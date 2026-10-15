@@ -5,26 +5,35 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const P = require('../lib/paths');
 
 const ROOT = path.join(__dirname, '..');
 const CLI_PATH = path.join(ROOT, 'bin', 'teach-me-agent.js').replace(/\\/g, '/');
-const BOOLEAN_FLAGS = new Set(['json', 'keep', 'help']);
+const BOOLEAN_FLAGS = new Set(['json', 'keep', 'help', 'copy', 'title', 'agent', 'all']);
 
-const HELP = `Teach me, Agent — on-screen teaching overlay driven by your coding agent.
+const HELP = `Teach me, Agent — on-screen companion. You point at the real UI; you do not click for the user.
 
 Usage: teach-me-agent <command> [options]
 
-  start [--topic T] [--say S]   Launch the overlay + panel (if needed) and begin a session
-  wait [--timeout SEC]          Block until the user speaks or circles something (default 480s)
-  say <text> | --file F | -     Show text in the user's panel
-  show <scene.json | JSON | ->  Draw guides on screen (arrows, boxes, clicks, html...) [--say S] [--shot ID] [--keep]
-  clear                         Remove everything drawn
+  start [--topic T] [--say S] [--display ID]
+                                Launch the app if needed and begin the one on-screen session.
+                                The launching agent connects without a prompt. The user picks a screen
+                                unless --display is set. Prints the session id.
+  attach --session ID           Ask the user to connect to that session. If a lesson is already
+                                active, no answer denies the connection.
+  wait [--timeout SEC]          Block until the user sends something (default 480s). No capture context.
+  say <text> | --file F | -     Show text in the capsule. [--copy] also copies it.
+  show <scene.json | JSON | ->  Draw one scene. Must include say (or --say). [--shot ID]
+  clear [--agent|--all]         Default and --agent clear your guides. --all also clears user ink.
+  capture [--title]             Screenshot after the approval tier, with a few retries.
+                                Adds focused process, mouse, and foreground bounds. --title adds the window title.
   zoom --rect x,y,w,h [--shot]  Crop a sharper image out of an existing shot (no new screenshot)
-  status                        Session, agent state, recent shots
+  board                         Optional: whether the board has user or agent ink
+  status                        Session id, display, capture tier, recent shots
   stop                          Close the app
-  demo                          Draw a sample of every guide type on the primary screen
+  demo                          Draw a sample of the guide types on one screen
   install-skill [--to DIR]      Install the agent skill (Cursor, plus Claude Code / Codex if present)
 
 Scene reference: ${path.join(ROOT, 'skill', 'teach-me-agent', 'scene-reference.md')}
@@ -74,6 +83,7 @@ function request(method, route, body) {
   return new Promise((resolve, reject) => {
     const data = body ? Buffer.from(JSON.stringify(body), 'utf8') : null;
     const headers = { 'x-tma-token': st.token };
+    if (st.sessionToken) headers['x-tma-session'] = st.sessionToken;
     if (data) Object.assign(headers, { 'content-type': 'application/json', 'content-length': data.length });
     const req = http.request({ host: '127.0.0.1', port: st.port, path: route, method, headers }, (res) => {
       const chunks = [];
@@ -109,7 +119,8 @@ async function call(method, route, body) {
 
 async function ensureApp() {
   try {
-    return await request('GET', '/health');
+    await request('GET', '/health');
+    return { spawned: false, secret: null };
   } catch (e) {
     if (e.code === 'APP_ERROR') throw e;
   }
@@ -122,7 +133,8 @@ async function ensureApp() {
   try {
     fs.unlinkSync(P.stateFile);
   } catch {}
-  const env = { ...process.env };
+  const secret = crypto.randomBytes(16).toString('hex');
+  const env = { ...process.env, TMA_LAUNCH_SECRET: secret };
   delete env.ELECTRON_RUN_AS_NODE;
   const child = spawn(electron, [ROOT], { detached: true, stdio: 'ignore', env });
   child.unref();
@@ -130,7 +142,8 @@ async function ensureApp() {
   while (Date.now() - t0 < 25000) {
     await sleep(300);
     try {
-      return await request('GET', '/health');
+      await request('GET', '/health');
+      return { spawned: true, secret };
     } catch {}
   }
   fail(`the app did not come up within 25s; see ${P.logFile}`);
@@ -149,26 +162,66 @@ function hhmmss(iso) {
 
 async function cmdStart({ pos, flags }) {
   const topic = typeof flags.topic === 'string' ? flags.topic : pos.join(' ');
-  await ensureApp();
-  const r = await call('POST', '/session', { topic, say: typeof flags.say === 'string' ? flags.say : undefined });
-  const hk = r.hotkeys;
+  const launched = await ensureApp();
+  const r = await call('POST', '/session/start', {
+    topic,
+    say: typeof flags.say === 'string' ? flags.say : undefined,
+    displayId: flags.display,
+    launchSecret: launched.secret || undefined,
+  });
+  if (r.denied) {
+    const id = r.session && r.session.id;
+    if (r.reason === 'session-active') {
+      fail(
+        `a lesson is already on screen${id ? ` (session ${id})` : ''}. This connection was denied. Ask the user with: teach-me-agent attach --session ${id || '<id>'}`,
+      );
+    }
+    if (r.reason === 'display-cancelled') fail('the user did not pick a display');
+    fail('the user did not allow this connection');
+  }
+  const hk = r.hotkeys || {};
   const lines = [
     `Teach me, Agent is running. Session ${r.session.id}${topic ? ` — "${topic}"` : ''}.`,
-    `The user's panel is on screen. Their hotkeys: ${pretty(hk.talk)} talk · ${pretty(hk.freeze)} circle-to-ask · ${pretty(hk.toggleOverlay)} hide/show your guides.`,
+    `Input is one entry: hold ${pretty(hk.talk)} to talk, click it to type. ${pretty(hk.toggleOverlay)} hides your guides. 继续 is a separate button${hk.continue ? ` (${pretty(hk.continue)})` : ' (no hotkey until the user sets one)'}.`,
     `Session dir (transcript.jsonl, shots/): ${r.session.dir}`,
-    `Scratch dir for scene / html files: ${r.session.scratch}`,
+    `Scratch dir: ${r.session.scratch}`,
   ];
+  if (r.display) lines.push(`Lesson display: ${r.display.id}`);
+  if (r.reused) lines.push('This session was already yours; nothing was replaced.');
   if (r.hotkeyErrors && r.hotkeyErrors.length) lines.push('Hotkey problems (tell the user): ' + r.hotkeyErrors.join('; '));
   lines.push('', 'Next: optionally greet in one short line with `say`, then run `wait` (tool timeout >= 10 min) and keep looping.');
   out(lines.join('\n'));
 }
 
+async function cmdAttach({ flags }) {
+  const id = typeof flags.session === 'string' ? flags.session : '';
+  if (!id) fail('attach needs --session <id>');
+  let r;
+  try {
+    r = await request('POST', '/session/attach', { session: id });
+  } catch (e) {
+    if (e.code === 'NOT_RUNNING' || e.code === 'GONE') {
+      fail('Teach me, Agent is not running. The agent that launches it should use start.');
+    }
+    fail(e.message);
+  }
+  if (r.denied) {
+    if (r.reason === 'no-session') fail('no session with that id');
+    if (r.reason === 'session-active') {
+      return out('Denied. A lesson is already active, and the user did not allow this connection.');
+    }
+    return out('Denied. The user did not allow this connection.');
+  }
+  out(`Attached to session ${r.session.id}.`);
+}
+
 function describeSource(m) {
-  if (m.source !== 'freeze') return 'typed in the panel';
-  const roles = m.shots.map((s) => s.role);
-  if (roles.includes('annotated')) return 'froze the screen, boxed a region and drew on it';
-  if (roles.includes('context')) return 'froze the screen and boxed a region';
-  return 'froze the whole screen';
+  if (m.source === 'voice') return 'held the input control and spoke';
+  if (m.source === 'text') return 'typed';
+  if (m.source === 'continue') return 'pressed 继续';
+  if (m.source === 'system') return 'the app reported a session event';
+  if (m.source === 'freeze') return 'sent a circled region from an older build';
+  return 'sent a message';
 }
 
 function formatWait(r, timeout) {
@@ -192,12 +245,12 @@ function formatWait(r, timeout) {
     lines.push('', 'Open the image(s) with your image/file reading tool before answering.');
     if (r.defaultShot)
       lines.push(`Scene coordinates default to the pixels of ${r.defaultShot}; set "shot" on the scene or an item to use another image.`);
-  } else if (real.length) lines.push('', 'No screen image this time (the user turned it off). Answer from context, or ask them to circle it.');
+  } else if (real.length) lines.push('', 'No screen image this time (the user turned screenshots off, or this message had none).');
   if (r.scene) lines.push(`Still drawn from before: scene #${r.scene.id} (${r.scene.types.join(', ')}). A new \`show\` replaces it.`);
   if (r.overlayHidden) lines.push('The user has hidden your guides right now; they will see drawings again when they unhide.');
   if (ended)
     lines.push('', 'END — the user clicked "end lesson". Do not run `wait` again. Run `stop`, then give a short recap in chat.');
-  else lines.push('', 'Next: reply with `show` (draw + "say") or `say`, then run `wait` again.');
+  else lines.push('', 'Next: reply with `show` (a scene that includes say) or `say`, then run `wait` again. `wait` does not include capture context; use `capture` for that.');
   return lines.join('\n').trim();
 }
 
@@ -224,8 +277,8 @@ async function textArg({ pos, flags }) {
 async function cmdSay(args) {
   const text = (await textArg(args)).replace(/^\uFEFF/, '');
   if (!text.trim()) fail('say needs text: teach-me-agent say "..."');
-  await call('POST', '/say', { text });
-  out('Shown in the panel. Run `wait` when you are ready to hear back.');
+  await call('POST', '/say', { text, copy: !!args.flags.copy });
+  out(args.flags.copy ? 'Shown in the capsule and copied.' : 'Shown in the capsule. Run `wait` when you are ready to hear back.');
 }
 
 function parseScene(raw) {
@@ -256,6 +309,9 @@ async function cmdShow({ pos, flags }) {
   if (typeof flags.shot === 'string') scene.shot = flags.shot;
   if (typeof flags.say === 'string') scene.say = flags.say;
   if (flags.keep) scene.keep = true;
+  if (!scene.say || !String(scene.say).trim()) {
+    fail('show must include a say. Pass --say "..." or set "say" in the scene.');
+  }
   const r = await call('POST', '/show', { scene });
   const lines = [];
   if (r.drawn.length)
@@ -268,9 +324,43 @@ async function cmdShow({ pos, flags }) {
   out(lines.join('\n'));
 }
 
-async function cmdClear() {
-  await call('POST', '/clear');
-  out('Cleared all guides.');
+async function cmdClear({ flags }) {
+  const scope = flags.all ? 'all' : 'agent';
+  await call('POST', '/clear', { scope });
+  out(scope === 'all' ? 'Cleared agent guides and user ink.' : 'Cleared agent guides.');
+}
+
+async function cmdCapture({ flags }) {
+  let r;
+  try {
+    r = await request('POST', '/capture', { title: !!flags.title });
+  } catch (e) {
+    if (e.code === 'NOT_RUNNING' || e.code === 'GONE') {
+      fail('Teach me, Agent is not running. Start a session with: teach-me-agent start --topic "..."');
+    }
+    if (/denied/i.test(e.message || '')) fail('capture denied');
+    fail(e.message);
+  }
+  const s = r.shot;
+  const ctx = r.context || {};
+  const bounds = ctx.foregroundBounds;
+  const lines = [
+    `${s.id}  ${s.width}x${s.height}  attempts ${r.attempts}`,
+    `    ${s.path}`,
+    'context:',
+    `  focusedProcess: ${ctx.focusedProcess || 'unknown'}`,
+    `  mouse: ${ctx.mouse ? `${ctx.mouse.x},${ctx.mouse.y}` : 'unknown'}`,
+    `  foregroundBounds: ${bounds ? [bounds.x, bounds.y, bounds.width, bounds.height].join(',') : 'unknown'}`,
+  ];
+  if (flags.title) lines.push(`  windowTitle: ${ctx.windowTitle || ''}`);
+  lines.push('Coordinates in a later show are pixels of this image.');
+  out(lines.join('\n'));
+}
+
+async function cmdBoard({ flags }) {
+  const r = await call('GET', '/board');
+  if (flags.json) return out(JSON.stringify(r, null, 2));
+  out(`Board: ${r.hasContent ? 'has ink' : 'empty'} · user ${r.userStrokes} · agent ${r.agentStrokes}`);
 }
 
 async function cmdZoom({ pos, flags }) {
@@ -297,14 +387,16 @@ async function cmdStatus({ flags }) {
   }
   if (flags.json) return out(JSON.stringify(r, null, 2));
   const lines = [
-    `Teach me, Agent ${r.version} — session ${r.session.id}${r.session.topic ? ` — "${r.session.topic}"` : ''}`,
+    `Teach me, Agent ${r.version} — session ${r.session ? r.session.id : 'none'}${r.session && r.session.topic ? ` — "${r.session.topic}"` : ''}`,
+    `Connected: ${r.session && r.session.connected ? 'yes' : 'no'} · display ${r.lessonDisplay || 'none'} · capture ${r.captureTier || 'ask'}`,
     `Agent state as the user sees it: ${r.agent}; queued messages: ${r.pending}`,
-    `Drawn now: ${r.scene ? `scene #${r.scene.id} (${r.scene.types.join(', ')})` : 'nothing'}${r.overlayHidden ? ' — hidden by the user' : ''}`,
+    `Board: user ${r.board ? r.board.userStrokes : 0} · agent ${r.board ? r.board.agentStrokes : 0}`,
+    `Drawn now: ${r.scene ? `scene #${r.scene.id} (${(r.scene.types || []).join(', ')})` : 'nothing'}${r.overlayHidden ? ' — guides hidden by the user' : ''}${r.layoutStale ? ' — screen layout changed, recapture before drawing' : ''}`,
     `Default shot: ${r.defaultShot || 'none yet'}`,
-    `Scratch dir: ${r.session.scratch}`,
+    `Scratch dir: ${r.session ? r.session.scratch : 'none'}`,
   ];
-  if (r.recentShots.length) lines.push('Recent shots:', ...r.recentShots.map((s) => `  ${s.id}  ${s.width}x${s.height}  ${s.role}  ${s.path}`));
-  if (r.hotkeyErrors.length) lines.push('Hotkey problems: ' + r.hotkeyErrors.join('; '));
+  if (r.recentShots && r.recentShots.length) lines.push('Recent shots:', ...r.recentShots.map((s) => `  ${s.id}  ${s.width}x${s.height}  ${s.role}  ${s.path}`));
+  if (r.hotkeyErrors && r.hotkeyErrors.length) lines.push('Hotkey problems: ' + r.hotkeyErrors.join('; '));
   out(lines.join('\n'));
 }
 
@@ -318,9 +410,18 @@ async function cmdStop() {
 }
 
 async function cmdDemo() {
-  await ensureApp();
+  const launched = await ensureApp();
   const st = await call('GET', '/status');
-  const d = st.displays.find((x) => x.id === st.primaryDisplay) || st.displays[0];
+  if (!st.session || !st.session.connected) {
+    const started = await call('POST', '/session/start', {
+      topic: 'demo',
+      displayId: st.primaryDisplay,
+      launchSecret: launched.secret || undefined,
+    });
+    if (started.denied) fail(started.reason || 'could not start the demo');
+  }
+  const live = await call('GET', '/status');
+  const d = live.displays.find((x) => x.id === live.primaryDisplay) || live.displays[0];
   const W = d.bounds.width;
   const H = d.bounds.height;
   const at = (fx, fy) => [Math.round(W * fx), Math.round(H * fy)];
@@ -336,7 +437,7 @@ async function cmdDemo() {
 <div class="card"><div>这是一段 agent 自己写的 HTML 动画</div><div class="bar"><i></i></div><div style="margin-top:12px" class="dots"><span></span><span></span><span></span></div></div>`;
   const scene = {
     shot: 'screen',
-    say: '这是演示：**箭头**、**方框**、**点击**、**拖动**、**步骤编号**、**快捷键**、**滚动**，以及 agent 可以随手写的 HTML 动画。\n按 [[Ctrl+Alt+H]] 隐藏，或点面板上的橡皮擦清除。',
+    say: '这是演示：箭头、方框、点击、拖动、步骤、快捷键、滚动，以及一小段 HTML。自定义 HTML 只接受文本，宿主会加上固定水印。',
     items: [
       { type: 'step', at: at(0.1, 0.18), n: 1, label: '步骤编号' },
       { type: 'box', rect: [...at(0.08, 0.3), Math.round(W * 0.2), 64], label: '方框：看这一块', delay: 250 },
@@ -346,7 +447,7 @@ async function cmdDemo() {
       { type: 'drag', from: at(0.6, 0.58), to: at(0.82, 0.7), label: '按住拖过去', delay: 1000 },
       { type: 'scroll', at: at(0.3, 0.62), direction: 'down', label: '往下滚', delay: 1250 },
       { type: 'keys', keys: ['Ctrl', 'Shift', 'S'], at: at(0.5, 0.86), label: '按这个快捷键', delay: 1500 },
-      { type: 'html', rect: [...at(0.06, 0.74), 300, 120], html, delay: 1750 },
+      { type: 'html', rect: [...at(0.06, 0.74), 280, 110], html, delay: 1750 },
     ],
   };
   const r = await call('POST', '/show', { scene });
@@ -379,16 +480,26 @@ function cmdInstallSkill({ flags }) {
 
 // ---------- main ----------
 
+async function cmdTour() {
+  await ensureApp();
+  await call('POST', '/tour');
+  out('Tour started.');
+}
+
 const COMMANDS = {
   start: cmdStart,
+  attach: cmdAttach,
   wait: cmdWait,
   say: cmdSay,
   show: cmdShow,
   clear: cmdClear,
+  capture: cmdCapture,
   zoom: cmdZoom,
+  board: cmdBoard,
   status: cmdStatus,
   stop: cmdStop,
   demo: cmdDemo,
+  tour: cmdTour,
   'install-skill': cmdInstallSkill,
 };
 

@@ -1,26 +1,53 @@
 # Scene reference
 
-A scene is a JSON object:
+A scene is a JSON object. `show` replaces the current scene and requires a short `say`.
 
 ```json
 {
   "shot": "s5",
-  "say": "text for the panel",
-  "keep": false,
-  "items": [ { "type": "arrow", "to": [412, 230] } ]
+  "say": "点这里。",
+  "pattern": "point",
+  "to": [412, 230],
+  "label": "文件",
+  "items": []
 }
 ```
 
+- `say` (required): short text shown in the capsule with the drawing. This is the only text the capsule shows from you.
 - `shot` (optional): image id the coordinates refer to. Defaults to the image `wait` named. An item's own `shot` wins.
-- `say` (optional): text shown in the panel together with the drawing.
-- `keep` (optional): `true` adds the items to what is already drawn instead of replacing it.
-- `items`: list of guides. A bare JSON array is also accepted as the item list.
+- `pattern` (optional): expands into basic items. Unknown patterns warn and add nothing.
+- `keep` is ignored. One scene is on screen at a time.
+- `items`: extra basic guides. A bare JSON array is also accepted as the item list.
 
-Points are `[x, y]`, rects are `[x, y, w, h]`, all in pixels of the shot. `show` prints warnings for unknown types, missing fields and coordinates outside the image; fix and resend if you get any.
+Points are `[x, y]`, rects are `[x, y, w, h]`, all in pixels of the shot. `show` prints warnings for unknown types, missing fields, and coordinates outside the image; fix and resend if you get any.
+
+If the screen's scale or position changed since that shot, `show` still says the text and does not draw. Capture again and use the new image.
+
+## Patterns
+
+| pattern | needs | becomes |
+|---------|--------|---------|
+| `point` | `to` | one `arrow` |
+| `highlight` | `rect` | one `box` |
+| `click` | `at` | one `click` (`button` optional) |
+| `drag` | `from`, `to` | one `drag` |
+| `keys` | `keys` | one `keys` |
+| `steps` | `steps` | one `step` per entry, staggered |
+
+```json
+{
+  "say": "三步：选中，右键，再点合并。",
+  "pattern": "steps",
+  "steps": [
+    { "at": [120, 210], "label": "选中" },
+    { "at": [210, 330], "label": "合并" }
+  ]
+}
+```
 
 ## Items
 
-Common optional fields: `label` (text bubble placed next to the guide), `color` (CSS color, default pink `#ff3d7f`), `delay` (ms before it appears), `ttl` (ms until it fades out), `shot`.
+Common optional fields: `label`, `color` (CSS color, default pink `#ff3d7f`), `delay` (ms), `ttl` (ms), `shot`.
 
 ### arrow
 
@@ -90,22 +117,17 @@ Dims the rest of the screen. Use one at a time.
 { "type": "scroll", "at": [600, 400], "direction": "down", "label": "往下滚到底" }
 ```
 
-### html
+### stroke
 
 ```json
-{ "type": "html", "rect": [500, 300, 320, 180], "html": "<div>...</div><style>...</style><script>...</script>" }
+{ "type": "stroke", "points": [[80, 80], [160, 120], [240, 90]] }
 ```
 
-or `"file": "C:/absolute/path/anim.html"` instead of `"html"`.
+Draws on the agent layer of the board (separate from the user's ink). `clear` removes it; `clear --all` also clears user ink.
 
-- Runs in a sandboxed, transparent iframe placed at `rect` (whole screen if omitted). It cannot be clicked, has no network access, and is limited to 512 KB. Inline everything.
-- A global `TMA` object is predefined:
-  - `TMA.pt(x, y)` maps shot pixels to iframe CSS pixels, returning `[x, y]`.
-  - `TMA.rect(x, y, w, h)` does the same for a rect.
-  - `TMA.width`, `TMA.height` give the iframe size; `TMA.color` is the item color.
-- Prefer animations that loop or settle into a final state, because the user may look over at any moment.
+### html
 
-Example: show that a layer above covers the one below.
+Text only. A `file` field is rejected.
 
 ```json
 {
@@ -115,23 +137,24 @@ Example: show that a layer above covers the one below.
 }
 ```
 
-## Patterns
+Limits the host enforces:
 
-A step sequence on one screen, appearing one after another:
+- `rect` is required. It is clamped so the scene cannot cover the screen (48 px margin, at most 40% of the display area).
+- One HTML item per scene. Extra HTML items are dropped.
+- At most 256 KB. Inline CSS and JS only.
+- Rendered in a `srcdoc` iframe with `sandbox="allow-scripts"` and never `allow-same-origin`.
+- CSP is `default-src 'none'`; images, media, and fonts may be `data:` or `blob:`; scripts and styles are inline only.
+- The window is click-through, does not take focus, and does not receive keyboard input.
+- The host draws a fixed watermark and border. Opacity cannot go below 0.85.
+- TTL defaults to 60 s and cannot be longer. A crashed HTML guide is not restored.
+- `TMA.pt(x, y)` maps shot pixels to iframe CSS pixels and returns `[x, y]`. `TMA.rect(x, y, w, h)` does the same for a rect. `TMA.width`, `TMA.height`, and `TMA.color` describe the frame.
 
-```json
-{
-  "say": "三步：选中 → 右键 → 选「合并」。",
-  "items": [
-    { "type": "step", "at": [120, 210], "n": 1, "label": "选中" },
-    { "type": "click", "at": [120, 210], "button": "right", "delay": 600 },
-    { "type": "step", "at": [210, 330], "n": 2, "delay": 1200, "label": "点「合并」" }
-  ]
-}
-```
+Prefer a loop or a settled final frame, because the user may look over at any moment.
+
+## Zoom
 
 A precise target in dense UI: run `zoom --rect` on the area, read the coordinates from the zoomed image, then
 
 ```json
-{ "shot": "s7", "items": [ { "type": "box", "rect": [88, 40, 30, 22], "label": "这个小图标" } ] }
+{ "say": "就是这个小图标。", "shot": "s7", "items": [ { "type": "box", "rect": [88, 40, 30, 22], "label": "这个小图标" } ] }
 ```
