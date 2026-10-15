@@ -61,6 +61,8 @@ const S = {
   token: crypto.randomBytes(24).toString('hex'),
   port: 0,
   launchSecret: process.env.TMA_LAUNCH_SECRET || '',
+  // One-shot free consent for the process that launched the app. Armed only
+  // when that launch presents its secret, then cleared in handleStart.
   launchOk: false,
   session: null,
   shots: null,
@@ -722,9 +724,17 @@ async function beginLesson({ topic, display }) {
 }
 
 async function handleStart(body, headers) {
-  if (body.launchSecret && S.launchSecret && body.launchSecret === S.launchSecret) S.launchOk = true;
+  // The launching agent skips consent once. Consume the secret and the flag
+  // on that call, including when a lesson is already active, so a later
+  // start or attach cannot reuse the waiver.
+  if (body.launchSecret && S.launchSecret && body.launchSecret === S.launchSecret) {
+    S.launchOk = true;
+    S.launchSecret = '';
+  }
+  const launchedApp = !!(S.launchOk && !isActive());
+  S.launchOk = false;
   const decision = decideStart({
-    launchedApp: S.launchOk && !isActive(),
+    launchedApp,
     hasActiveSession: isActive(),
     holdsConnection: holdsConnection(headers),
   });
@@ -1489,7 +1499,8 @@ function writeState() {
     version: VERSION,
     startedAt: Date.now(),
   };
-  fs.writeFileSync(P.stateFile, JSON.stringify(body));
+  fs.writeFileSync(P.stateFile, JSON.stringify(body), { mode: 0o600 });
+  fs.chmodSync(P.stateFile, 0o600);
 }
 
 function removeState() {
