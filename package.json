@@ -9,7 +9,8 @@
   },
   "scripts": {
     "app": "electron .",
-    "demo": "node bin/teach-me-agent.js demo"
+    "demo": "node bin/teach-me-agent.js demo",
+    "test": "node --test test/*.js"
   },
   "engines": {
     "node": ">=18"
