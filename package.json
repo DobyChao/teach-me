@@ -1,0 +1,21 @@
+{
+  "name": "teach-me-agent",
+  "version": "0.1.0",
+  "description": "Teach me, Agent: an on-screen overlay that lets the coding agent you already use point at the real UI while it teaches you.",
+  "private": true,
+  "main": "app/main.js",
+  "bin": {
+    "teach-me-agent": "bin/teach-me-agent.js"
+  },
+  "scripts": {
+    "app": "electron .",
+    "demo": "node bin/teach-me-agent.js demo"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^44.7.2"
+  }
+}

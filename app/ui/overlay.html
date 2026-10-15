@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <!-- Inline script is allowed so agent-authored HTML (srcdoc iframes inherit this policy) can animate. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob: file:; font-src * data:; media-src * data: blob:; frame-src 'self' data: blob: about:; connect-src 'none'"
+    />
+    <link rel="stylesheet" href="overlay.css" />
+  </head>
+  <body>
+    <div id="under"></div>
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="layer"></div>
+    <script src="overlay.js"></script>
+  </body>
+</html>
