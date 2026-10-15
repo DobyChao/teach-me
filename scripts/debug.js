@@ -1,7 +1,7 @@
 // Dev helper for the routes the app exposes when started with TMA_DEBUG=1.
 //   node scripts/debug.js capture panel|freeze|overlay[:displayId]
 //   node scripts/debug.js eval <target> <js | file.js>
-//   node scripts/debug.js hotkey freeze|talk|toggleOverlay
+//   node scripts/debug.js hotkey talk|toggleOverlay|continue|boardEdit|captureAllow
 //   node scripts/debug.js input <target> <events.json>
 const fs = require('fs');
 const http = require('http');

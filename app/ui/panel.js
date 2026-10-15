@@ -1,60 +1,43 @@
 const $ = (s) => document.querySelector(s);
 const log = $('#log');
-const input = $('#input');
-const sendBtn = $('#btn-send');
-const attachBtn = $('#btn-attach');
-
 let hotkeys = {};
-let attach = localStorage.getItem('attach') !== 'off';
-let collapsed = false;
 let ended = false;
-let sending = false;
-let endArmTimer = null;
 let state = { agent: 'offline', since: Date.now(), pending: 0 };
-
-// ---------- rendering ----------
+let rec = null;
+let recorder = null;
+let stream = null;
+let chunks = [];
+let voiceText = '';
 
 function esc(s) {
-  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 }
-
 function md(text) {
   return esc(text)
     .replace(/`([^`\n]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
-    .replace(/\[\[([^\]\n]+)\]\]/g, '<kbd>$1</kbd>')
-    .replace(/^(\s*)[-*] /gm, '$1• ');
+    .replace(/\[\[([^\]\n]+)\]\]/g, '<kbd>$1</kbd>');
 }
-
 function hhmm(t) {
   const d = new Date(t);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
-
 function fileUrl(p) {
-  return encodeURI('file:///' + p.replace(/\\/g, '/')).replace(/#/g, '%23');
+  return encodeURI('file:///' + String(p).replace(/\\/g, '/')).replace(/#/g, '%23');
 }
-
-function scrollDown() {
-  log.scrollTop = log.scrollHeight;
-}
-
 function hideEmpty() {
   const e = $('#empty');
   if (e) e.style.display = 'none';
 }
-
-function addAgent(entry, quiet) {
+function addAgent(entry) {
   hideEmpty();
   const m = document.createElement('div');
   m.className = 'msg agent';
   m.innerHTML = md(entry.text) + `<span class="meta">${hhmm(entry.at)}</span>`;
   log.appendChild(m);
-  $('#last').innerHTML = md(entry.text);
-  scrollDown();
-  if (!quiet) flash();
+  $('#last').textContent = entry.text;
+  log.scrollTop = log.scrollHeight;
 }
-
 function addUser(entry) {
   hideEmpty();
   const m = document.createElement('div');
@@ -66,7 +49,7 @@ function addUser(entry) {
     for (const s of entry.shots.slice(0, 2)) {
       const img = document.createElement('img');
       img.src = fileUrl(s.path);
-      img.title = s.role;
+      img.alt = s.role || '';
       t.appendChild(img);
     }
     m.appendChild(t);
@@ -76,198 +59,234 @@ function addUser(entry) {
   meta.textContent = hhmm(entry.at);
   m.appendChild(meta);
   log.appendChild(m);
-  scrollDown();
+  log.scrollTop = log.scrollHeight;
 }
-
-function addNotice(entry, warn) {
+function addNotice(entry) {
   const n = document.createElement('div');
-  n.className = 'notice' + (warn ? ' warn' : '');
+  n.className = 'notice';
   n.textContent = entry.text;
   log.appendChild(n);
-  scrollDown();
 }
-
 function renderHistory(history) {
   log.querySelectorAll('.msg, .notice').forEach((n) => n.remove());
-  $('#last').textContent = '';
   const e = $('#empty');
-  if (e) e.style.display = history.length ? 'none' : '';
-  for (const h of history) {
-    if (h.kind === 'agent') addAgent(h, true);
+  if (e) e.style.display = history && history.length ? 'none' : '';
+  $('#last').textContent = '还没有开始。按住说话，点一下打字。';
+  for (const h of history || []) {
+    if (h.kind === 'agent') addAgent(h);
     else if (h.kind === 'user') addUser(h);
     else addNotice(h);
   }
 }
-
-function flash() {
-  const h = $('#header');
-  h.classList.remove('flash');
-  void h.offsetWidth;
-  h.classList.add('flash');
-}
-
 function elapsed(ms) {
   const s = Math.floor(ms / 1000);
   return s < 60 ? `${s} 秒` : `${Math.floor(s / 60)} 分 ${s % 60} 秒`;
 }
-
 function renderState() {
   const { agent, since, pending } = state;
   const text = {
-    listening: 'agent 在听 · 说一句，或圈给它看',
+    listening: 'agent 在听',
     thinking: `agent 在想… ${elapsed(Date.now() - since)}`,
-    offline: pending
-      ? `agent 暂时没在听 · ${pending} 条消息排队中，它回来就会看到`
-      : 'agent 没在听 · 先在你的 agent 里开始一次教学',
+    offline: pending ? `agent 不在 · ${pending} 条在排队` : 'agent 还没连上',
     ended: '这次教学已结束',
-  }[agent];
-  $('#status-text').textContent = text || agent;
-  $('#status').className = agent;
-  $('#dot').className = 'dot ' + agent;
+  }[agent] || '还没有教学';
+  $('#status-text').textContent = text;
+  $('#dot').className = 'dot ' + (agent || 'offline');
+  document.body.classList.toggle('listening', agent === 'listening');
+  document.body.classList.toggle('thinking', agent === 'thinking');
+  document.body.classList.toggle('offline', agent === 'offline' || !agent);
   ended = agent === 'ended';
-  $('#btn-end').title = ended ? '关闭' : '结束这次教学';
 }
-
+function applyConfig(cfg) {
+  if (!cfg) return;
+  const mode = cfg.appearance && cfg.appearance.mode === 'pet' ? 'pet' : 'capsule';
+  document.body.classList.toggle('mode-pet', mode === 'pet');
+  document.body.classList.toggle('mode-capsule', mode !== 'pet');
+  hotkeys = cfg.hotkeys || hotkeys;
+}
 function setSession(s) {
-  $('#topic').textContent = s.topic || '';
-  $('#topic').title = s.topic || '';
+  $('#sid').textContent = s && s.id ? s.id : '';
+  $('#sid').title = s && s.id ? s.id : '';
 }
-
-function setOverlayHidden(hidden) {
-  $('#btn-eye').classList.toggle('hidden-guides', !!hidden);
-  $('#btn-eye').title = hidden ? '显示画面上的指引' : '隐藏画面上的指引';
+function stopStream() {
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  stream = null;
 }
-
-function setHotkeys(hk) {
-  hotkeys = hk || {};
-  const pretty = (a) => (a || '').replace(/Control/g, 'Ctrl').replace(/CommandOrControl/g, 'Ctrl');
-  document.querySelectorAll('[data-hk]').forEach((k) => {
-    k.textContent = pretty(hotkeys[k.dataset.hk]) || '未设置';
-  });
-  $('#btn-draw').title = `圈给它看（${pretty(hotkeys.freeze)}）`;
-}
-
-function renderAttach() {
-  attachBtn.classList.toggle('on', attach);
-  attachBtn.title = attach ? '发送时会附上当前屏幕（点一下关闭）' : '发送时不附屏幕（点一下打开）';
-}
-
-function autosize() {
-  input.style.height = 'auto';
-  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-  if (collapsed) requestCollapse();
-}
-
-function requestCollapse() {
-  const h = $('#header').offsetHeight + $('#last').offsetHeight + $('#composer').offsetHeight + 28;
-  tma.send('panel:collapse', { collapsed, height: h });
-}
-
-// ---------- actions ----------
-
-async function send() {
-  const text = input.value.trim();
-  if (!text || sending) return;
-  sending = true;
-  sendBtn.disabled = true;
-  input.value = '';
-  autosize();
-  tma.send('panel:draft', '');
-  try {
-    const r = await tma.invoke('panel:send', { text, attach });
-    if (!r || !r.ok) input.value = text;
-  } catch {
-    input.value = text;
-  } finally {
-    sending = false;
-    sendBtn.disabled = false;
-    autosize();
-  }
-}
-
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
-    e.preventDefault();
-    send();
-  } else if (e.key === 'Escape') {
-    tma.send('panel:escape');
-  }
-});
-
-input.addEventListener('input', () => {
-  autosize();
-  tma.send('panel:draft', input.value);
-});
-
-sendBtn.addEventListener('click', send);
-
-attachBtn.addEventListener('click', () => {
-  attach = !attach;
-  localStorage.setItem('attach', attach ? 'on' : 'off');
-  renderAttach();
-});
-
-$('#btn-mic').addEventListener('click', () => {
-  input.focus();
-  tma.send('voice:dictate');
-});
-
-$('#btn-draw').addEventListener('click', () => tma.send('panel:freeze'));
-$('#btn-clear').addEventListener('click', () => tma.send('panel:clear-overlay'));
-$('#btn-eye').addEventListener('click', () => tma.send('panel:toggle-overlay'));
-
-$('#btn-collapse').addEventListener('click', () => {
-  collapsed = !collapsed;
-  document.body.classList.toggle('collapsed', collapsed);
-  $('#btn-collapse').title = collapsed ? '展开' : '折叠';
-  requestAnimationFrame(requestCollapse);
-});
-
-$('#btn-end').addEventListener('click', () => {
-  const b = $('#btn-end');
-  if (ended) return tma.send('panel:quit');
-  if (!b.classList.contains('armed')) {
-    b.classList.add('armed');
-    clearTimeout(endArmTimer);
-    endArmTimer = setTimeout(() => b.classList.remove('armed'), 3000);
+async function startListen(engine) {
+  voiceText = '';
+  if (engine === 'system') {
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Rec) {
+      tma.send('voice:result', { error: 'no-system-speech' });
+      return;
+    }
+    rec = new Rec();
+    rec.lang = 'zh-CN';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      voiceText = '';
+      for (let i = 0; i < e.results.length; i++) voiceText += e.results[i][0].transcript;
+      $('#last').textContent = voiceText || '在听…';
+    };
+    rec.onerror = () => {};
+    rec.onend = () => {
+      const text = voiceText;
+      rec = null;
+      tma.send('voice:result', { text });
+    };
+    try {
+      rec.start();
+    } catch (e) {
+      rec = null;
+      tma.send('voice:result', { error: e.message || 'speech-failed' });
+    }
     return;
   }
-  b.classList.remove('armed');
-  tma.send('panel:end');
-});
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream);
+    chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size) chunks.push(e.data);
+    };
+    recorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      const data = Array.from(new Uint8Array(await blob.arrayBuffer()));
+      const mime = blob.type;
+      recorder = null;
+      stopStream();
+      tma.send('voice:audio', { mime, data });
+    };
+    recorder.start();
+  } catch (e) {
+    stopStream();
+    tma.send('voice:result', { error: e.message || 'mic-denied' });
+  }
+}
+function stopListen() {
+  if (rec) {
+    try {
+      rec.stop();
+    } catch {
+      rec = null;
+      tma.send('voice:result', { text: voiceText || '' });
+    }
+  }
+  if (recorder && recorder.state !== 'inactive') {
+    try {
+      recorder.stop();
+    } catch {
+      recorder = null;
+      stopStream();
+      tma.send('voice:result', { error: 'record-failed' });
+    }
+  }
+}
 
-// ---------- events from main ----------
+const entry = $('#entry');
+entry.addEventListener('pointerdown', (e) => {
+  entry.classList.add('holding');
+  try {
+    entry.setPointerCapture(e.pointerId);
+  } catch {}
+  tma.send('input:pointer', { phase: 'down' });
+});
+function pointerUp() {
+  if (!entry.classList.contains('holding')) return;
+  entry.classList.remove('holding');
+  tma.send('input:pointer', { phase: 'up' });
+}
+entry.addEventListener('pointerup', pointerUp);
+entry.addEventListener('pointercancel', pointerUp);
+
+$('#btn-continue').addEventListener('click', () => tma.send('panel:continue'));
+$('#btn-board').addEventListener('click', () => tma.send('panel:board-edit'));
+$('#btn-eye').addEventListener('click', () => tma.send('panel:toggle-overlay'));
+$('#btn-expand').addEventListener('click', () => tma.send('panel:toggle-expand'));
+$('#btn-clear-user').addEventListener('click', () => tma.send('panel:clear-user'));
+$('#btn-clear-agent').addEventListener('click', () => tma.send('panel:clear-agent'));
+$('#btn-settings').addEventListener('click', () => tma.send('panel:settings'));
+$('#btn-copy-id').addEventListener('click', () => tma.send('panel:copy-id'));
+$('#btn-end').addEventListener('click', () => tma.send(ended ? 'panel:quit' : 'panel:end'));
+$('#tour-next').addEventListener('click', () => tma.send('tour:next'));
+$('#tour-skip').addEventListener('click', () => tma.send('tour:skip'));
+$('#flash-undo').addEventListener('click', () => tma.send('panel:voice-undo'));
+$('#attach-board').addEventListener('change', (e) => tma.send('panel:attach-board', { on: e.target.checked }));
+
+document.body.addEventListener('mouseenter', () => tma.send('panel:hover', { on: true }));
+document.body.addEventListener('mouseleave', () => tma.send('panel:hover', { on: false }));
 
 tma.on('panel:init', (d) => {
+  applyConfig(d.config);
   setSession(d.session);
-  setHotkeys(d.hotkeys);
   renderHistory(d.history || []);
-  setOverlayHidden(d.overlayHidden);
-  for (const err of d.hotkeyErrors || []) addNotice({ text: err }, true);
+  if (d.hotkeyErrors) for (const err of d.hotkeyErrors) addNotice({ text: err });
+  document.body.classList.toggle('collapsed', d.collapsed !== false);
+  $('#btn-expand').textContent = d.collapsed === false ? '收起' : '展开';
+  $('#btn-eye').classList.toggle('hidden-guides', !!d.overlayHidden);
+  $('#btn-board').classList.toggle('on', !!d.editing);
+  const board = d.board || {};
+  $('#attach-board').checked = !!board.attach;
+  $('#attach-board').disabled = !board.hasContent;
 });
-
+tma.on('panel:config', applyConfig);
 tma.on('panel:session', (d) => {
   setSession(d.session);
-  renderHistory(d.history || []);
+  if (d.history) renderHistory(d.history);
 });
-
-tma.on('panel:say', (e) => addAgent(e));
-tma.on('panel:user', (e) => addUser(e));
-tma.on('panel:notice', (e) => addNotice(e, true));
-tma.on('panel:overlay-hidden', setOverlayHidden);
+tma.on('panel:say', addAgent);
+tma.on('panel:user', addUser);
+tma.on('panel:notice', addNotice);
 tma.on('panel:state', (s) => {
   state = s;
   renderState();
 });
-tma.on('panel:focus-input', () => {
-  input.focus();
-  input.setSelectionRange(input.value.length, input.value.length);
+tma.on('panel:overlay-hidden', (hidden) => {
+  $('#btn-eye').classList.toggle('hidden-guides', !!hidden);
+  $('#btn-eye').textContent = hidden ? '显示指引' : '指引';
 });
-tma.on('panel:clear-draft', () => {
-  input.value = '';
-  autosize();
+tma.on('panel:collapsed', (collapsed) => {
+  document.body.classList.toggle('collapsed', !!collapsed);
+  $('#btn-expand').textContent = collapsed ? '展开' : '收起';
+});
+tma.on('panel:editing', (on) => {
+  document.body.classList.toggle('editing', !!on);
+});
+tma.on('panel:board', (board) => {
+  const box = $('#attach-board');
+  box.disabled = !board.hasContent;
+  box.checked = !!board.attach;
+});
+tma.on('panel:listen', (d) => {
+  if (d && d.on) {
+    $('#last').textContent = '在听…';
+    startListen(d.engine || 'system');
+  } else stopListen();
+});
+tma.on('panel:voice-flash', (d) => {
+  const flash = $('#flash');
+  if (!d || !d.text) {
+    flash.hidden = true;
+    return;
+  }
+  $('#flash-text').textContent = d.text;
+  flash.hidden = false;
+});
+tma.on('panel:tour', (d) => {
+  const bar = $('#tourbar');
+  if (!d || !d.on) {
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  $('#tour-label').textContent = `引导 ${d.step}/${d.total}`;
+});
+tma.on('panel:speak', (d) => {
+  if (!d || !d.text || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance(d.text));
 });
 
 setInterval(() => state.agent === 'thinking' && renderState(), 1000);
-renderAttach();
 renderState();

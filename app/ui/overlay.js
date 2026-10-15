@@ -256,25 +256,8 @@ const RENDER = {
     if (it.label) bubble(it.label, x + 22, y, 1, 0, box, 8);
   },
 
-  html(it, g, box) {
-    const [x, y, w, h] = it.rect || [0, 0, W(), H()];
-    const f = document.createElement('iframe');
-    f.className = 'html';
-    f.setAttribute('sandbox', 'allow-scripts');
-    Object.assign(f.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
-    const m = it.map;
-    const env = { color: it.color || ACCENT, width: w, height: h, sx: m.sx, sy: m.sy, ox: m.ox - x, oy: m.oy - y };
-    const json = JSON.stringify(env).replace(/</g, '\\u003c');
-    const prelude =
-      '<!doctype html><meta charset="utf-8">' +
-      '<style>html,body{margin:0;background:transparent;overflow:hidden;color-scheme:normal}</style>' +
-      `<script>(function(){var t=${json};` +
-      't.pt=function(x,y){return [x*t.sx+t.ox,y*t.sy+t.oy]};' +
-      't.rect=function(x,y,w,h){var a=t.pt(x,y);return [a[0],a[1],w*t.sx,h*t.sy]};' +
-      'window.TMA=t;})()</' +
-      'script>';
-    f.srcdoc = prelude + it.html;
-    box.appendChild(f);
+  html() {
+    // Custom HTML is a separate sandboxed window. This page never iframes it.
   },
 };
 
@@ -317,9 +300,105 @@ function clearAll() {
 tma.on('overlay:scene', ({ items, keep }) => {
   if (!keep) clearAll();
   for (const it of items) {
+    if (it.type === 'html' || it.type === 'stroke') continue;
     if (it.delay) timers.push(setTimeout(() => render(it), it.delay));
     else render(it);
   }
 });
 
 tma.on('overlay:clear', clearAll);
+
+const userCanvas = document.getElementById('user-ink');
+const agentCanvas = document.getElementById('agent-ink');
+let userStrokes = [];
+let agentStrokes = [];
+let liveStroke = null;
+
+function paint(canvas, strokes, live) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.round(window.innerWidth * dpr));
+  canvas.height = Math.max(1, Math.round(window.innerHeight * dpr));
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const all = live ? strokes.concat([live]) : strokes;
+  for (const s of all) {
+    if (!s.points || s.points.length < 2) continue;
+    ctx.beginPath();
+    ctx.strokeStyle = s.color || '#e2a23a';
+    ctx.lineWidth = s.width || 3;
+    ctx.setLineDash(s.dash || []);
+    ctx.moveTo(s.points[0][0], s.points[0][1]);
+    for (let i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i][0], s.points[i][1]);
+    ctx.stroke();
+  }
+}
+
+function redrawInk() {
+  paint(userCanvas, userStrokes, liveStroke);
+  paint(agentCanvas, agentStrokes, null);
+}
+
+window.exportBoard = () => {
+  if (!userStrokes.length && !agentStrokes.length && !liveStroke) return '';
+  const c = document.createElement('canvas');
+  c.width = userCanvas.width;
+  c.height = userCanvas.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(userCanvas, 0, 0);
+  ctx.drawImage(agentCanvas, 0, 0);
+  return c.toDataURL('image/png');
+};
+
+tma.on('overlay:board', (data) => {
+  userStrokes = (data && data.user) || [];
+  agentStrokes = (data && data.agent) || [];
+  liveStroke = null;
+  redrawInk();
+});
+
+tma.on('overlay:edit', (on) => {
+  document.body.classList.toggle('editing', !!on);
+  if (!on) {
+    liveStroke = null;
+    redrawInk();
+  }
+});
+
+tma.on('overlay:agent-visible', (on) => {
+  document.body.classList.toggle('agent-hidden', !on);
+});
+
+window.addEventListener('resize', redrawInk);
+
+userCanvas.addEventListener('pointerdown', (e) => {
+  if (!document.body.classList.contains('editing')) return;
+  userCanvas.setPointerCapture(e.pointerId);
+  liveStroke = { points: [[e.clientX, e.clientY]], color: '#e2a23a', width: 3.5 };
+});
+
+userCanvas.addEventListener('pointermove', (e) => {
+  if (!liveStroke) return;
+  liveStroke.points.push([e.clientX, e.clientY]);
+  redrawInk();
+});
+
+function finishStroke() {
+  if (!liveStroke) return;
+  const stroke = liveStroke;
+  liveStroke = null;
+  if (stroke.points.length >= 2) tma.send('board:stroke', { points: stroke.points });
+  else redrawInk();
+}
+
+userCanvas.addEventListener('pointerup', finishStroke);
+userCanvas.addEventListener('pointercancel', finishStroke);
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('editing')) {
+    e.preventDefault();
+    tma.send('board:edit-off');
+  }
+});

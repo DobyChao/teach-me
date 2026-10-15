@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <title>截屏</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0; height: 100vh; box-sizing: border-box; padding: 12px 14px;
+        background: #16130f; color: #f6f0e6;
+        font: 13px/1.4 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+        border: 1px solid #ff3d7f; border-radius: 14px;
+      }
+      p { margin: 0 0 8px; }
+      .bar { height: 4px; border-radius: 99px; background: #3a3126; overflow: hidden; margin-bottom: 8px; }
+      .bar i { display: block; height: 100%; width: 0; background: #ff3d7f; }
+      .row { display: flex; gap: 8px; justify-content: flex-end; }
+      button { border-radius: 999px; border: 1px solid #3a3126; background: #2a241c; color: inherit; padding: 4px 10px; font: inherit; cursor: pointer; }
+      #allow { background: #ff3d7f; border-color: transparent; color: white; }
+    </style>
+  </head>
+  <body>
+    <p id="text">agent 想看一眼屏幕</p>
+    <div class="bar" id="bar" hidden><i id="fill"></i></div>
+    <div class="row">
+      <button id="deny" type="button">拒绝</button>
+      <button id="interrupt" type="button" hidden>打断</button>
+      <button id="allow" type="button">允许</button>
+    </div>
+    <script src="approval.js"></script>
+  </body>
+</html>

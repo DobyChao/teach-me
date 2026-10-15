@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; frame-src about: data: blob:; connect-src 'none'"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      #frame {
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        border: 2px solid #ff3d7f;
+        border-radius: 12px;
+        background: rgba(20, 16, 18, 0.88);
+        overflow: hidden;
+      }
+      #mark {
+        position: absolute;
+        z-index: 2;
+        top: 6px;
+        left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #ff3d7f;
+        color: #fff;
+        font: 600 11px/1.4 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+        letter-spacing: 0.04em;
+        pointer-events: none;
+      }
+      iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="frame">
+      <div id="mark">AI 指引</div>
+      <iframe id="view" sandbox="allow-scripts" referrerpolicy="no-referrer" tabindex="-1"></iframe>
+    </div>
+    <script>
+      window.renderScene = function (payload) {
+        var frame = document.getElementById('frame');
+        var view = document.getElementById('view');
+        view.setAttribute('sandbox', 'allow-scripts');
+        if (view.getAttribute('sandbox') !== 'allow-scripts') return;
+        var opacity = Number(payload && payload.opacity);
+        if (!isFinite(opacity) || opacity < 0.85) opacity = 0.85;
+        frame.style.opacity = String(opacity);
+        view.srcdoc = payload && payload.srcdoc ? String(payload.srcdoc) : '';
+      };
+      window.addEventListener('keydown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    </script>
+  </body>
+</html>

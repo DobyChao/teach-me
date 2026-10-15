@@ -9,64 +9,63 @@
     <title>Teach me, Agent</title>
     <link rel="stylesheet" href="panel.css" />
   </head>
-  <body>
+  <body class="mode-capsule collapsed">
     <header id="header">
-      <span id="dot" class="dot offline"></span>
-      <div class="title">
-        <b>Teach me, Agent</b>
-        <span id="topic"></span>
+      <div id="pet" class="pet" title="桌宠">
+        <svg viewBox="0 0 80 80" aria-hidden="true">
+          <ellipse class="shadow" cx="40" cy="70" rx="18" ry="4" />
+          <circle class="ear" cx="24" cy="28" r="8" />
+          <circle class="ear" cx="56" cy="28" r="8" />
+          <ellipse class="body" cx="40" cy="46" rx="26" ry="22" />
+          <circle class="eye" cx="32" cy="44" r="3.2" />
+          <circle class="eye" cx="50" cy="44" r="3.2" />
+          <path class="mouth" d="M36 52 q4 5 8 0" />
+          <path class="stick" d="M60 54 l14 12" />
+        </svg>
+      </div>
+      <div id="say-wrap">
+        <span id="dot" class="dot offline"></span>
+        <p id="last">还没有开始。按住说话，点一下打字。</p>
       </div>
       <div class="actions">
-        <button id="btn-eye" class="icon" title="隐藏画面上的指引">
-          <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /><path class="off" d="M3 3l18 18" /></svg>
-        </button>
-        <button id="btn-clear" class="icon" title="清除画面上的指引">
-          <svg viewBox="0 0 24 24"><path d="M8 20h12" /><path d="M4.5 15.5l9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L11 19H8z" /><path d="M9 11l4.5 4.5" /></svg>
-        </button>
-        <button id="btn-collapse" class="icon" title="折叠">
-          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
-        </button>
-        <button id="btn-end" class="icon" title="结束这次教学">
-          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
-        </button>
+        <button id="btn-continue" type="button">继续</button>
+        <button id="entry" type="button">按住说话</button>
+        <button id="btn-board" type="button">画板</button>
+        <button id="btn-eye" type="button">指引</button>
+        <button id="btn-expand" type="button" title="展开">展开</button>
       </div>
     </header>
 
-    <div id="status"><span id="status-text">agent 不在线</span></div>
-    <div id="last"></div>
+    <div id="flash" hidden>
+      <p id="flash-text"></p>
+      <button id="flash-undo" type="button">撤回</button>
+    </div>
+
+    <div id="tourbar" hidden>
+      <span id="tour-label">引导</span>
+      <button id="tour-next" type="button">下一步</button>
+      <button id="tour-skip" type="button">跳过</button>
+    </div>
+
+    <div id="status"><span id="status-text">还没有教学</span></div>
 
     <main id="log">
       <section id="empty">
-        <h2>不用切窗口，直接问</h2>
-        <ul>
-          <li><kbd data-hk="talk">Ctrl+Alt+W</kbd><span>跟它说一句。发送时它会看一眼你的屏幕</span></li>
-          <li><kbd data-hk="freeze">Ctrl+Alt+Q</kbd><span>定住画面，框一块、涂一涂，再交给它</span></li>
-          <li><kbd data-hk="toggleOverlay">Ctrl+Alt+H</kbd><span>指引挡住了？临时隐藏 / 显示</span></li>
-        </ul>
-        <p>它会在这里用文字讲，并直接在你的软件上画箭头、圈重点、演示动作。</p>
+        <h2>不用切走，直接说</h2>
+        <p>按住入口说话，点一下打字。画板平时点得穿。指引可以单独藏起来。</p>
       </section>
     </main>
 
-    <footer id="composer">
-      <textarea id="input" rows="1" placeholder="说一句…  Enter 发送，Shift+Enter 换行"></textarea>
-      <div class="tools">
-        <button id="btn-mic" class="icon" title="语音输入（Windows 语音输入 Win+H）">
-          <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
-        </button>
-        <button id="btn-draw" class="icon" title="圈给它看">
-          <svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><path d="M9 15l5.5-5.5 1.5 1.5-5.5 5.5H9z" /></svg>
-        </button>
-        <button id="btn-attach" class="toggle on" title="发送时附上当前屏幕">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
-          <span>附屏幕</span>
-        </button>
-        <span class="grow"></span>
-        <button id="btn-send" class="send" title="发送 (Enter)">
-          <svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" /></svg>
-        </button>
-      </div>
+    <footer id="foot">
+      <label class="check"><input id="attach-board" type="checkbox" /> 附画板</label>
+      <button id="btn-clear-user" type="button">清笔迹</button>
+      <button id="btn-clear-agent" type="button">清指引</button>
+      <button id="btn-settings" type="button">设置</button>
+      <button id="btn-end" type="button">结束</button>
+      <span class="grow"></span>
+      <span id="sid"></span>
+      <button id="btn-copy-id" type="button">复制</button>
     </footer>
-
     <script src="panel.js"></script>
   </body>
 </html>

@@ -1,6 +1,6 @@
 // Turns an agent-authored scene (coordinates in shot pixels) into overlay
 // items (coordinates in display-local DIP), with warnings the agent can act on.
-const fs = require('fs');
+const { prepareHtml, clampHtmlRect, clampOpacity, clampTtl, SANDBOX } = require('../lib/html-sandbox');
 
 const TYPES = {
   arrow: { points: ['to', 'from?'] },
@@ -13,10 +13,9 @@ const TYPES = {
   step: { points: ['at'] },
   keys: { points: ['at?'] },
   scroll: { points: ['at'] },
-  html: { rects: ['rect?'] },
+  stroke: { lists: ['points'] },
+  html: { rects: ['rect'] },
 };
-
-const MAX_HTML = 512 * 1024;
 
 function asPoint(v) {
   if (Array.isArray(v) && v.length >= 2) return [Number(v[0]), Number(v[1])];
@@ -156,26 +155,46 @@ function resolveScene(scene, { shots, defaultShot, displays, primary }) {
       } else out.keys = keys.map((k) => String(k).trim()).filter(Boolean);
     }
     if (raw.type === 'html') {
-      let html = raw.html;
-      if (html == null && raw.file) {
+      if (raw.file != null) {
+        warnings.push(`${where}: html file is not supported in v1 (text "html" only), skipped`);
+        ok = false;
+      }
+      if (ok && out.rect) {
+        const clamped = clampHtmlRect(out.rect, { width: display.bounds.width, height: display.bounds.height });
+        if (!clamped.ok) {
+          warnings.push(`${where}: html rect is invalid, skipped`);
+          ok = false;
+        } else {
+          if (clamped.shrunk) warnings.push(`${where}: html rect was reduced so it cannot cover the screen`);
+          out.rect = clamped.rect;
+        }
+      }
+      if (ok) {
         try {
-          html = fs.readFileSync(String(raw.file), 'utf8');
+          const prepared = prepareHtml(raw.html, {
+            color: out.color || '#ff3d7f',
+            width: out.rect[2],
+            height: out.rect[3],
+            sx,
+            sy,
+            ox: shot.dipRect.x - ox - out.rect[0],
+            oy: shot.dipRect.y - oy - out.rect[1],
+          });
+          const env = prepared.srcdoc;
+          out.html = raw.html;
+          out.srcdoc = env;
+          out.hash = prepared.hash;
+          out.bytes = prepared.bytes;
+          out.sandbox = SANDBOX;
+          out.opacity = clampOpacity(raw.opacity);
+          out.ttl = clampTtl(raw.ttl);
+          out.map = { sx, sy, ox: shot.dipRect.x - ox, oy: shot.dipRect.y - oy };
+          out.viewport = { width: display.bounds.width, height: display.bounds.height };
         } catch (e) {
-          warnings.push(`${where}: cannot read file ${raw.file}: ${e.message}, skipped`);
+          warnings.push(`${where}: ${e.message}, skipped`);
           ok = false;
         }
       }
-      if (ok && (typeof html !== 'string' || !html.trim())) {
-        warnings.push(`${where}: html needs "html" (string) or "file" (absolute path), skipped`);
-        ok = false;
-      }
-      if (ok && html.length > MAX_HTML) {
-        warnings.push(`${where}: html is larger than ${MAX_HTML / 1024} KB, skipped`);
-        ok = false;
-      }
-      out.html = html;
-      out.map = { sx, sy, ox: shot.dipRect.x - ox, oy: shot.dipRect.y - oy };
-      out.viewport = { width: display.bounds.width, height: display.bounds.height };
     }
 
     if (ok) {

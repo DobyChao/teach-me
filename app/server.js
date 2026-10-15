@@ -45,11 +45,11 @@ function startServer({ token, routes, log }) {
     try {
       const body = req.method === 'POST' ? await readBody(req) : {};
       const onAbort = (fn) => res.on('close', () => !res.writableFinished && fn());
-      const out = await handler({ query: url.searchParams, body, onAbort });
+      const out = await handler({ query: url.searchParams, body, onAbort, headers: req.headers });
       send(res, 200, out ?? { ok: true });
     } catch (e) {
       log && log(`route ${url.pathname} failed: ${e.stack || e.message}`);
-      send(res, 400, { error: e.message });
+      send(res, e.status || 400, { error: e.message, reason: e.reason || undefined, denied: !!e.denied });
     }
   });
   server.requestTimeout = 0;

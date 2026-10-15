@@ -12,7 +12,13 @@ const MEMBERS = [
   '[DllImport("user32.dll")] static extern bool BringWindowToTop(System.IntPtr h);',
   '[DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(System.IntPtr h, System.IntPtr pid);',
   '[DllImport("user32.dll")] static extern bool AttachThreadInput(uint a, uint b, bool attach);',
+  '[DllImport("user32.dll")] static extern bool GetWindowRect(System.IntPtr h, out RECT r);',
+  '[DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);',
+  '[DllImport("user32.dll")] static extern short GetAsyncKeyState(int v);',
+  '[DllImport("user32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode)] static extern int GetWindowText(System.IntPtr h, System.Text.StringBuilder s, int n);',
   '[DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();',
+  'public struct RECT { public int L; public int T; public int R; public int B; }',
+  'public struct POINT { public int X; public int Y; }',
   'public static void WinH() {',
   '  keybd_event(0x5B, 0, 0, System.UIntPtr.Zero); keybd_event(0x48, 0, 0, System.UIntPtr.Zero);',
   '  keybd_event(0x48, 0, 2, System.UIntPtr.Zero); keybd_event(0x5B, 0, 2, System.UIntPtr.Zero); }',
@@ -28,6 +34,23 @@ const MEMBERS = [
   '  bool ok = SetForegroundWindow(p); BringWindowToTop(p);',
   '  if (att) AttachThreadInput(me, ft, false);',
   '  return ok || GetForegroundWindow() == p; }',
+  'public static bool Down(int v) { return (GetAsyncKeyState(v) & 0x8000) != 0; }',
+  'public static string Proc(long hwnd) {',
+  '  var mem = System.Runtime.InteropServices.Marshal.AllocHGlobal(4);',
+  '  GetWindowThreadProcessId(new System.IntPtr(hwnd), mem);',
+  '  int id = System.Runtime.InteropServices.Marshal.ReadInt32(mem);',
+  '  System.Runtime.InteropServices.Marshal.FreeHGlobal(mem);',
+  '  if (id == 0) return "";',
+  '  try { return System.Diagnostics.Process.GetProcessById(id).ProcessName; } catch { return ""; } }',
+  'public static string Bounds(long hwnd) {',
+  '  RECT r = new RECT();',
+  '  if (!GetWindowRect(new System.IntPtr(hwnd), out r)) return "";',
+  '  return r.L + "," + r.T + "," + (r.R - r.L) + "," + (r.B - r.T); }',
+  'public static string Cursor() { POINT p = new POINT(); if (!GetCursorPos(out p)) return ""; return p.X + "," + p.Y; }',
+  'public static string Title(long hwnd) {',
+  '  var sb = new System.Text.StringBuilder(512);',
+  '  GetWindowText(new System.IntPtr(hwnd), sb, sb.Capacity);',
+  '  return sb.ToString(); }',
 ].join(' ');
 
 const DEFINE = `Add-Type -Namespace TMA -Name W -MemberDefinition '${MEMBERS}'`;
@@ -109,6 +132,34 @@ class WinHelper {
     return (await this.call(`[TMA.W]::Activate(${Number(hwnd)})`, 800)) === 'True';
   }
 
+  // Lightweight capture context. The window title is read only when the caller
+  // passes includeTitle — v1 does not query an accessibility tree.
+  async captureContext({ includeTitle = false } = {}) {
+    if (!this.supported) return { focusedProcess: null, mouse: null, foregroundBounds: null };
+    const fg = await this.call('[TMA.W]::Fg()', 800);
+    const hwnd = fg && /^\d+$/.test(fg) ? fg : '0';
+    const proc = await this.call(`[TMA.W]::Proc(${hwnd})`, 1200);
+    const bounds = await this.call(`[TMA.W]::Bounds(${hwnd})`, 800);
+    const mouse = await this.call('[TMA.W]::Cursor()', 800);
+    const ctx = {
+      focusedProcess: proc || null,
+      mouse: parsePair(mouse),
+      foregroundBounds: parseRect(bounds),
+    };
+    if (includeTitle) ctx.windowTitle = (await this.call(`[TMA.W]::Title(${hwnd})`, 800)) || null;
+    return ctx;
+  }
+
+  async chordDown(vks) {
+    if (!this.supported || !vks || !vks.length) return null;
+    const expr = vks.map((v) => `[TMA.W]::Down(${Number(v)})`).join('+" "+');
+    const raw = await this.call(expr, 600);
+    if (raw == null) return null;
+    const parts = String(raw).trim().split(/\s+/);
+    if (parts.length !== vks.length) return null;
+    return parts.every((p) => p === 'True');
+  }
+
   dispose() {
     if (this.ps) {
       try {
@@ -117,6 +168,20 @@ class WinHelper {
       this.ps = null;
     }
   }
+}
+
+function parseRect(s) {
+  if (!s) return null;
+  const n = String(s).split(',').map(Number);
+  if (n.length !== 4 || n.some((x) => !Number.isFinite(x))) return null;
+  return { x: n[0], y: n[1], width: n[2], height: n[3] };
+}
+
+function parsePair(s) {
+  if (!s) return null;
+  const n = String(s).split(',').map(Number);
+  if (n.length !== 2 || n.some((x) => !Number.isFinite(x))) return null;
+  return { x: n[0], y: n[1] };
 }
 
 module.exports = { WinHelper };

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+    <title>设置</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0; box-sizing: border-box; padding: 16px 16px 24px;
+        background: #16130f; color: #f6f0e6;
+        font: 14px/1.45 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+      }
+      h1 { margin: 0 0 12px; font: 600 22px/1.2 Palatino, 'Songti SC', serif; }
+      fieldset { border: 1px solid #3a3126; border-radius: 14px; margin: 0 0 12px; padding: 10px 12px 12px; }
+      legend { padding: 0 6px; color: #e2a23a; }
+      label { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 8px 0; }
+      input[type='text'], input[type='number'], select {
+        background: #221c16; color: inherit; border: 1px solid #3a3126; border-radius: 8px; padding: 4px 8px; font: inherit;
+      }
+      .hk { min-width: 160px; text-align: left; cursor: pointer; }
+      .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+      button { border-radius: 999px; border: 1px solid #3a3126; background: #2a241c; color: inherit; padding: 6px 12px; font: inherit; cursor: pointer; }
+      #save { background: #ff3d7f; border-color: transparent; color: white; }
+      #err { color: #f0b429; min-height: 1.2em; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>设置</h1>
+    <fieldset>
+      <legend>快捷键</legend>
+      <div id="hotkeys"></div>
+      <p id="hk-hint">点一下录制，Esc 取消，退格清除。继续、画板编辑、截屏审批默认不绑定。</p>
+    </fieldset>
+    <fieldset>
+      <legend>输入与语音</legend>
+      <label>发送时附带截图 <input id="attach-shot" type="checkbox" /></label>
+      <label>语音引擎
+        <select id="engine">
+          <option value="system">系统</option>
+          <option value="local">本地</option>
+          <option value="custom">自定义 API</option>
+        </select>
+      </label>
+      <label>本地命令 <input id="local" type="text" placeholder="可执行文件，参数为音频路径" /></label>
+      <label>自定义 API <input id="custom" type="text" placeholder="https://… 接收音频，返回 {text}" /></label>
+      <label>朗读 agent 的话
+        <select id="tts">
+          <option value="off">关</option>
+          <option value="follow">跟随</option>
+        </select>
+      </label>
+      <label>语音撤回时间（毫秒） <input id="confirm" type="number" min="1000" max="2000" step="100" /></label>
+    </fieldset>
+    <fieldset>
+      <legend>隐私与截屏</legend>
+      <label>agent 截屏
+        <select id="tier">
+          <option value="ask">每次询问</option>
+          <option value="lesson">本次教学默认允许</option>
+          <option value="always">始终允许</option>
+        </select>
+      </label>
+      <p>默认允许会在边缘短读秒，读秒中可打断回待审批。用户自己发的截图不再询问。</p>
+    </fieldset>
+    <fieldset>
+      <legend>外观</legend>
+      <label>样子
+        <select id="mode">
+          <option value="capsule">简洁胶囊</option>
+          <option value="pet">桌宠</option>
+        </select>
+      </label>
+      <label>自动收回（秒，0 为不收回） <input id="collapse" type="number" min="0" max="120" /></label>
+    </fieldset>
+    <p id="err"></p>
+    <div class="row">
+      <button id="tour" type="button">再看一次引导</button>
+      <button id="save" type="button">保存</button>
+    </div>
+    <script src="settings.js"></script>
+  </body>
+</html>
