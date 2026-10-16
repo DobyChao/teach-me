@@ -14,13 +14,17 @@
         background: transparent;
         overflow: hidden;
       }
+      :root {
+        --bg: #14161b;
+        --accent: #ff3d7f;
+      }
       #frame {
         position: absolute;
         inset: 0;
         box-sizing: border-box;
-        border: 2px solid #ff3d7f;
+        border: 2px solid var(--accent);
         border-radius: 12px;
-        background: rgba(20, 16, 18, 0.88);
+        background: rgba(20, 22, 27, 0.92);
         overflow: hidden;
       }
       #mark {
@@ -30,9 +34,9 @@
         left: 8px;
         padding: 2px 8px;
         border-radius: 999px;
-        background: #ff3d7f;
+        background: var(--accent);
         color: #fff;
-        font: 600 11px/1.4 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+        font: 600 11px/1.4 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
         letter-spacing: 0.04em;
         pointer-events: none;
       }

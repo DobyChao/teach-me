@@ -334,7 +334,7 @@ function chromeWindow(opts) {
     show: false,
     frame: false,
     transparent: false,
-    backgroundColor: '#16130f',
+    backgroundColor: '#14161b',
     autoHideMenuBar: true,
     skipTaskbar: true,
     alwaysOnTop: true,

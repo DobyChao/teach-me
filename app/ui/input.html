@@ -5,21 +5,30 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
     <title>写一句</title>
     <style>
-      :root { color-scheme: dark; }
+      :root {
+        color-scheme: dark;
+        --bg: #14161b;
+        --surface: #1c1f26;
+        --surface-2: #232731;
+        --line: #2b2f39;
+        --text: #e9ebf0;
+        --muted: #8d93a1;
+        --accent: #ff3d7f;
+      }
       body {
         margin: 0; height: 100vh; box-sizing: border-box; padding: 12px;
         display: flex; flex-direction: column; gap: 8px;
-        background: #16130f; color: #f6f0e6;
-        font: 14px/1.4 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
-        border: 1px solid #3a3126; border-radius: 16px;
+        background: var(--bg); color: var(--text);
+        font: 14px/1.5 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+        border: 1px solid var(--line); border-radius: 16px;
       }
       textarea {
-        flex: 1; resize: none; border-radius: 10px; border: 1px solid #3a3126;
-        background: #221c16; color: inherit; padding: 8px 10px;
-        font: 16px/1.4 Palatino, 'Songti SC', serif;
+        flex: 1; resize: none; border-radius: 10px; border: 1px solid var(--line);
+        background: var(--surface); color: inherit; padding: 8px 10px;
+        font: 16px/1.5 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
       }
-      .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #b3a28d; font-size: 12px; }
-      button { border: 0; border-radius: 999px; padding: 6px 12px; background: #ff3d7f; color: white; font: inherit; cursor: pointer; }
+      .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+      button { border: 0; border-radius: 999px; padding: 6px 12px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
     </style>
   </head>
   <body>

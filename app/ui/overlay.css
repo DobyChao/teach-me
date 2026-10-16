@@ -1,5 +1,10 @@
 :root {
-  --c: #ff3d7f;
+  --accent: #ff3d7f;
+  --c: var(--accent);
+  --bg: #14161b;
+  --surface: #1c1f26;
+  --line: #2b2f39;
+  --text: #e9ebf0;
   --halo: rgba(255, 255, 255, 0.95);
   --ink: rgba(20, 22, 29, 0.95);
   color-scheme: normal;
@@ -47,10 +52,10 @@ body {
   display: none;
   padding: 6px 12px;
   border-radius: 999px;
-  background: #1a1208;
-  color: #f0d7a2;
-  border: 1px solid #e2a23a;
-  font: 600 13px/1.2 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  font: 600 13px/1.2 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
 }
 
 body.editing #edit-badge {
@@ -455,7 +460,7 @@ body.agent-hidden #under {
   border-radius: 8px;
   background: linear-gradient(#fbfbfd, #dcdee5);
   color: #16181f;
-  font: 600 15px/36px 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  font: 600 15px/36px 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
   text-align: center;
   box-shadow: 0 3px 0 #8f929d, 0 5px 10px rgba(0, 0, 0, 0.32);
   animation: key-press 2.4s ease-in-out infinite;
