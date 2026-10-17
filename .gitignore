@@ -1,0 +1,7 @@
+node_modules/
+dist/
+/rebuild/
+.runtime/
+*.log
+*.tsbuildinfo
+coverage/
