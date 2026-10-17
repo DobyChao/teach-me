@@ -327,6 +327,32 @@
         "docs/rebuild/evidence/T13.md"
       ],
       "notes": "原 master d0edb2e 已备份至本地/远端 codex/master-backup-20261017；重建分支改名 master 并以明确 lease 推送成功，远端引用已核对。"
+    },
+    {
+      "id": "T14",
+      "title": "定位 npm 启动后退出并补全退出诊断",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R17",
+        "R19"
+      ],
+      "acceptance": [
+        "A19"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/smoke.mjs",
+        "node scripts/launch-smoke.mjs",
+        "npm run app 静置及远控可见性现场观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T14.md"
+      ],
+      "notes": "退出根因尚未复现；增加父启动器退出诊断。现场不可见的隔离实例确认为默认捕获保护所致，开启可见配置后出现；该结果不等同于修复最初自行退出。"
     }
   ]
 }

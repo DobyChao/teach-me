@@ -22,6 +22,7 @@
 | A16 | 反复 prepare/cancel、设置和画板编辑后，主面板保持 APPWINDOW、画布保持 TOOLWINDOW，焦点禁用仍保留 NOACTIVATE；窗口句柄、渲染进程与窗口数不变；真实 Ctrl+Alt+W/发送前后主任务栏入口可见且没有画布入口 | Windows 扩展样式读取 + Electron 回归 + computer-use 现场观察 |
 | A17 | 画图前台下三轮 Ctrl+Alt+W、取消/发送均保持原窗口；show/hide/minimize/restore/created/可聚焦重建/taskbar 重建计数为 0；取帧在激活前、原生与 DOM 焦点真实成立；Win+R 完整路径另行手工复核 | Windows 生命周期夹具 + 真实键盘；完整 Win+R 路径 pending |
 | A18 | 旧远端 master SHA 在独立备份分支可取回；本地当前 master 与远端 master SHA 一致；只在旧 SHA 未变时替换远端 | git fetch/ls-remote/ref 检查、先推备份再 force-with-lease |
+| A19 | 真实启动器重复启动保留原 PID；静置保持在线；外部终止即使没有 host quit 也记录非零退出码；正常退出记录 0；异常日志不含正文/凭据；远控可见实例现场有浮窗，原生 TOPMOST 位存在。用户最初自行退出原因须独立确认 | launch-smoke + 日志隐私测试 + Windows 原生样式与现场观察；未复现退出不得标 done |
 
 ## 证据格式
 

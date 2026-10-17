@@ -11,7 +11,6 @@ import { createServer } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs/promises';
-import { appendFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { actionSchema, defaults, settingsSchema } from '../shared/protocol.ts';
@@ -27,6 +26,7 @@ import { SystemSpeech, transcribe } from './speech.ts';
 import { pruneSessions } from './storage.ts';
 import { IMAGE_EDGE } from '../shared/limits.ts';
 import { setWindowInput } from './window-policy.ts';
+import { failureMetadata, writeRuntimeEvent } from './runtime-log.ts';
 
 app.setName('Teach me, Agent');
 app.commandLine.appendSwitch('enable-features', 'AllowWindowCaptureExclusionInRemoteSessions');
@@ -35,25 +35,18 @@ app.setPath(
   process.env.TEACH_ME_AGENT_HOME || path.join(app.getPath('appData'), 'teach-me-agent-v2'),
 );
 if (!app.requestSingleInstanceLock()) {
+  console.log('应用已在运行，本次启动退出；不会创建第二个窗口。');
   app.exit(0);
 }
 const home = app.getPath('userData');
 const endpointFile = path.join(home, 'endpoint.json');
 function runtimeEvent(event: string, detail: Record<string, string | number | boolean> = {}) {
-  try {
-    const file = path.join(home, 'runtime.log');
-    try {
-      if (statSync(file).size > 128 * 1024) writeFileSync(file, '');
-    } catch {}
-    appendFileSync(
-      file,
-      JSON.stringify({ at: new Date().toISOString(), pid: process.pid, event, ...detail }) + '\n',
-      { mode: 0o600 },
-    );
-  } catch {
-    /* Diagnostics must not interrupt input or shutdown. */
-  }
+  writeRuntimeEvent(home, event, detail);
 }
+process.on('uncaughtExceptionMonitor', (error, origin) => {
+  runtimeEvent('main-exception', { origin, ...failureMetadata(error) });
+});
+app.on('second-instance', () => runtimeEvent('second-instance'));
 const auth = randomBytes(24).toString('hex');
 let launchSecret = process.env.TMA_LAUNCH_SECRET || '';
 let session: Session | null = null;
@@ -1001,10 +994,16 @@ app
     broadcast();
   })
   .catch((e) => {
+    runtimeEvent('startup-failed', failureMetadata(e));
     console.error(e);
     app.exit(1);
   });
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => {
+  runtimeEvent('window-all-closed');
+  app.quit();
+});
+app.on('before-quit', () => runtimeEvent('before-quit', { requested: quitting }));
+app.on('quit', (_event, exitCode) => runtimeEvent('quit', { exitCode }));
 app.on('will-quit', () => {
   runtimeEvent('will-quit');
   globalShortcut.unregisterAll();

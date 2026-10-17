@@ -8,6 +8,8 @@ export class WindowStyleProbe {
     const handle = (w: BrowserWindow) => w.getNativeWindowHandle().readBigUInt64LE().toString();
     const p = await this.windows.windowStyle(handle(panel));
     const o = await this.windows.windowStyle(handle(overlay));
+    assert.ok(p & 0x00000008, 'panel remains natively WS_EX_TOPMOST');
+    assert.ok(o & 0x00000008, 'overlay remains natively WS_EX_TOPMOST');
     assert.ok(p & 0x00040000, 'panel remains WS_EX_APPWINDOW');
     assert.equal(p & 0x00000080, 0, 'panel never becomes a tool window');
     assert.equal(
