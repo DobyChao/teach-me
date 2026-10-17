@@ -2,6 +2,8 @@
 
 更新：2026-10-17。空分支基线：`f5e1e56`（设计参考快照 `54623c6`）。本目录是随 Git 演进的工程规划，外部聊天和 agent 私有记忆不是进度来源。
 
+当前主线为 `master`，从重建分支提升；原 master 位于 `codex/master-backup-20261017`（本地与 origin 均已保存）。详情见 `evidence/T13.md`；功能验收仍以 tasks.json 为准。
+
 ## 工作流
 
 规格 `PRODUCT.md` → 决策 `DECISIONS.md` → 任务 `tasks.json` → 验收 `ACCEPTANCE.md` → 证据 `evidence/` → 接续记录 `PROGRESS.md`。

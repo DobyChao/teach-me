@@ -1,5 +1,7 @@
 # 接续记录
 
+当前主线：master。2026-10-17 按用户明确要求，由 codex/companion-rebuild-empty 提升并推送；原 master 已备份到本地及远端 codex/master-backup-20261017（d0edb2e）。本目录任务状态继续如实保留，主线提升不等于全产品验收。
+
 2026-10-17，分支 codex/companion-rebuild-empty，空基线 f5e1e56。旧 UI 快照保留在另一分支。
 
 本轮已实现可启动的 Electron + React 版本：固定 IPC 桥、会话队列、输入事务、截图/zoom 适配、三层指引、画板、审批、语音三引擎适配、部分设置和 CLI。完整功能仍未交付。

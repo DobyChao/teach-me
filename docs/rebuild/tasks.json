@@ -307,7 +307,7 @@
       "id": "T13",
       "title": "备份原 master 并推送重建主线",
       "milestone": "M0",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "T00"
       ],
@@ -325,7 +325,8 @@
       ],
       "evidence": [
         "docs/rebuild/evidence/T13.md"
-      ]
+      ],
+      "notes": "原 master d0edb2e 已备份至本地/远端 codex/master-backup-20261017；重建分支改名 master 并以明确 lease 推送成功，远端引用已核对。"
     }
   ]
 }
