@@ -77,16 +77,18 @@ async function run() {
     ...display.bounds,
     title: 'Teach me native fixture',
     frame: false,
+    transparent: true,
     show: false,
     alwaysOnTop: true,
-    backgroundColor: '#226644',
+    skipTaskbar: true,
+    backgroundColor: '#00000000',
     webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
   });
   globalThis.nativeBackground = bg;
   await bg.loadURL(
     'data:text/html;charset=utf-8,' +
       encodeURIComponent(
-        '<title>Teach me native fixture</title><body style="margin:0;background:#226644;color:white;font:24px sans-serif"><p>Teach me native fixture — Ctrl+Alt+W</p></body>',
+        `<title>Teach me native fixture</title><body style="margin:0;background:transparent;color:white;font:24px sans-serif"><main style="height:${display.workArea.height}px;background:#226644"><span>Teach me native fixture — Ctrl+Alt+W</span></main></body>`,
       ),
   );
   bg.show();
@@ -97,7 +99,9 @@ async function run() {
   await pause(300);
   assert.equal(bg.isVisible(), true, 'synthetic cover must be visible before any capture');
   assert.equal(
-    await bg.webContents.executeJavaScript('getComputedStyle(document.body).backgroundColor'),
+    await bg.webContents.executeJavaScript(
+      'getComputedStyle(document.querySelector("main")).backgroundColor',
+    ),
     'rgb(34, 102, 68)',
   );
   let hides = 0;

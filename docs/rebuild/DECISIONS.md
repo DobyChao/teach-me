@@ -38,6 +38,12 @@ prepare 的并发调用共用一次记窗/取图/聚焦，已有编辑回合仅�
 
 Agent 必须持续 wait，超时后再次 wait；单次 wait 结束不意味着后台仍有人自动回答。宿主在无活跃 wait 且 ready 超过 15 秒、thinking 超过 5 分钟时显示 offline（文案为连接待确认），保留未确认消息；新的 wait/say 恢复状态。这是活动超时判断，不是进程存活证明。活跃长轮询不触发过期。
 
+## ADR-008 · 接受 · 2026-10-17 · 将任务栏身份与输入焦点分开
+
+Electron Windows 的 SetFocusable 同时调用 SetSkipTaskbar(!focusable)，原先输入/发送/设置/画板切换会改变任务栏入口。仅紧接着 setSkipTaskbar(false) 在本机现场仍会在失焦后消失，不能作为修复完成。主面板明确使用 WS_EX_APPWINDOW、清除 TOOLWINDOW，画布明确使用 TOOLWINDOW、清除 APPWINDOW，再应用任务栏入口策略。保留 NOACTIVATE 位以维持聚焦前取图，更新样式不激活、不移动、不改 Z 序；异步平台调用之后检查 turn 是否仍有效。
+
+主面板在活动与非活动状态均保留一个任务栏入口；画布与 HTML 不参与任务栏。快捷键没有创建窗口的路径，用句柄、渲染 PID 和 browser-window-created 计数验证复用。启动时设置角色，后续每次焦点切换均重申策略。设置与画板不因可聚焦而成为新的任务栏窗口。来源：[Electron SetFocusable 实现](https://github.com/electron/electron/blob/main/shell/browser/native_window_views.cc)、[Microsoft 扩展窗口样式](https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles)。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

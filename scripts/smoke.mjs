@@ -12,6 +12,14 @@ await build({
   external: ['electron'],
 });
 const require = createRequire(import.meta.url);
+await build({
+  entryPoints: ['test/desktop/window-policy-smoke.ts'],
+  outfile: 'dist/test/window-policy-smoke.cjs',
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  external: ['electron'],
+});
 const home = path.resolve('.runtime/electron-smoke');
 await fs.mkdir(home, { recursive: true });
 await fs.rm(path.join(home, 'endpoint.json'), { force: true });

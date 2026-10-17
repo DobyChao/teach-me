@@ -19,6 +19,7 @@
 | A13 | npm ci 可复现；类型/测试/构建通过；Windows 安装包可启动；旧入口切换有回退说明 | CI + Windows 安装包验收 |
 | A14 | 远控可见开关保存并立即切换主窗、画布和现存 HTML 的内容保护；新 HTML 继承；旧配置默认继续保护 | Electron 集成 + 配置迁移测试；具体远控客户端画面另行验证 |
 | A15 | 重复快捷键/点击只准备一次；取图不触发窗口 hide/show、成功失败均恢复捕获设置；真实 CLI start/status/wait/ack/say 和 UI 连续两轮收发；长轮询超过五分钟后仍可接收；原生快捷键能取到排除面板的画面并聚焦输入；失联提示与重连不丢消息 | 控制器/CLI HTTP 测试、spawned CLI Electron 回归、长等待实验、Windows 原生快捷键与合成背景像素；第三方远控画面另验 |
+| A16 | 反复 prepare/cancel、设置和画板编辑后，主面板保持 APPWINDOW、画布保持 TOOLWINDOW，焦点禁用仍保留 NOACTIVATE；窗口句柄、渲染进程与窗口数不变；真实 Ctrl+Alt+W/发送前后主任务栏入口可见且没有画布入口 | Windows 扩展样式读取 + Electron 回归 + computer-use 现场观察 |
 
 ## 证据格式
 

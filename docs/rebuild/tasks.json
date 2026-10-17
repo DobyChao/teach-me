@@ -251,6 +251,30 @@
         "docs/rebuild/evidence/T10.md"
       ],
       "notes": "39 测试、23 项 Electron、310 秒 CLI 长等待与两轮收发、Windows 原生快捷键/真实排除取图/键盘 Enter/回复渲染和草稿清除通过；第三方远控持续画面及独立外部软件焦点恢复未验证，保留 in_progress。"
+    },
+    {
+      "id": "T11",
+      "title": "稳定任务栏身份并验证快捷键复用窗口",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R16"
+      ],
+      "acceptance": [
+        "A16"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/smoke.mjs",
+        "node scripts/native-input.mjs + Windows 任务栏现场观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T11.md"
+      ]
     }
   ]
 }

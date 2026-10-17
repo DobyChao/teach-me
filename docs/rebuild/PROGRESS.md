@@ -15,3 +15,5 @@
 2026-10-17 追加：处理输入无回复及闪烁反馈，恢复测试子代理持续监听；实现输入准备合并、截图后立即恢复窗口、减少重复窗口操作，以及 Agent 活动超时提示。合成截图 Electron 回归 22 项通过，真实输入/焦点/远控闪烁未验收，T10 保持 in_progress。详见 evidence/T10.md。
 
 2026-10-17 再次反馈后：取消取图 hide/show，改为系统捕获排除；CLI 从 fetch 改用 node:http，增加安全的本地生命周期诊断。39 测试、23 项 Electron 回归通过，真实 CLI 连续两轮收发及 310 秒长等待后收发通过；Windows 实际 Ctrl+Alt+W→取图（排除面板、0 hide）→直接键盘输入→Enter→CLI say→React 回复显示与草稿清除通过。第三方远控持续画面、独立外部软件焦点恢复仍未验收，T10 保持 in_progress。详见 evidence/T10.md 的最新记录。
+
+2026-10-17 任务栏反馈：将任务栏角色与输入焦点分开，主面板保持 APPWINDOW 入口，画布保持 TOOLWINDOW。24 项 Electron 回归通过（含三轮原生样式与 HWND/renderer PID/窗口创建计数），现场观察原生快捷键输入及发送前后主入口保留。详见 evidence/T11.md。该结果不替代 T10 的远控持续画面与外部焦点验收。

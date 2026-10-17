@@ -84,6 +84,58 @@ async function run() {
   const js = (code) => panel.webContents.executeJavaScript(code);
   const perform = (action) => js(`window.companion.perform(${JSON.stringify(action)})`);
   const initial = await js('window.companion.snapshot()');
+  const overlay = BrowserWindow.getAllWindows().find((w) =>
+    w.webContents.getURL().includes('mode=overlay'),
+  );
+  const identities = [panel, overlay].map((w) => ({
+    id: w.id,
+    handle: w.getNativeWindowHandle().toString('hex'),
+    renderer: w.webContents.getOSProcessId(),
+  }));
+  const policies = new Map();
+  for (const w of [panel, overlay]) {
+    const setSkip = w.setSkipTaskbar.bind(w);
+    w.setSkipTaskbar = (skip) => {
+      policies.set(w.id, skip);
+      return setSkip(skip);
+    };
+  }
+  let created = 0;
+  const onCreated = () => created++;
+  app.on('browser-window-created', onCreated);
+  const styleProbe = new (require('../../dist/test/window-policy-smoke.cjs').WindowStyleProbe)();
+  await styleProbe.check(panel, overlay);
+  for (let i = 0; i < 3; i++) {
+    const preparing = await perform({ type: 'prepare' });
+    assert.equal(preparing.input.phase, 'editing');
+    assert.equal(policies.get(panel.id), false, 'panel keeps taskbar entry when focused');
+    await styleProbe.check(panel, overlay);
+    await perform({ type: 'cancel' });
+    assert.equal(policies.get(panel.id), false, 'panel keeps taskbar entry when released');
+    await styleProbe.check(panel, overlay);
+    await perform({ type: 'settings-focus', on: true });
+    await perform({ type: 'settings-focus', on: false });
+    assert.equal(policies.get(panel.id), false);
+    await perform({ type: 'edit', on: true });
+    assert.equal(policies.get(overlay.id), true, 'editable overlay never becomes taskbar entry');
+    await styleProbe.check(panel, overlay);
+    await perform({ type: 'edit', on: false });
+    assert.equal(policies.get(overlay.id), true);
+  }
+  assert.equal(created, 0);
+  assert.deepEqual(
+    [panel, overlay].map((w) => ({
+      id: w.id,
+      handle: w.getNativeWindowHandle().toString('hex'),
+      renderer: w.webContents.getOSProcessId(),
+    })),
+    identities,
+  );
+  app.removeListener('browser-window-created', onCreated);
+  styleProbe.dispose();
+  checks.push(
+    'repeated prepare/cancel/settings/board preserve HWNDs, renderer PIDs, window count and taskbar policies',
+  );
   const chrome = BrowserWindow.getAllWindows().filter((w) =>
     w.webContents.getURL().includes('mode='),
   );

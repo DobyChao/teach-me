@@ -26,6 +26,7 @@ import { VoiceController } from '../core/voice.ts';
 import { SystemSpeech, transcribe } from './speech.ts';
 import { pruneSessions } from './storage.ts';
 import { IMAGE_EDGE } from '../shared/limits.ts';
+import { setWindowInput } from './window-policy.ts';
 
 app.setName('Teach me, Agent');
 app.commandLine.appendSwitch('enable-features', 'AllowWindowCaptureExclusionInRemoteSessions');
@@ -300,12 +301,16 @@ const input = new InputController({
   remember: foreground,
   capture: () => (settings.attachScreenshot ? captureScreen() : Promise.resolve(null)),
   focus: async () => {
-    if (!panel.isFocusable()) panel.setFocusable(true);
+    const turn = input.state.turnId;
+    await setWindowInput(panel, true, true, windows);
+    if (input.state.turnId !== turn || !['preparing', 'editing'].includes(input.state.phase))
+      return;
     if (!panel.isVisible()) panel.show();
     if (!panel.isFocused()) panel.focus();
   },
   restore: async (handle) => {
-    panel.setFocusable(false);
+    await setWindowInput(panel, false, true, windows);
+    if (input.state.phase !== 'idle') return;
     await windows.activate(handle);
     autoCollapse();
   },
@@ -479,13 +484,12 @@ async function action(a: Action) {
     case 'edit':
       editing = a.on;
       overlay.setIgnoreMouseEvents(!editing);
-      overlay.setFocusable(editing);
+      await setWindowInput(overlay, editing, false, windows);
       if (editing) {
         await foreground();
         overlay.show();
         overlay.focus();
       } else {
-        overlay.setFocusable(false);
         await windows.activate(lastExternal);
       }
       break;
@@ -504,11 +508,11 @@ async function action(a: Action) {
     case 'settings-focus':
       if (a.on) {
         await foreground();
-        panel.setFocusable(true);
-        panel.show();
-        panel.focus();
+        await setWindowInput(panel, true, true, windows);
+        if (!panel.isVisible()) panel.show();
+        if (!panel.isFocused()) panel.focus();
       } else if (input.state.phase === 'idle') {
-        panel.setFocusable(false);
+        await setWindowInput(panel, false, true, windows);
         await windows.activate(lastExternal);
       }
       break;
@@ -545,7 +549,7 @@ async function action(a: Action) {
       settleCapture(false);
       editing = false;
       overlay.setIgnoreMouseEvents(true);
-      overlay.setFocusable(false);
+      await setWindowInput(overlay, false, false, windows);
       break;
     case 'quit':
       await shutdown('panel-quit');
@@ -838,7 +842,7 @@ app
       backgroundColor: '#00000000',
       resizable: false,
       focusable: false,
-      skipTaskbar: true,
+      skipTaskbar: false,
       alwaysOnTop: true,
       webPreferences: preferences,
     });
@@ -862,6 +866,10 @@ app
       w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       w.webContents.on('will-navigate', (e) => e.preventDefault());
     }
+    await setWindowInput(panel, false, true, windows);
+    await setWindowInput(overlay, false, false, windows);
+    panel.on('show', () => panel.setSkipTaskbar(false));
+    overlay.on('show', () => overlay.setSkipTaskbar(true));
     overlay.setIgnoreMouseEvents(true);
     applyCaptureVisibility();
     place();

@@ -10,6 +10,19 @@ const members = `
 [System.Runtime.InteropServices.DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool AttachThreadInput(uint a,uint b,bool attach);
 [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool BringWindowToTop(System.IntPtr h);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern int GetWindowLong(System.IntPtr h, int index);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern int SetWindowLong(System.IntPtr h, int index, int value);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetWindowPos(System.IntPtr h, System.IntPtr after, int x, int y, int w, int height, uint flags);
+public static bool Taskbar(System.IntPtr h, bool visible) {
+  if(!IsWindow(h)) return false;
+  int oldStyle=GetWindowLong(h,-20);
+  int style=visible ? (oldStyle|0x00040000)&~0x00000080 : (oldStyle&~0x00040000)|0x00000080;
+  if(style!=oldStyle) {
+    SetWindowLong(h,-20,style);
+    if(!SetWindowPos(h,System.IntPtr.Zero,0,0,0,0,0x0037)) return false;
+  }
+  return GetWindowLong(h,-20)==style;
+}
 public static bool Activate(System.IntPtr h) {
   if(!IsWindow(h))return false;
   uint foreground=GetWindowThreadProcessId(GetForegroundWindow(),System.IntPtr.Zero);
@@ -30,7 +43,7 @@ export class WindowsAdapter {
   private ensure() {
     if (this.child) return;
     if (process.platform !== 'win32') throw new Error('当前桌面版本仅支持 Windows');
-    const script = `Add-Type -TypeDefinition 'public class CompanionNative {${members}}'; while($null -ne ($line=[Console]::ReadLine())) { try { $q=$line|ConvertFrom-Json; $v=''; if($q.kind -eq 'fg'){$v=[CompanionNative]::GetForegroundWindow().ToInt64().ToString()}; if($q.kind -eq 'activate'){ $v=[CompanionNative]::Activate([IntPtr]([long]$q.handle)).ToString() }; if($q.kind -eq 'down'){$v=(([CompanionNative]::GetAsyncKeyState(87) -band 0x8000) -ne 0).ToString()}; [Console]::WriteLine(('@'+$q.id+'='+$v)); } catch {} }`;
+    const script = `Add-Type -TypeDefinition 'public class CompanionNative {${members}}'; while($null -ne ($line=[Console]::ReadLine())) { try { $q=$line|ConvertFrom-Json; $v=''; if($q.kind -eq 'fg'){$v=[CompanionNative]::GetForegroundWindow().ToInt64().ToString()}; if($q.kind -eq 'activate'){ $v=[CompanionNative]::Activate([IntPtr]([long]$q.handle)).ToString() }; if($q.kind -eq 'down'){$v=(([CompanionNative]::GetAsyncKeyState(87) -band 0x8000) -ne 0).ToString()}; if($q.kind -eq 'taskbar'){$v=[CompanionNative]::Taskbar([IntPtr]([long]$q.handle),[bool]$q.visible).ToString()}; if($q.kind -eq 'style'){$v=[CompanionNative]::GetWindowLong([IntPtr]([long]$q.handle),-20).ToString()}; [Console]::WriteLine(('@'+$q.id+'='+$v)); } catch {} }`;
     this.child = spawn(
       'powershell.exe',
       ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
@@ -64,16 +77,19 @@ export class WindowsAdapter {
     this.child.on('exit', close);
     this.child.stdin!.on('error', () => {});
   }
-  private call(kind: string, handle?: string): Promise<string | null> {
+  private call(kind: string, handle?: string, visible?: boolean): Promise<string | null> {
     this.ensure();
     const id = ++this.sequence;
     return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        resolve(null);
-      }, 3000);
+      const timer = setTimeout(
+        () => {
+          this.pending.delete(id);
+          resolve(null);
+        },
+        kind === 'taskbar' || kind === 'style' ? 10000 : 3000,
+      );
       this.pending.set(id, { resolve, timer });
-      this.child!.stdin!.write(JSON.stringify({ id, kind, handle }) + '\n');
+      this.child!.stdin!.write(JSON.stringify({ id, kind, handle, visible }) + '\n');
     });
   }
   foreground() {
@@ -84,6 +100,15 @@ export class WindowsAdapter {
   }
   async talkDown() {
     return (await this.call('down')) === 'True';
+  }
+  async taskbar(handle: string, visible: boolean) {
+    if ((await this.call('taskbar', handle, visible)) !== 'True')
+      throw new Error('无法应用窗口任务栏样式');
+  }
+  async windowStyle(handle: string) {
+    const style = await this.call('style', handle);
+    if (style === null || !/^-?\d+$/.test(style)) throw new Error('无法读取窗口样式');
+    return Number(style);
   }
   dispose() {
     this.child?.kill();
