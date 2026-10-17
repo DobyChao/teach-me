@@ -73,6 +73,7 @@ let error: string | null = null;
 let revision = 0,
   shotSequence = 0;
 let lastExternal: string | null = null;
+let lastForeground: string | null = null;
 let lastShot: Shot | null = null;
 const shots = new Map<string, Shot>();
 const originals = new Map<string, string>();
@@ -156,7 +157,16 @@ function ours(handle: string) {
 }
 async function foreground() {
   const current = await windows.foreground();
-  if (current && current !== '0' && !ours(current)) lastExternal = current;
+  if (current && current !== '0' && !ours(current)) {
+    lastExternal = current;
+    if (current !== lastForeground && !quitting) {
+      if (overlay && !overlay.isDestroyed() && overlay.isVisible() && !overlay.isMinimized())
+        overlay.moveTop();
+      if (panel && !panel.isDestroyed() && panel.isVisible() && !panel.isMinimized())
+        panel.moveTop();
+    }
+  }
+  lastForeground = current;
   return lastExternal;
 }
 function setBounds(height: number) {
@@ -305,13 +315,22 @@ const input = new InputController({
     await setWindowInput(panel, true, true, windows);
     if (input.state.turnId !== turn || !['preparing', 'editing'].includes(input.state.phase))
       return;
+    if (panel.isMinimized()) panel.restore();
     if (!panel.isVisible()) panel.show();
     if (!panel.isFocused()) panel.focus();
+    if (!panel.isFocused()) {
+      const handle = panel.getNativeWindowHandle();
+      await windows.activate(
+        (handle.length >= 8 ? handle.readBigUInt64LE() : BigInt(handle.readUInt32LE())).toString(),
+      );
+    }
+    if (input.state.turnId === turn && panel.isFocused()) panel.webContents.focus();
   },
   restore: async (handle) => {
     await setWindowInput(panel, false, true, windows);
     if (input.state.phase !== 'idle') return;
     await windows.activate(handle);
+    if (input.state.phase === 'idle' && panel.isFocused()) panel.blur();
     autoCollapse();
   },
   deliver: async (text, frames, id, attach) => {
@@ -487,8 +506,8 @@ async function action(a: Action) {
       await setWindowInput(overlay, editing, false, windows);
       if (editing) {
         await foreground();
-        overlay.show();
-        overlay.focus();
+        if (!overlay.isVisible()) overlay.show();
+        if (!overlay.isFocused()) overlay.focus();
       } else {
         await windows.activate(lastExternal);
       }
@@ -841,7 +860,8 @@ app
       transparent: true,
       backgroundColor: '#00000000',
       resizable: false,
-      focusable: false,
+      focusable: true,
+      minimizable: false,
       skipTaskbar: false,
       alwaysOnTop: true,
       webPreferences: preferences,
@@ -854,7 +874,8 @@ app
       transparent: true,
       backgroundColor: '#00000000',
       resizable: false,
-      focusable: false,
+      focusable: true,
+      minimizable: false,
       skipTaskbar: true,
       hasShadow: false,
       alwaysOnTop: true,
@@ -870,6 +891,23 @@ app
     await setWindowInput(overlay, false, false, windows);
     panel.on('show', () => panel.setSkipTaskbar(false));
     overlay.on('show', () => overlay.setSkipTaskbar(true));
+    for (const [role, window] of [
+      ['panel', panel],
+      ['overlay', overlay],
+    ] as const) {
+      const log = (event: string) => () =>
+        runtimeEvent(`window-${event}`, {
+          role,
+          visible: window.isVisible(),
+          minimized: window.isMinimized(),
+        });
+      window.on('show', log('show'));
+      window.on('hide', log('hide'));
+      window.on('minimize', log('minimize'));
+      window.on('restore', log('restore'));
+      window.on('focus', log('focus'));
+      window.on('blur', log('blur'));
+    }
     overlay.setIgnoreMouseEvents(true);
     applyCaptureVisibility();
     place();

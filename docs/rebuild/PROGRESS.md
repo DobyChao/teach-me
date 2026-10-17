@@ -17,3 +17,5 @@
 2026-10-17 再次反馈后：取消取图 hide/show，改为系统捕获排除；CLI 从 fetch 改用 node:http，增加安全的本地生命周期诊断。39 测试、23 项 Electron 回归通过，真实 CLI 连续两轮收发及 310 秒长等待后收发通过；Windows 实际 Ctrl+Alt+W→取图（排除面板、0 hide）→直接键盘输入→Enter→CLI say→React 回复显示与草稿清除通过。第三方远控持续画面、独立外部软件焦点恢复仍未验收，T10 保持 in_progress。详见 evidence/T10.md 的最新记录。
 
 2026-10-17 任务栏反馈：将任务栏角色与输入焦点分开，主面板保持 APPWINDOW 入口，画布保持 TOOLWINDOW。24 项 Electron 回归通过（含三轮原生样式与 HWND/renderer PID/窗口创建计数），现场观察原生快捷键输入及发送前后主入口保留。详见 evidence/T11.md。该结果不替代 T10 的远控持续画面与外部焦点验收。
+
+2026-10-17 画图前台反馈：停止按输入重建 Electron 激活代理和任务栏，用 NOACTIVATE 管理聚焦前取帧，并补原生焦点兜底、可见浮窗层级维持及显隐诊断。24 项 Electron 与画图前台三轮真实快捷键/取消/发送通过，窗口显隐/最小化/创建/激活代理重建/任务栏重建计数全 0。完整 Win+R 入口受电脑工具限制仍 pending，T12 保持 in_progress。按用户明确授权准备备份并提升 master，见 T13 证据。

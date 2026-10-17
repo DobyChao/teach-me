@@ -44,6 +44,16 @@ Electron Windows 的 SetFocusable 同时调用 SetSkipTaskbar(!focusable)，原�
 
 主面板在活动与非活动状态均保留一个任务栏入口；画布与 HTML 不参与任务栏。快捷键没有创建窗口的路径，用句柄、渲染 PID 和 browser-window-created 计数验证复用。启动时设置角色，后续每次焦点切换均重申策略。设置与画板不因可聚焦而成为新的任务栏窗口。来源：[Electron SetFocusable 实现](https://github.com/electron/electron/blob/main/shell/browser/native_window_views.cc)、[Microsoft 扩展窗口样式](https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles)。
 
+## ADR-009 · 接受 · 2026-10-17 · 稳定激活代理与浮窗层级
+
+ADR-008 仍在每次输入切换 Electron setFocusable，Windows 会连带删除/添加任务栏入口。现在面板和画布的 Electron 激活代理从创建起保持可激活，实际鼠标激活由宿主 Win32 NOACTIVATE 位控制，任务栏角色只在首次/角色变化时应用，不在每次输入重建。取帧前保持 NOACTIVATE，取帧后解除；系统拒绝普通 focus 时使用原生前台激活兜底，再聚焦 WebContents。取消或旧异步回调按 turn 检查，不得让旧输入重新占据焦点。
+
+面板和画布不提供常规最小化；热键在确实已最小化/隐藏时恢复同一个窗口。外部前台窗口变化时仅提升已可见、未最小化的原浮窗 Z 序，不调用 show/hide、不激活；恢复外部窗口只使用 SetForegroundWindow，不再冗余 BringWindowToTop。新增无正文窗口生命周期日志，用于区分 hide/minimize 与崩溃/退出。
+
+## ADR-010 · 接受 · 2026-10-17 · 主线替换
+
+用户本轮明确授权修复后备份原 master、将当前重建分支变成 master 并推送，该授权覆盖平时“不自动 push”的默认约定。先 fetch 并记录 origin/master 原 SHA，先推独立备份并核对，再以该 SHA 为 lease 更新 master；远端有并发变更即停止替换并重新处理。此次提升主线不表示所有产品任务已经验收，待验证任务继续留在 tasks.json。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

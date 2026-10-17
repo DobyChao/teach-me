@@ -92,12 +92,23 @@ async function run() {
     handle: w.getNativeWindowHandle().toString('hex'),
     renderer: w.webContents.getOSProcessId(),
   }));
-  const policies = new Map();
+  const policies = new Map([
+    [panel.id, false],
+    [overlay.id, true],
+  ]);
+  let activationMutations = 0,
+    taskbarMutations = 0;
   for (const w of [panel, overlay]) {
     const setSkip = w.setSkipTaskbar.bind(w);
     w.setSkipTaskbar = (skip) => {
+      taskbarMutations++;
       policies.set(w.id, skip);
       return setSkip(skip);
+    };
+    const setFocusable = w.setFocusable.bind(w);
+    w.setFocusable = (accept) => {
+      activationMutations++;
+      return setFocusable(accept);
     };
   }
   let created = 0;
@@ -123,6 +134,9 @@ async function run() {
     assert.equal(policies.get(overlay.id), true);
   }
   assert.equal(created, 0);
+  assert.equal(activationMutations, 0, 'input must not toggle the Electron activation delegate');
+  assert.equal(taskbarMutations, 0, 'input must not remove/readd taskbar tabs');
+  assert.equal(panel.isMinimizable(), false);
   assert.deepEqual(
     [panel, overlay].map((w) => ({
       id: w.id,

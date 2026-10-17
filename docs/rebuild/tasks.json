@@ -275,6 +275,57 @@
       "evidence": [
         "docs/rebuild/evidence/T11.md"
       ]
+    },
+    {
+      "id": "T12",
+      "title": "修复外部前台切换与快捷键重新拉起观感",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R16",
+        "R17"
+      ],
+      "acceptance": [
+        "A17"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/smoke.mjs",
+        "node scripts/window-lifecycle.mjs + Windows Paint 三轮真实快捷键",
+        "Win+R/mspaint 完整入口手工复核"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T12.md"
+      ],
+      "notes": "修复与 Paint 三轮真实快捷键/取消/发送通过；完整 Win+R 启动入口因电脑工具限制未验证，保留 pending。"
+    },
+    {
+      "id": "T13",
+      "title": "备份原 master 并推送重建主线",
+      "milestone": "M0",
+      "status": "in_progress",
+      "dependsOn": [
+        "T00"
+      ],
+      "requirements": [
+        "R18"
+      ],
+      "acceptance": [
+        "A18"
+      ],
+      "verify": [
+        "git fetch origin",
+        "推送并核对旧 master 备份",
+        "明确 lease 更新远端 master",
+        "核对本地和远端 SHA"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T13.md"
+      ]
     }
   ]
 }

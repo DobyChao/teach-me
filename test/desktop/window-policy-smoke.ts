@@ -18,6 +18,9 @@ export class WindowStyleProbe {
     assert.equal(o & 0x00040000, 0, 'overlay never becomes an app window');
     assert.ok(o & 0x00000080, 'overlay remains a tool window even when editable');
   }
+  foreground() {
+    return this.windows.foreground();
+  }
   dispose() {
     this.windows.dispose();
   }
