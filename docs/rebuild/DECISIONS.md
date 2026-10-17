@@ -54,6 +54,16 @@ ADR-008 仍在每次输入切换 Electron setFocusable，Windows 会连带删除
 
 用户本轮明确授权修复后备份原 master、将当前重建分支变成 master 并推送，该授权覆盖平时“不自动 push”的默认约定。先 fetch 并记录 origin/master 原 SHA，先推独立备份并核对，再以该 SHA 为 lease 更新 master；远端有并发变更即停止替换并重新处理。此次提升主线不表示所有产品任务已经验收，待验证任务继续留在 tasks.json。
 
+## ADR-011 · 接受 · 2026-10-17 · 复用 Excalidraw 用户编辑器
+
+用户明确指出用户自己的画板能力不足，并要求优先借用开源项目。选择 MIT 许可的 `@excalidraw/excalidraw` 0.18.1（支持 React 19），以本地 React 组件接入透明屏幕画板。tldraw SDK 的生产使用需要额外许可，不采用。许可与版权保留在 THIRD-PARTY-NOTICES.md，字体与其 notices 随构建复制；依赖和兼容修复 overrides 写入锁文件。
+
+保留 Excalidraw 自带的编辑工具、选择、样式、撤销和缩放；仅编辑时展示界面并接收鼠标，完成后保留实例、隐藏界面并穿透。离线可画，首次连接同一屏幕时保留预先绘制内容；替换旧会话时清除。用户内容和 Agent 场景分层；主进程不导入第三方场景格式，仅校验来自 overlay 的数量/epoch。用户画板清除会重置其历史，不能用旧撤销或晚回调恢复清除前内容。发送透明屏幕坐标 PNG，独立合成 Agent 笔迹，不截取编辑器 UI。图片/文本等编辑数据在 renderer 内存持有，不写配置或 Git。
+
+包按需加载；字体本地打包。0.18.1 即使设置本地路径仍追加字体 CDN fallback，构建适配将该 fallback 改为同一本地路径，CSP 继续阻止远程资源；禁用 AI、外部嵌入、外链打开和在线协作入口。手动选择库、图片导入等附加流程未验证，不扩展声称。
+
+依据：[MIT 许可](https://github.com/excalidraw/excalidraw/blob/master/LICENSE)、[官方集成方式](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/integration)、[官方导出 API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export)、[tldraw 许可](https://tldraw.dev/community/license)。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

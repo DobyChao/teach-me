@@ -29,7 +29,7 @@ const state: Snapshot = {
   input: { phase: 'idle', turnId: null, error: null },
   guides: [],
   guidesHidden: false,
-  userInk: [],
+  userBoard: { epoch: 0, count: 0 },
   editing: false,
   collapsed: false,
   settings: defaults,
@@ -60,6 +60,19 @@ test('arrow-only guide existence is distinct from attachable board', () => {
   const next = { ...state, guides: [{ type: 'arrow' as const, to: [10, 10] as [number, number] }] };
   assert.equal(hasGuides(next), true);
   assert.equal(hasBoard(next), false);
+});
+test('user editor content is attachable independently of Agent guides', () => {
+  const next = { ...state, userBoard: { epoch: 3, count: 1 } };
+  assert.equal(hasBoard(next), true);
+  assert.equal(hasGuides(next), false);
+  assert.equal(
+    actionSchema.safeParse({ type: 'board-change', epoch: -1, count: 1 }).success,
+    false,
+  );
+  assert.equal(
+    actionSchema.safeParse({ type: 'board-change', epoch: 3, count: Infinity }).success,
+    false,
+  );
 });
 test('scene without say fails and arbitrary IPC commands fail', () => {
   assert.throws(() => parseScene({ items: [] }));

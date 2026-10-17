@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import type { Guide } from '../shared/protocol.ts';
 import { useHost } from './use-host.ts';
+import type { BoardExporter } from './UserBoard.tsx';
+const UserBoard = lazy(() => import('./UserBoard.tsx'));
+declare global {
+  interface Window {
+    companionBoard?: { export: (epoch: number) => Promise<string> };
+    EXCALIDRAW_ASSET_PATH?: string;
+  }
+}
+window.EXCALIDRAW_ASSET_PATH = new URL('./excalidraw-assets/', location.href).href;
 function GuideShape({ guide: g }: { guide: Guide }) {
   switch (g.type) {
     case 'arrow': {
@@ -109,10 +118,12 @@ function GuideShape({ guide: g }: { guide: Guide }) {
   }
 }
 export function Overlay() {
-  const { state, act } = useHost();
+  const { state, act, failure } = useHost();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stroke, setStroke] = useState<[number, number][]>([]);
-  const drawing = useRef<[number, number][] | null>(null);
+  const userExport = useRef<BoardExporter | null>(null);
+  const onExporter = useCallback((exporter: BoardExporter | null) => {
+    userExport.current = exporter;
+  }, []);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !state) return;
@@ -131,46 +142,45 @@ export function Overlay() {
       points.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p)));
       ctx.stroke();
     };
-    state.userInk.forEach((s) => draw(s, '#e2a23a'));
     if (!state.guidesHidden)
       state.guides.forEach((g) => {
         if (g.type === 'stroke') draw(g.points, '#ff3d7f');
       });
-    draw(stroke, '#e2a23a');
-  }, [state, stroke]);
+  }, [state]);
   useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') act({ type: 'edit', on: false });
+    if (!state) return;
+    const exported = {
+      export: async (epoch: number) => {
+        if (epoch !== state.userBoard.epoch) throw new Error('画板已变更');
+        if (state.userBoard.count && !userExport.current)
+          throw new Error('画板正在加载，请稍后重试');
+        const canvas = userExport.current
+          ? await userExport.current(epoch)
+          : document.createElement('canvas');
+        const agent = canvasRef.current;
+        if (!userExport.current && agent) {
+          canvas.width = agent.width;
+          canvas.height = agent.height;
+        }
+        if (agent) {
+          const ctx = canvas.getContext('2d')!;
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.drawImage(agent, 0, 0);
+        }
+        return canvas.toDataURL('image/png');
+      },
     };
-    addEventListener('keydown', key);
-    return () => removeEventListener('keydown', key);
-  }, [act]);
+    window.companionBoard = exported;
+    return () => {
+      if (window.companionBoard === exported) delete window.companionBoard;
+    };
+  }, [state]);
   if (!state) return null;
   return (
-    <div
-      className={`overlay ${state.editing ? 'editing' : ''}`}
-      onPointerDown={(e) => {
-        if (!state.editing) return;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        drawing.current = [[e.clientX, e.clientY]];
-        setStroke(drawing.current);
-      }}
-      onPointerMove={(e) => {
-        if (!drawing.current) return;
-        drawing.current = [...drawing.current, [e.clientX, e.clientY]];
-        setStroke(drawing.current);
-      }}
-      onPointerUp={() => {
-        if (drawing.current && drawing.current.length > 1)
-          act({ type: 'stroke', points: drawing.current });
-        drawing.current = null;
-        setStroke([]);
-      }}
-      onPointerCancel={() => {
-        drawing.current = null;
-        setStroke([]);
-      }}
-    >
+    <div className={`overlay ${state.editing ? 'editing' : ''}`}>
+      <Suspense fallback={state.editing ? <p className="board-loading">正在打开画板…</p> : null}>
+        <UserBoard state={state} act={act} onExporter={onExporter} />
+      </Suspense>
       <canvas data-board ref={canvasRef} />
       {!state.guidesHidden && (
         <svg className="guides">
@@ -192,15 +202,7 @@ export function Overlay() {
           ))}
         </svg>
       )}
-      {state.editing && (
-        <button
-          className="edit-exit"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => act({ type: 'edit', on: false })}
-        >
-          画板编辑中 · Esc 完成
-        </button>
-      )}
+      {state.editing && failure && <p className="board-error">{failure}</p>}
     </div>
   );
 }

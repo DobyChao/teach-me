@@ -368,13 +368,14 @@ input[type='checkbox'] {
   cursor: crosshair;
   background: #00000005;
 }
-.overlay canvas,
-.guides {
+.overlay > canvas,
+.overlay > .guides {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 2;
 }
 .guides {
   fill: none;
@@ -391,14 +392,36 @@ input[type='checkbox'] {
   font-size: 17px;
   font-weight: 600;
 }
-.edit-exit {
+.user-board {
+  position: absolute;
+  inset: 0;
+}
+.overlay .user-board .excalidraw.theme--dark {
+  --color-primary: var(--accent);
+  --color-primary-darker: #dc2f6b;
+  --color-primary-light: #522239;
+  --color-surface-primary-container: #522239;
+}
+.user-board.viewing {
+  pointer-events: none;
+}
+.user-board.viewing .layer-ui__wrapper,
+.user-board.viewing .excalidraw__context-menu {
+  display: none;
+}
+.user-board .board-done {
+  white-space: nowrap;
+}
+.board-loading,
+.board-error {
   position: absolute;
   top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   background: var(--bg);
-  border-color: var(--accent);
-  padding: 8px 16px;
+  z-index: 5;
 }
 @media (prefers-reduced-motion: reduce) {
   *,

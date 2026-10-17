@@ -23,6 +23,16 @@ export class WindowStyleProbe {
   foreground() {
     return this.windows.foreground();
   }
+  // Interactive-only fixture: expose the normally tool-only overlay to the
+  // computer-use window inventory. Production roles are never changed here.
+  async makeTargetable(window: BrowserWindow) {
+    await this.windows.inputPolicy(
+      window.getNativeWindowHandle().readBigUInt64LE().toString(),
+      true,
+      true,
+    );
+    window.setSkipTaskbar(false);
+  }
   dispose() {
     this.windows.dispose();
   }

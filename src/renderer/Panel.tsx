@@ -353,11 +353,10 @@ export function Panel() {
           <button
             type="button"
             aria-pressed={state.editing}
-            title="画板编辑；Esc 退出"
+            title="打开你的画板：图形、文字、自由画、橡皮与撤销"
             onClick={() => act({ type: 'edit', on: !state.editing })}
-            disabled={!active}
           >
-            圈画
+            {state.editing ? '正在画' : '画板'}
           </button>
           <label className="attach">
             <input
@@ -368,7 +367,7 @@ export function Panel() {
             />
             附画板
           </label>
-          {state.userInk.length > 0 && (
+          {state.userBoard.count > 0 && (
             <button type="button" onClick={() => act({ type: 'clear', layer: 'user' })}>
               清笔迹
             </button>

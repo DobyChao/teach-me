@@ -94,8 +94,12 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('toggle-guides') }),
   z.object({ type: z.literal('clear'), layer: z.enum(['agent', 'user', 'all']) }),
   z.object({ type: z.literal('edit'), on: z.boolean() }),
-  z.object({ type: z.literal('stroke'), points: z.array(point).min(2).max(5000) }),
   z.object({ type: z.literal('settings'), settings: settingsSchema }),
+  z.object({
+    type: z.literal('board-change'),
+    epoch: z.number().int().nonnegative(),
+    count: z.number().int().min(0).max(10000),
+  }),
   z.object({ type: z.literal('settings-focus'), on: z.boolean() }),
   z.object({
     type: z.literal('capture-decision'),
@@ -155,7 +159,7 @@ export interface Snapshot {
   };
   guides: Guide[];
   guidesHidden: boolean;
-  userInk: [number, number][][];
+  userBoard: { epoch: number; count: number };
   editing: boolean;
   collapsed: boolean;
   settings: Settings;
@@ -178,7 +182,7 @@ declare global {
 
 export const hasGuides = (s: Snapshot) => s.guides.length > 0;
 export const hasBoard = (s: Snapshot) =>
-  s.userInk.length > 0 || s.guides.some((g) => g.type === 'stroke');
+  s.userBoard.count > 0 || s.guides.some((g) => g.type === 'stroke');
 export function canContinue(s: Snapshot, draft: string) {
   return (
     !!s.session &&

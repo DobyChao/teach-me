@@ -60,8 +60,11 @@ let collapsed = true,
   editing = false;
 let expandedHeight = 420,
   collapsedHeight = 142;
-let guides: Guide[] = [],
-  userInk: [number, number][][] = [];
+let guides: Guide[] = [];
+let userBoard = { epoch: 0, count: 0 };
+function clearUserBoard() {
+  userBoard = { epoch: userBoard.epoch + 1, count: 0 };
+}
 let error: string | null = null;
 let revision = 0,
   shotSequence = 0;
@@ -112,7 +115,7 @@ function snapshot(): Snapshot {
     input: input.state,
     guides,
     guidesHidden,
-    userInk,
+    userBoard,
     editing,
     collapsed,
     settings,
@@ -328,11 +331,14 @@ const input = new InputController({
   },
   deliver: async (text, frames, id, attach) => {
     const s = requireSession();
+    const epoch = userBoard.epoch;
     let all = frames;
-    if (attach && (userInk.length || guides.some((g) => g.type === 'stroke'))) {
+    if (attach && (userBoard.count || guides.some((g) => g.type === 'stroke'))) {
       const dataUrl = await overlay.webContents.executeJavaScript(
-        "document.querySelector('canvas[data-board]')?.toDataURL('image/png')",
+        `window.companionBoard?.export(${epoch})`,
       );
+      if (userBoard.epoch !== epoch || session !== s || s.phase === 'ended')
+        throw new Error('画板或教学已变更，请重新发送');
       if (
         typeof dataUrl !== 'string' ||
         !dataUrl.startsWith('data:image/png;base64,') ||
@@ -340,6 +346,7 @@ const input = new InputController({
       )
         throw new Error('画板导出失败');
       const png = nativeImage.createFromDataURL(dataUrl);
+      if (png.isEmpty()) throw new Error('画板导出失败');
       const d = target();
       const shotId = `s${++shotSequence}`;
       const file = path.join(home, 'sessions', s.id, 'shots', `${shotId}-board.png`);
@@ -358,6 +365,14 @@ const input = new InputController({
         },
       ];
     }
+    if (
+      input.state.turnId !== id ||
+      input.state.phase !== 'submitting' ||
+      session !== s ||
+      s.phase === 'ended'
+    )
+      throw new Error('输入已取消，附件已作废');
+    if (attach && userBoard.epoch !== epoch) throw new Error('画板已变更，请重新发送');
     s.push(text, all, id);
     if (frames[0]) lastShot = frames[0];
   },
@@ -491,7 +506,7 @@ async function action(a: Action) {
       break;
     case 'clear':
       if (a.layer !== 'user') guides = [];
-      if (a.layer !== 'agent') userInk = [];
+      if (a.layer !== 'agent') clearUserBoard();
       break;
     case 'edit':
       editing = a.on;
@@ -501,13 +516,23 @@ async function action(a: Action) {
         await foreground();
         if (!overlay.isVisible()) overlay.show();
         if (!overlay.isFocused()) overlay.focus();
+        if (!overlay.isFocused()) {
+          const handle = overlay.getNativeWindowHandle();
+          await windows.activate(
+            (handle.length >= 8
+              ? handle.readBigUInt64LE()
+              : BigInt(handle.readUInt32LE())
+            ).toString(),
+          );
+        }
+        if (editing && overlay.isFocused()) overlay.webContents.focus();
       } else {
         await windows.activate(lastExternal);
       }
       break;
-    case 'stroke':
-      if (!editing) throw new Error('画板未处于编辑模式');
-      userInk = [...userInk, a.points];
+    case 'board-change':
+      if (a.epoch !== userBoard.epoch) return snapshot();
+      userBoard = { ...userBoard, count: a.count };
       break;
     case 'settings':
       error = null;
@@ -544,7 +569,7 @@ async function action(a: Action) {
       await input.cancel();
       displayId = a.id;
       guides = [];
-      userInk = [];
+      clearUserBoard();
       lastShot = null;
       place();
       if (displayRequest) {
@@ -648,6 +673,7 @@ async function startServer() {
               const selected = z.number().int().parse(data.displayId);
               if (!screen.getAllDisplays().some((d) => d.id === selected))
                 throw new Error('指定屏幕不存在');
+              if (selected !== target().id) clearUserBoard();
               displayId = selected;
               place();
             } else if (screen.getAllDisplays().length > 1) {
@@ -668,9 +694,10 @@ async function startServer() {
             if (quitting) throw new Error('应用正在退出');
             launchSecret = '';
             await input.cancel();
+            const hadSession = session !== null;
             session = new Session(topic, broadcast);
             guides = [];
-            userInk = [];
+            if (hadSession) clearUserBoard();
             lastShot = null;
             shots.clear();
             originals.clear();
@@ -737,7 +764,7 @@ async function startServer() {
           }
           case '/clear':
             guides = [];
-            if (data.all === true) userInk = [];
+            if (data.all === true) clearUserBoard();
             result = { ok: true };
             break;
           case '/capture': {
@@ -781,7 +808,8 @@ async function startServer() {
           }
           case '/board':
             result = {
-              userStrokes: userInk.length,
+              userStrokes: userBoard.count,
+              userElements: userBoard.count,
               agentStrokes: guides.filter((g) => g.type === 'stroke').length,
             };
             break;
@@ -902,6 +930,9 @@ app
       window.on('blur', log('blur'));
     }
     overlay.setIgnoreMouseEvents(true);
+    overlay.on('focus', () => {
+      if (editing) overlay.webContents.focus();
+    });
     applyCaptureVisibility();
     place();
     ipcMain.handle('companion:snapshot', (e) => {
@@ -913,8 +944,10 @@ app
       if (![panel.webContents.id, overlay.webContents.id].includes(e.sender.id))
         throw new Error('unknown sender');
       const parsed = actionSchema.parse(value);
-      if (e.sender.id === overlay.webContents.id && !['stroke', 'edit'].includes(parsed.type))
+      if (e.sender.id === overlay.webContents.id && !['board-change', 'edit'].includes(parsed.type))
         throw new Error('overlay action rejected');
+      if (parsed.type === 'board-change' && e.sender.id !== overlay.webContents.id)
+        throw new Error('board sender rejected');
       try {
         return await action(parsed);
       } catch (err) {
@@ -972,6 +1005,7 @@ app
       if (displayId && !screen.getAllDisplays().some((d) => d.id === displayId)) {
         displayId = null;
         guides = [];
+        clearUserBoard();
         lastShot = null;
         input.cancel().catch(fail);
         fail(new Error('教学屏幕断开，请重新选屏'));
@@ -981,6 +1015,7 @@ app
     });
     screen.on('display-metrics-changed', () => {
       guides = [];
+      clearUserBoard();
       lastShot = null;
       place();
       broadcast();
