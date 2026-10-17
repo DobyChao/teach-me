@@ -201,6 +201,28 @@
         "npm ci；CI；安装包验收"
       ],
       "evidence": []
+    },
+    {
+      "id": "T09",
+      "title": "实现远控可见性开关并配置本机",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R14"
+      ],
+      "acceptance": [
+        "A14"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/smoke.mjs"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T09.md"
+      ]
     }
   ]
 }

@@ -7,6 +7,11 @@ export class HtmlHost {
   private window: BrowserWindow | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private watchdog: ReturnType<typeof setInterval> | null = null;
+  private captureVisible = false;
+  setCaptureVisible(visible: boolean) {
+    this.captureVisible = visible;
+    if (this.window && !this.window.isDestroyed()) this.window.setContentProtection(!visible);
+  }
   constructor(privateChanged: (reason: string) => void) {
     this.changed = privateChanged;
   }
@@ -38,7 +43,7 @@ export class HtmlHost {
       },
     });
     this.window = window;
-    window.setContentProtection(true);
+    window.setContentProtection(!this.captureVisible);
     window.setAlwaysOnTop(true, 'screen-saver');
     window.setIgnoreMouseEvents(true);
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));

@@ -196,6 +196,11 @@ async function readSettings() {
 async function saveSettings() {
   await fs.writeFile(path.join(home, 'settings.json'), JSON.stringify(settings, null, 2));
 }
+function applyCaptureVisibility() {
+  for (const window of [panel, overlay])
+    if (window && !window.isDestroyed()) window.setContentProtection(!settings.showInScreenCapture);
+  htmlHost.setCaptureVisible(settings.showInScreenCapture);
+}
 
 let captureTail: Promise<unknown> = Promise.resolve();
 async function captureScreen(): Promise<Shot> {
@@ -462,6 +467,7 @@ async function action(a: Action) {
       if (voice.state.phase !== 'idle') await voice.cancel();
       settings = a.settings;
       await saveSettings();
+      applyCaptureVisibility();
       autoCollapse();
       break;
     case 'settings-focus':
@@ -816,12 +822,13 @@ app
       webPreferences: preferences,
     });
     for (const w of [panel, overlay]) {
-      w.setContentProtection(true);
+      w.setContentProtection(!settings.showInScreenCapture);
       w.setAlwaysOnTop(true, 'screen-saver');
       w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       w.webContents.on('will-navigate', (e) => e.preventDefault());
     }
     overlay.setIgnoreMouseEvents(true);
+    applyCaptureVisibility();
     place();
     ipcMain.handle('companion:snapshot', (e) => {
       if (![panel.webContents.id, overlay.webContents.id].includes(e.sender.id))

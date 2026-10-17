@@ -25,6 +25,14 @@ export function SettingsView({
         />
       </label>
       <label className="setting-row">
+        <span>在远程控制／屏幕共享中显示应用</span>
+        <input
+          type="checkbox"
+          checked={draft.showInScreenCapture}
+          onChange={(e) => setDraft({ ...draft, showInScreenCapture: e.target.checked })}
+        />
+      </label>
+      <label className="setting-row">
         <span>Agent 请求截屏</span>
         <select
           value={draft.captureTier}

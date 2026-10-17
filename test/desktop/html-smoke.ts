@@ -17,6 +17,11 @@ export async function testHtml() {
       w.webContents.getURL().startsWith('data:text/html'),
     );
     assert.ok(window, 'isolated HTML window exists');
+    assert.equal(window.isContentProtected(), true);
+    host.setCaptureVisible(true);
+    assert.equal(window.isContentProtected(), false);
+    host.setCaptureVisible(false);
+    assert.equal(window.isContentProtected(), true);
     const frame = window.webContents.mainFrame.frames[0];
     assert.ok(frame, 'sandboxed srcdoc frame exists');
     assert.equal(await frame.executeJavaScript('document.body.dataset.ran'), 'yes');
@@ -34,11 +39,23 @@ export async function testHtml() {
     );
     await new Promise((resolve) => setTimeout(resolve, 1200));
     assert.equal(window.isDestroyed(), true);
+    host.setCaptureVisible(true);
+    await host.show(
+      { type: 'html', rect: [20, 20, 250, 120], html: '<div>新建指引</div>', ttl: 1000 },
+      { bounds: { x: 0, y: 0, width: 1200, height: 800 } },
+    );
+    const next = BrowserWindow.getAllWindows().find((w) =>
+      w.webContents.getURL().startsWith('data:text/html'),
+    );
+    assert.ok(next);
+    assert.equal(next.isContentProtected(), false);
     return [
       'isolated HTML runs inline scripts',
       'HTML has no Node/preload/parent access',
       'HTML network blocked',
       'HTML TTL destroys renderer',
+      'HTML capture visibility changes live',
+      'new HTML windows inherit capture visibility',
     ];
   } finally {
     host.clear();

@@ -6,6 +6,7 @@ import {
   defaults,
   hasBoard,
   hasGuides,
+  settingsSchema,
 } from '../src/shared/protocol.ts';
 import type { Shot, Snapshot } from '../src/shared/protocol.ts';
 import { mapGuides, parseScene } from '../src/core/scene.ts';
@@ -44,6 +45,15 @@ test('wait means ready for reply; typing and preparation suppress continue', () 
   assert.equal(
     canContinue({ ...state, input: { phase: 'preparing', turnId: 't', error: null } }, ''),
     false,
+  );
+});
+test('legacy settings stay protected unless remote visibility is enabled', () => {
+  const legacy = { ...defaults };
+  delete (legacy as Partial<typeof defaults>).showInScreenCapture;
+  assert.equal(settingsSchema.parse(legacy).showInScreenCapture, false);
+  assert.equal(
+    settingsSchema.parse({ ...legacy, showInScreenCapture: true }).showInScreenCapture,
+    true,
   );
 });
 test('arrow-only guide existence is distinct from attachable board', () => {

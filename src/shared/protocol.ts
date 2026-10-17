@@ -55,6 +55,7 @@ export const sceneSchema = z.object({
 });
 export type Scene = z.infer<typeof sceneSchema>;
 export const settingsSchema = z.object({
+  showInScreenCapture: z.boolean().default(false),
   attachScreenshot: z.boolean(),
   captureTier: z.enum(['ask', 'lesson', 'always']),
   autoCollapseSec: z.number().min(0).max(120),
@@ -71,6 +72,7 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaults: Settings = {
+  showInScreenCapture: false,
   attachScreenshot: true,
   captureTier: 'ask',
   autoCollapseSec: 8,

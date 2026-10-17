@@ -59,6 +59,21 @@ async function run() {
   assert.ok(panel);
   const js = (code) => panel.webContents.executeJavaScript(code);
   const perform = (action) => js(`window.companion.perform(${JSON.stringify(action)})`);
+  const initial = await js('window.companion.snapshot()');
+  const chrome = BrowserWindow.getAllWindows().filter((w) =>
+    w.webContents.getURL().includes('mode='),
+  );
+  assert.ok(chrome.every((w) => w.isContentProtected()));
+  await perform({ type: 'settings', settings: { ...initial.settings, showInScreenCapture: true } });
+  assert.ok(chrome.every((w) => !w.isContentProtected()));
+  const saved = JSON.parse(await fs.readFile(path.join(home, 'settings.json'), 'utf8'));
+  assert.equal(saved.showInScreenCapture, true);
+  await perform({
+    type: 'settings',
+    settings: { ...initial.settings, showInScreenCapture: false },
+  });
+  assert.ok(chrome.every((w) => w.isContentProtected()));
+  checks.push('capture visibility toggles both native windows and persists');
   assert.equal(await js('typeof window.companion.send'), 'undefined');
   checks.push('restricted preload bridge');
   await call('say', { text: '这是宿主发来的测试指引。' });
