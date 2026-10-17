@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
+import { postJson } from './http.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,19 +48,16 @@ let endpoint = await read(endpointFile);
 let driver = await read(driverFile);
 async function call(route, data = {}, timeout = 30000) {
   if (!endpoint) throw new Error('应用未启动。先运行 start。');
-  const response = await fetch(`http://127.0.0.1:${endpoint.port}/${route}`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
+  return postJson(
+    endpoint.port,
+    route,
+    {
       'x-companion-token': endpoint.token,
       ...(driver ? { 'x-session-token': driver.token } : {}),
     },
-    body: JSON.stringify(data),
-    signal: AbortSignal.timeout(timeout),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
-  return result;
+    data,
+    timeout,
+  );
 }
 async function alive() {
   try {

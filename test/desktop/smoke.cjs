@@ -1,5 +1,5 @@
-// Runs inside Electron against the real host and renderer. No desktop capture:
-// the isolated settings file disables screen attachments before launch.
+// Runs inside Electron against the real host, renderer and spawned CLI.
+// Screen attachments use an injected synthetic frame, never the real desktop.
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -8,6 +8,30 @@ require('../../dist/host/main.cjs');
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const home = process.env.TEACH_ME_AGENT_HOME;
 const checks = [];
+const { spawn } = require('node:child_process');
+const { createHash } = require('node:crypto');
+function cli(...args) {
+  const child = spawn(process.execPath, ['bin/teach-me.mjs', ...args, '--client', 'smoke-cli'], {
+    windowsHide: true,
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  return new Promise((resolve, reject) => {
+    let output = '',
+      error = '';
+    child.stdout.on('data', (s) => (output += s));
+    child.stderr.on('data', (s) => (error += s));
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code !== 0) return reject(new Error(`CLI exit ${code}: ${error}`));
+      try {
+        resolve(JSON.parse(output));
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
 async function run() {
   await app.whenReady();
   let endpoint;
@@ -137,6 +161,42 @@ async function run() {
   await pause(100);
   assert.equal(await js('document.querySelector("textarea").value'), '');
   checks.push('real textarea input + Enter sends and clears only after delivery');
+  await fs.mkdir(path.join(home, 'clients'), { recursive: true });
+  await fs.writeFile(
+    path.join(home, 'clients', createHash('sha256').update('smoke-cli').digest('hex') + '.json'),
+    JSON.stringify(driver),
+  );
+  assert.equal((await cli('start')).id, driver.id);
+  assert.equal((await cli('status')).session.id, driver.id);
+  for (let round = 1; round <= 2; round++) {
+    const receivedByCli = cli('wait', '--timeout', '480');
+    for (let i = 0; i < 100; i++) {
+      if ((await call('status')).session.phase === 'waiting') break;
+      await pause(20);
+    }
+    assert.equal((await call('status')).session.phase, 'waiting');
+    if (round === 1 && process.env.TMA_LONG_WAIT_MS) {
+      console.log(
+        'CLI long poll started; delaying synthetic UI message beyond fetch header deadline',
+      );
+      await pause(Number(process.env.TMA_LONG_WAIT_MS));
+    }
+    await perform({ type: 'prepare' });
+    await pause(80);
+    await panel.webContents.insertText(`CLI往返${round}`);
+    await pause(40);
+    panel.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
+    panel.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+    const result = await receivedByCli;
+    assert.equal(result.messages[0].text, `CLI往返${round}`);
+    await cli('say', `CLI已回复${round}`);
+    await pause(80);
+    assert.match(await js('document.body.innerText'), new RegExp(`CLI已回复${round}`));
+  }
+  assert.equal((await cli('wait', '--timeout', '1')).timeout, true);
+  checks.push(
+    'spawned CLI start/status, two real textarea -> wait/ack -> say round trips, timeout',
+  );
   // Synthetic capture only: getSources never reads the user's desktop.
   const { desktopCapturer, nativeImage } = require('electron');
   const originalSources = desktopCapturer.getSources;
@@ -145,7 +205,8 @@ async function run() {
   let writesVisible = 0;
   desktopCapturer.getSources = async () => {
     captures++;
-    assert.equal(panel.isVisible(), false);
+    assert.equal(panel.isVisible(), true);
+    assert.ok(chrome.every((w) => w.isContentProtected()));
     await pause(80);
     return [
       {
@@ -166,13 +227,21 @@ async function run() {
     return originalWrite(file, ...args);
   };
   try {
-    await perform({ type: 'settings', settings: { ...initial.settings, attachScreenshot: true } });
+    await perform({
+      type: 'settings',
+      settings: { ...initial.settings, attachScreenshot: true, showInScreenCapture: true },
+    });
+    let hideEvents = 0;
+    const onHide = () => hideEvents++;
+    chrome.forEach((w) => w.on('hide', onHide));
     const preparedTurns = await js(
       `Promise.all(Array.from({length:3},()=>window.companion.perform({type:'prepare'})))`,
     );
     assert.equal(new Set(preparedTurns.map((s) => s.input.turnId)).size, 1);
     assert.equal(captures, 1);
     assert.equal(writesVisible, 2);
+    assert.equal(hideEvents, 0);
+    assert.ok(chrome.every((w) => !w.isContentProtected()));
     await pause(100);
     const bounds = panel.getBounds();
     await perform({ type: 'prepare' });
@@ -181,7 +250,7 @@ async function run() {
     assert.equal(await js('document.activeElement===document.querySelector("textarea")'), true);
     assert.equal(panel.getBounds().height, bounds.height);
     checks.push(
-      'concurrent prepare shares synthetic capture and restores windows before slow writes',
+      'concurrent prepare captures once with no window hide; protection restored before writes',
     );
     checks.push('editing refocus keeps stable panel height without recapture');
     await perform({ type: 'cancel' });
@@ -190,6 +259,9 @@ async function run() {
     };
     await assert.rejects(perform({ type: 'prepare' }), /合成截图失败/);
     assert.equal(panel.isVisible(), true);
+    assert.equal(hideEvents, 0);
+    assert.ok(chrome.every((w) => !w.isContentProtected()));
+    chrome.forEach((w) => w.removeListener('hide', onHide));
     checks.push('failed capture restores panel visibility');
     await perform({ type: 'cancel' });
   } finally {

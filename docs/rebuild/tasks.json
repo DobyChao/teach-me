@@ -243,12 +243,14 @@
       "verify": [
         "npm run check",
         "node scripts/smoke.mjs",
-        "Windows 真实快捷键/鼠标与远控观察"
+        "TMA_LONG_WAIT_MS=310000 node scripts/smoke.mjs",
+        "node scripts/native-input.mjs + 原生 Ctrl+Alt+W/输入/Enter",
+        "第三方远控画面观察"
       ],
       "evidence": [
         "docs/rebuild/evidence/T10.md"
       ],
-      "notes": "代码与合成截图回归完成，真实截图/焦点与远控闪烁观察仍待验证。"
+      "notes": "39 测试、23 项 Electron、310 秒 CLI 长等待与两轮收发、Windows 原生快捷键/真实排除取图/键盘 Enter/回复渲染和草稿清除通过；第三方远控持续画面及独立外部软件焦点恢复未验证，保留 in_progress。"
     }
   ]
 }

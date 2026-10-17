@@ -11,6 +11,7 @@ import { createServer } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs/promises';
+import { appendFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { actionSchema, defaults, settingsSchema } from '../shared/protocol.ts';
@@ -27,6 +28,7 @@ import { pruneSessions } from './storage.ts';
 import { IMAGE_EDGE } from '../shared/limits.ts';
 
 app.setName('Teach me, Agent');
+app.commandLine.appendSwitch('enable-features', 'AllowWindowCaptureExclusionInRemoteSessions');
 app.setPath(
   'userData',
   process.env.TEACH_ME_AGENT_HOME || path.join(app.getPath('appData'), 'teach-me-agent-v2'),
@@ -36,6 +38,21 @@ if (!app.requestSingleInstanceLock()) {
 }
 const home = app.getPath('userData');
 const endpointFile = path.join(home, 'endpoint.json');
+function runtimeEvent(event: string, detail: Record<string, string | number | boolean> = {}) {
+  try {
+    const file = path.join(home, 'runtime.log');
+    try {
+      if (statSync(file).size > 128 * 1024) writeFileSync(file, '');
+    } catch {}
+    appendFileSync(
+      file,
+      JSON.stringify({ at: new Date().toISOString(), pid: process.pid, event, ...detail }) + '\n',
+      { mode: 0o600 },
+    );
+  } catch {
+    /* Diagnostics must not interrupt input or shutdown. */
+  }
+}
 const auth = randomBytes(24).toString('hex');
 let launchSecret = process.env.TMA_LAUNCH_SECRET || '';
 let session: Session | null = null;
@@ -58,7 +75,6 @@ let lastExternal: string | null = null;
 let lastShot: Shot | null = null;
 const shots = new Map<string, Shot>();
 const originals = new Map<string, string>();
-let captureInProgress = false;
 const htmlHost = new HtmlHost((reason) => {
   guides = guides.filter((g) => g.type !== 'html');
   if (reason) error = reason;
@@ -123,7 +139,7 @@ function broadcast() {
   if (!app.isReady()) return;
   const state = snapshot();
   if (!guides.some((g) => g.type === 'html')) htmlHost.clear();
-  else htmlHost.visible(!guidesHidden && !captureInProgress);
+  else htmlHost.visible(!guidesHidden);
   for (const w of [panel, overlay])
     if (w && !w.isDestroyed()) w.webContents.send('companion:state', state);
 }
@@ -212,10 +228,12 @@ async function saveSettings() {
 }
 function applyCaptureVisibility() {
   for (const window of [panel, overlay])
-    if (window && !window.isDestroyed()) window.setContentProtection(!settings.showInScreenCapture);
-  htmlHost.setCaptureVisible(settings.showInScreenCapture);
+    if (window && !window.isDestroyed())
+      window.setContentProtection(captureProtected || !settings.showInScreenCapture);
+  htmlHost.setCaptureVisible(!captureProtected && settings.showInScreenCapture);
 }
 
+let captureProtected = false;
 let captureTail: Promise<unknown> = Promise.resolve();
 async function captureScreen(): Promise<Shot> {
   const capturingSession = requireSession();
@@ -223,9 +241,8 @@ async function captureScreen(): Promise<Shot> {
     .catch(() => {})
     .then(async () => {
       const d = target();
-      const visible = BrowserWindow.getAllWindows().filter((w) => w.isVisible());
-      captureInProgress = true;
-      visible.forEach((w) => w.hide());
+      captureProtected = true;
+      applyCaptureVisibility();
       let sources;
       try {
         await wait(35);
@@ -237,11 +254,8 @@ async function captureScreen(): Promise<Shot> {
           },
         });
       } finally {
-        captureInProgress = false;
-        visible.forEach((w) => {
-          if (!w.isDestroyed() && !quitting && !w.isVisible()) w.showInactive();
-        });
-        htmlHost.visible(!guidesHidden);
+        captureProtected = false;
+        applyCaptureVisibility();
       }
       const source = sources.find((s) => s.display_id === String(d.id));
       if (!source || source.thumbnail.isEmpty()) throw new Error('该屏幕无法截取，请更换屏幕');
@@ -534,7 +548,7 @@ async function action(a: Action) {
       overlay.setFocusable(false);
       break;
     case 'quit':
-      await shutdown();
+      await shutdown('panel-quit');
       break;
     case 'voice-start':
       requireSession();
@@ -655,12 +669,13 @@ async function startServer() {
         if (!(await consent('attach', session.topic))) throw new Error('用户拒绝连接');
         result = { id: session.id, token: session.token };
       } else if (route === '/stop') {
-        await shutdown();
+        await shutdown('api-stop');
         result = { ok: true };
       } else {
         const active = checkDriver(req);
         switch (route) {
           case '/wait': {
+            runtimeEvent('wait-start');
             const controller = new AbortController();
             res.on('close', () => {
               if (!res.writableEnded) controller.abort();
@@ -669,6 +684,7 @@ async function startServer() {
               z.number().min(1).max(480000).default(480000).parse(data.timeoutMs),
               controller.signal,
             );
+            runtimeEvent('wait-complete', { messages: messages.length });
             result = {
               messages,
               ended: active.phase === 'ended',
@@ -776,9 +792,10 @@ async function startServer() {
   return server;
 }
 
-async function shutdown() {
+async function shutdown(reason: string) {
   if (quitting) return;
   quitting = true;
+  runtimeEvent('shutdown', { reason });
   htmlHost.clear();
   await voice.cancel();
   if (displayRequest) {
@@ -802,6 +819,7 @@ app
   .whenReady()
   .then(async () => {
     await fs.mkdir(home, { recursive: true });
+    runtimeEvent('startup');
     await pruneSessions(home, 7);
     await readSettings();
     const preferences = {
@@ -931,7 +949,7 @@ app
     panel.on('close', (e) => {
       if (!quitting) {
         e.preventDefault();
-        shutdown().catch(fail);
+        shutdown('native-window-close').catch(fail);
       }
     });
     broadcast();
@@ -942,8 +960,19 @@ app
   });
 app.on('window-all-closed', () => app.quit());
 app.on('will-quit', () => {
+  runtimeEvent('will-quit');
   globalShortcut.unregisterAll();
   windows.dispose();
   if (fgTimer) clearInterval(fgTimer);
   if (collapseTimer) clearTimeout(collapseTimer);
+});
+app.on('render-process-gone', (_event, _contents, details) => {
+  runtimeEvent('renderer-exit', { reason: details.reason, exitCode: details.exitCode });
+});
+app.on('child-process-gone', (_event, details) => {
+  runtimeEvent('child-exit', {
+    type: details.type,
+    reason: details.reason,
+    exitCode: details.exitCode,
+  });
 });

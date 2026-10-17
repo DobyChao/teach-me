@@ -36,10 +36,13 @@ const child = spawn(require('electron'), ['test/desktop/smoke.cjs'], {
   stdio: 'inherit',
   windowsHide: true,
 });
-const timer = setTimeout(() => {
-  child.kill();
-  console.error('Electron smoke timed out');
-}, 45000);
+const timer = setTimeout(
+  () => {
+    child.kill();
+    console.error('Electron smoke timed out');
+  },
+  45000 + Number(process.env.TMA_LONG_WAIT_MS || 0),
+);
 child.on('error', (e) => {
   clearTimeout(timer);
   console.error(e.message);

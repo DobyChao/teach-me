@@ -42,6 +42,8 @@ HTML 示例：`{"type":"html","rect":[100,100,300,180],"html":"<div>解释</div>
 
 Agent 需要持续调用 wait：超时后重新 wait，收到消息后 ack、回答，再回到 wait。一次 wait 结束后退出的 Agent 不会自动被应用唤醒。无活跃 wait 且 ready 15 秒或 thinking 5 分钟无活动时，面板提示连接待确认；消息保留到同一会话重连。活跃长轮询不会因此超时。
 
+CLI 的 wait 默认等待 480 秒，使用 node:http 的明确请求期限。若命令失败，保留具体错误，先用 status 判断应用/会话是否仍在：同一会话仍活跃时可重试；应用已退出或会话变更须报告，不能声称仍在监听。本地 runtime.log 只记录进程/等待生命周期，不含消息内容。
+
 此协议是重建版本，不完整兼容旧 CLI 参数。尚未实现 install-skill、say --copy、capture --title/轻量窗口上下文、内置首次引导。热键当前固定为 Ctrl+Alt+W 和 Ctrl+Alt+H。不要把未支持的旧命令写进 Agent 工作流。
 
 截图保留在用户数据目录的 sessions 下，默认启动时清理七天前的会话；本地 ASR 的临时录音在成功或失败后删除。不要把这些文件加入 Git。
