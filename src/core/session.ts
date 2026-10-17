@@ -16,9 +16,21 @@ export class Session {
   } | null = null;
   topic: string;
   private changed: () => void;
-  constructor(topic: string, changed: () => void = () => {}) {
+  private now: () => number;
+  private activity: number;
+  constructor(topic: string, changed: () => void = () => {}, now = Date.now) {
     this.topic = topic;
     this.changed = changed;
+    this.now = now;
+    this.activity = now();
+  }
+  refreshConnection() {
+    if (this.waiter || this.phase === 'ended' || this.phase === 'offline') return;
+    const grace = this.phase === 'thinking' ? 300_000 : 15_000;
+    if (this.now() - this.activity >= grace) {
+      this.phase = 'offline';
+      this.changed();
+    }
   }
   get pending() {
     return this.messages.filter((m) => m.role === 'user' && m.id > this.acknowledged);
@@ -27,6 +39,7 @@ export class Session {
     if (this.phase === 'ended') throw new Error('教学已结束');
     const m: Message = { id: ++this.sequence, role: 'agent', text, at: Date.now(), shots: [] };
     this.messages.push(m);
+    this.activity = this.now();
     this.phase = 'ready';
     this.changed();
     return m;
@@ -51,6 +64,7 @@ export class Session {
     if (this.phase === 'ended') return [];
     if (this.waiter) throw new Error('已有 wait 正在等待');
     if (signal?.aborted) throw new Error('wait aborted');
+    this.activity = this.now();
     this.phase = 'waiting';
     this.changed();
     if (this.pending.length) {
@@ -65,6 +79,7 @@ export class Session {
         if (!this.waiter) return;
         clearTimeout(this.waiter.timer);
         this.waiter = null;
+        this.activity = this.now();
         this.phase = 'ready';
         this.changed();
         reject(new Error('wait aborted'));
@@ -88,6 +103,7 @@ export class Session {
     this.waiter = null;
     clearTimeout(waiter.timer);
     this.markDelivered(messages);
+    this.activity = this.now();
     if (this.phase !== 'ended') this.phase = messages.length ? 'thinking' : 'ready';
     waiter.finish(messages);
     this.changed();

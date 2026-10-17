@@ -5,7 +5,7 @@ import { useMicrophone } from './use-microphone.ts';
 import { SettingsView } from './SettingsView.tsx';
 const bridge = window.companion;
 const phaseLabels = {
-  offline: 'Agent 尚未连接',
+  offline: 'Agent 连接待确认，消息会保留',
   ready: '轮到你了',
   waiting: '正在等你回应',
   thinking: 'Agent 正在思考…',
@@ -128,8 +128,8 @@ export function Panel() {
   const title =
     state.voice.phase !== 'idle'
       ? state.voice.text || voiceLabels[state.voice.phase]
-      : state.session?.phase === 'ended'
-        ? phaseLabels.ended
+      : state.session?.phase === 'ended' || state.session?.phase === 'offline'
+        ? phaseLabels[state.session.phase]
         : last || (state.session ? phaseLabels[state.session.phase] : phaseLabels.offline);
   const editable = state.input.phase === 'editing' && state.voice.phase === 'idle';
   return (
@@ -293,7 +293,8 @@ export function Panel() {
             }
           }}
           onFocus={() => {
-            if (!editable) prepare();
+            if (['idle', 'failed'].includes(state.input.phase) && state.voice.phase === 'idle')
+              prepare();
           }}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

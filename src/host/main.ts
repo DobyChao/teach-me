@@ -47,6 +47,8 @@ let collapsed = true,
   hover = false,
   guidesHidden = false,
   editing = false;
+let expandedHeight = 420,
+  collapsedHeight = 142;
 let guides: Guide[] = [],
   userInk: [number, number][][] = [];
 let error: string | null = null;
@@ -143,21 +145,26 @@ async function foreground() {
 function setBounds(height: number) {
   const area = target().workArea;
   const h = Math.min(Math.max(100, height), Math.max(100, area.height - 16));
-  panel.setBounds({
+  const bounds = {
     x: area.x + Math.max(0, area.width - 536),
     y: area.y + area.height - h - 8,
     width: Math.min(520, area.width),
     height: h,
-  });
+  };
+  const current = panel.getBounds();
+  if (Object.entries(bounds).some(([key, value]) => current[key as keyof typeof current] !== value))
+    panel.setBounds(bounds);
 }
 function place() {
   const d = target();
   overlay.setBounds(d.bounds);
-  setBounds(collapsed ? 142 : 420);
+  setBounds(collapsed ? collapsedHeight : expandedHeight);
 }
 function expand() {
-  collapsed = false;
-  setBounds(420);
+  if (collapsed) {
+    collapsed = false;
+    setBounds(expandedHeight);
+  }
   broadcast();
   autoCollapse();
 }
@@ -166,15 +173,22 @@ function autoCollapse() {
   if (
     !collapsed &&
     !hover &&
+    !panel.isFocused() &&
     input.state.phase === 'idle' &&
     !captureState &&
     !connection &&
     settings.autoCollapseSec > 0
   ) {
     collapseTimer = setTimeout(() => {
-      if (input.state.phase === 'idle' && !hover && !captureState && !connection) {
+      if (
+        input.state.phase === 'idle' &&
+        !hover &&
+        !panel.isFocused() &&
+        !captureState &&
+        !connection
+      ) {
         collapsed = true;
-        setBounds(142);
+        setBounds(collapsedHeight);
         broadcast();
       }
     }, settings.autoCollapseSec * 1000);
@@ -212,57 +226,58 @@ async function captureScreen(): Promise<Shot> {
       const visible = BrowserWindow.getAllWindows().filter((w) => w.isVisible());
       captureInProgress = true;
       visible.forEach((w) => w.hide());
+      let sources;
       try {
-        await wait(100);
-        const sources = await desktopCapturer.getSources({
+        await wait(35);
+        sources = await desktopCapturer.getSources({
           types: ['screen'],
           thumbnailSize: {
             width: Math.round(d.size.width * d.scaleFactor),
             height: Math.round(d.size.height * d.scaleFactor),
           },
         });
-        const source = sources.find((s) => s.display_id === String(d.id));
-        if (!source || source.thumbnail.isEmpty()) throw new Error('该屏幕无法截取，请更换屏幕');
-        const raw = source.thumbnail;
-        const rawSize = raw.getSize();
-        const ratio = Math.min(1, IMAGE_EDGE / Math.max(rawSize.width, rawSize.height));
-        const image =
-          ratio < 1
-            ? raw.resize({
-                width: Math.round(rawSize.width * ratio),
-                height: Math.round(rawSize.height * ratio),
-              })
-            : raw;
-        const size = image.getSize();
-        if (session !== capturingSession || capturingSession.phase === 'ended')
-          throw new Error('教学已变更，截图已作废');
-        const id = `s${++shotSequence}`;
-        const dir = path.join(home, 'sessions', capturingSession.id, 'shots');
-        await fs.mkdir(dir, { recursive: true });
-        const file = path.join(dir, `${id}.png`);
-        await fs.writeFile(file, image.toPNG());
-        const originalFile = path.join(dir, `${id}-original.png`);
-        await fs.writeFile(originalFile, raw.toPNG());
-        originals.set(id, originalFile);
-        const shot: Shot = {
-          id,
-          path: file,
-          width: size.width,
-          height: size.height,
-          displayId: d.id,
-          bounds: { ...d.bounds },
-          scaleFactor: d.scaleFactor,
-          at: Date.now(),
-        };
-        shots.set(id, shot);
-        return shot;
       } finally {
         captureInProgress = false;
         visible.forEach((w) => {
-          if (!w.isDestroyed() && !quitting) w.showInactive();
+          if (!w.isDestroyed() && !quitting && !w.isVisible()) w.showInactive();
         });
         htmlHost.visible(!guidesHidden);
       }
+      const source = sources.find((s) => s.display_id === String(d.id));
+      if (!source || source.thumbnail.isEmpty()) throw new Error('该屏幕无法截取，请更换屏幕');
+      const raw = source.thumbnail;
+      const rawSize = raw.getSize();
+      const ratio = Math.min(1, IMAGE_EDGE / Math.max(rawSize.width, rawSize.height));
+      const image =
+        ratio < 1
+          ? raw.resize({
+              width: Math.round(rawSize.width * ratio),
+              height: Math.round(rawSize.height * ratio),
+            })
+          : raw;
+      const size = image.getSize();
+      if (session !== capturingSession || capturingSession.phase === 'ended')
+        throw new Error('教学已变更，截图已作废');
+      const id = `s${++shotSequence}`;
+      const dir = path.join(home, 'sessions', capturingSession.id, 'shots');
+      await fs.mkdir(dir, { recursive: true });
+      const file = path.join(dir, `${id}.png`);
+      await fs.writeFile(file, image.toPNG());
+      const originalFile = path.join(dir, `${id}-original.png`);
+      await fs.writeFile(originalFile, raw.toPNG());
+      originals.set(id, originalFile);
+      const shot: Shot = {
+        id,
+        path: file,
+        width: size.width,
+        height: size.height,
+        displayId: d.id,
+        bounds: { ...d.bounds },
+        scaleFactor: d.scaleFactor,
+        at: Date.now(),
+      };
+      shots.set(id, shot);
+      return shot;
     });
   captureTail = task;
   return task;
@@ -271,9 +286,9 @@ const input = new InputController({
   remember: foreground,
   capture: () => (settings.attachScreenshot ? captureScreen() : Promise.resolve(null)),
   focus: async () => {
-    panel.setFocusable(true);
-    panel.show();
-    panel.focus();
+    if (!panel.isFocusable()) panel.setFocusable(true);
+    if (!panel.isVisible()) panel.show();
+    if (!panel.isFocused()) panel.focus();
   },
   restore: async (handle) => {
     panel.setFocusable(false);
@@ -428,7 +443,7 @@ async function action(a: Action) {
     }
     case 'toggle-expanded':
       collapsed = !collapsed;
-      setBounds(collapsed ? 142 : 420);
+      setBounds(collapsed ? collapsedHeight : expandedHeight);
       autoCollapse();
       break;
     case 'hover':
@@ -436,7 +451,9 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'resize':
-      setBounds(collapsed ? Math.min(280, a.height) : Math.max(240, Math.min(560, a.height)));
+      if (collapsed) collapsedHeight = Math.min(280, a.height);
+      else expandedHeight = Math.max(240, Math.min(560, a.height));
+      setBounds(collapsed ? collapsedHeight : expandedHeight);
       break;
     case 'toggle-guides':
       guidesHidden = !guidesHidden;
@@ -854,6 +871,7 @@ app
     await startServer();
     let checking = false;
     fgTimer = setInterval(() => {
+      session?.refreshConnection();
       if (!checking) {
         checking = true;
         foreground()

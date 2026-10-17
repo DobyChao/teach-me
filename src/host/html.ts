@@ -84,8 +84,8 @@ export class HtmlHost {
   }
   visible(show: boolean) {
     if (this.window && !this.window.isDestroyed()) {
-      if (show) this.window.showInactive();
-      else this.window.hide();
+      if (show && !this.window.isVisible()) this.window.showInactive();
+      else if (!show && this.window.isVisible()) this.window.hide();
     }
   }
   clear() {

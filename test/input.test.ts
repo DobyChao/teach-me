@@ -104,3 +104,34 @@ test('submitting while preparation is pending is rejected', async () => {
   d.resolve(shot);
   await pending;
 });
+
+test('overlapping hotkey and pointer preparation share capture, turn and focus', async () => {
+  const d = deferred<Shot>();
+  const { input, events } = setup(() => d.promise);
+  const first = input.prepare(false);
+  const second = input.prepare();
+  const third = input.prepare();
+  d.resolve(shot);
+  const ids = await Promise.all([first, second, third]);
+  assert.equal(new Set(ids).size, 1);
+  assert.deepEqual(events, ['remember', 'capture', 'focus']);
+  assert.equal(await input.prepare(), ids[0]);
+  assert.deepEqual(events, ['remember', 'capture', 'focus', 'focus']);
+});
+
+test('canceled preparation cannot clear the next in-flight preparation', async () => {
+  const old = deferred<Shot>();
+  const next = deferred<Shot>();
+  let calls = 0;
+  const { input } = setup(() => (++calls === 1 ? old.promise : next.promise));
+  const first = input.prepare();
+  await new Promise((r) => setImmediate(r));
+  await input.cancel();
+  const second = input.prepare();
+  old.resolve(shot);
+  await assert.rejects(first, /取消/);
+  const joined = input.prepare();
+  next.resolve(shot);
+  assert.equal(await second, await joined);
+  assert.equal(calls, 2);
+});

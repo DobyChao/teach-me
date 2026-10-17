@@ -223,6 +223,32 @@
       "evidence": [
         "docs/rebuild/evidence/T09.md"
       ]
+    },
+    {
+      "id": "T10",
+      "title": "修复输入重复准备、窗口闪烁及失联状态",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R06",
+        "R15"
+      ],
+      "acceptance": [
+        "A15"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/smoke.mjs",
+        "Windows 真实快捷键/鼠标与远控观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T10.md"
+      ],
+      "notes": "代码与合成截图回归完成，真实截图/焦点与远控闪烁观察仍待验证。"
     }
   ]
 }

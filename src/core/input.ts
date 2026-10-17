@@ -15,12 +15,32 @@ export class InputController {
   private shot: Shot | null = null;
   private original: string | null = null;
   private ports: Ports;
+  private preparation: Promise<string> | null = null;
+  private focusRequested = false;
   constructor(ports: Ports) {
     this.ports = ports;
   }
-  async prepare(focus = true) {
-    if (this.state.phase === 'editing') return this.state.turnId!;
-    if (['preparing', 'submitting'].includes(this.state.phase)) throw new Error('输入仍在处理中');
+  async prepare(focus = true): Promise<string> {
+    if (this.state.phase === 'editing') {
+      const id = this.state.turnId!;
+      if (focus) await this.ports.focus();
+      return id;
+    }
+    if (this.state.phase === 'preparing' && this.preparation) {
+      this.focusRequested ||= focus;
+      return this.preparation;
+    }
+    if (this.state.phase === 'submitting') throw new Error('输入仍在处理中');
+    this.focusRequested = focus;
+    const preparation = this.begin();
+    this.preparation = preparation;
+    try {
+      return await preparation;
+    } finally {
+      if (this.preparation === preparation) this.preparation = null;
+    }
+  }
+  private async begin(): Promise<string> {
     const gen = ++this.generation;
     const id = randomUUID();
     this.state = { phase: 'preparing', turnId: id, error: null };
@@ -33,7 +53,7 @@ export class InputController {
       const shot = await this.ports.capture();
       if (gen !== this.generation) throw new Error('输入已取消');
       this.shot = shot;
-      if (focus) await this.ports.focus();
+      if (this.focusRequested) await this.ports.focus();
       if (gen !== this.generation) throw new Error('输入已取消');
       this.state = { phase: 'editing', turnId: id, error: null };
       this.ports.changed();

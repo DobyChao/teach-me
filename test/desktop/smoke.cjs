@@ -137,6 +137,66 @@ async function run() {
   await pause(100);
   assert.equal(await js('document.querySelector("textarea").value'), '');
   checks.push('real textarea input + Enter sends and clears only after delivery');
+  // Synthetic capture only: getSources never reads the user's desktop.
+  const { desktopCapturer, nativeImage } = require('electron');
+  const originalSources = desktopCapturer.getSources;
+  const originalWrite = fs.writeFile;
+  let captures = 0;
+  let writesVisible = 0;
+  desktopCapturer.getSources = async () => {
+    captures++;
+    assert.equal(panel.isVisible(), false);
+    await pause(80);
+    return [
+      {
+        display_id: String(require('electron').screen.getPrimaryDisplay().id),
+        thumbnail: nativeImage.createFromBitmap(Buffer.alloc(4 * 4 * 4, 255), {
+          width: 4,
+          height: 4,
+        }),
+      },
+    ];
+  };
+  fs.writeFile = async (file, ...args) => {
+    if (String(file).includes(`${path.sep}shots${path.sep}`)) {
+      assert.equal(panel.isVisible(), true, 'restore before PNG disk writes');
+      writesVisible++;
+      await pause(80);
+    }
+    return originalWrite(file, ...args);
+  };
+  try {
+    await perform({ type: 'settings', settings: { ...initial.settings, attachScreenshot: true } });
+    const preparedTurns = await js(
+      `Promise.all(Array.from({length:3},()=>window.companion.perform({type:'prepare'})))`,
+    );
+    assert.equal(new Set(preparedTurns.map((s) => s.input.turnId)).size, 1);
+    assert.equal(captures, 1);
+    assert.equal(writesVisible, 2);
+    await pause(100);
+    const bounds = panel.getBounds();
+    await perform({ type: 'prepare' });
+    await pause(100);
+    assert.equal(captures, 1, 'editing does not recapture');
+    assert.equal(await js('document.activeElement===document.querySelector("textarea")'), true);
+    assert.equal(panel.getBounds().height, bounds.height);
+    checks.push(
+      'concurrent prepare shares synthetic capture and restores windows before slow writes',
+    );
+    checks.push('editing refocus keeps stable panel height without recapture');
+    await perform({ type: 'cancel' });
+    desktopCapturer.getSources = async () => {
+      throw new Error('合成截图失败');
+    };
+    await assert.rejects(perform({ type: 'prepare' }), /合成截图失败/);
+    assert.equal(panel.isVisible(), true);
+    checks.push('failed capture restores panel visibility');
+    await perform({ type: 'cancel' });
+  } finally {
+    desktopCapturer.getSources = originalSources;
+    fs.writeFile = originalWrite;
+    await perform({ type: 'settings', settings: initial.settings });
+  }
   panel.webContents.setZoomFactor(520 / 460);
   await pause(150);
   assert.equal(
