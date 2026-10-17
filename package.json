@@ -1,0 +1,41 @@
+{
+  "name": "teach-me-agent",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/host/main.cjs",
+  "bin": {
+    "teach-me-agent": "bin/teach-me.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && node scripts/build-host.mjs",
+    "app": "npm run build && node scripts/launch.mjs",
+    "test": "node --test test/*.test.cjs test/*.test.ts",
+    "plan": "node scripts/check-plan.cjs",
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "format": "prettier --write src bin scripts test package.json tsconfig.json vite.config.ts",
+    "format:check": "prettier --check src bin scripts test package.json tsconfig.json vite.config.ts",
+    "boundaries": "node scripts/check-boundaries.mjs",
+    "check": "npm run plan && npm run boundaries && npm run format:check && npm test && npm run build"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.7.2",
+    "esbuild": "^0.28.2",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}

@@ -1,14 +1,206 @@
 {
   "version": 1,
   "tasks": [
-    {"id":"T00","title":"空分支内建立规划与约束","milestone":"M0","status":"done","dependsOn":[],"requirements":["R01","R10"],"acceptance":["A01"],"verify":["npm run plan"],"evidence":["docs/rebuild/evidence/T00.md"]},
-    {"id":"T01","title":"类型协议、领域控制器与工程构建","milestone":"M1","status":"in_progress","dependsOn":["T00"],"requirements":["R02","R05","R06","R08","R10"],"acceptance":["A02"],"verify":["npm test","npm run build"],"evidence":[]},
-    {"id":"T02","title":"React 面板与浏览器布局验收","milestone":"M1","status":"todo","dependsOn":["T01"],"requirements":["R02","R10"],"acceptance":["A03"],"verify":["组件交互、520/460 宽布局验收"],"evidence":[]},
-    {"id":"T03","title":"Electron 截图与焦点真实输入闭环","milestone":"M2","status":"todo","dependsOn":["T02"],"requirements":["R03","R04"],"acceptance":["A04","A05"],"verify":["输入控制器测试；Windows 真机时序"],"evidence":[]},
-    {"id":"T04","title":"CLI、Agent 会话教学闭环","milestone":"M3","status":"todo","dependsOn":["T03"],"requirements":["R01","R05","R06"],"acceptance":["A06"],"verify":["CLI/Electron smoke；真实 Agent 教学"],"evidence":[]},
-    {"id":"T05","title":"完整指引、画板、审批与 HTML 安全","milestone":"M4","status":"todo","dependsOn":["T04"],"requirements":["R07","R08","R09","R13"],"acceptance":["A07","A08","A12"],"verify":["场景/审批/HTML 集成；穿透与资源限制真机实验"],"evidence":[]},
-    {"id":"T06","title":"语音、完整设置与三步引导","milestone":"M4","status":"todo","dependsOn":["T05"],"requirements":["R03","R04","R12"],"acceptance":["A09","A10"],"verify":["语音异步/热键测试；Windows 麦克风验收"],"evidence":[]},
-    {"id":"T07","title":"多屏、缩放与断屏故障恢复","milestone":"M5","status":"todo","dependsOn":["T06"],"requirements":["R11"],"acceptance":["A11"],"verify":["坐标测试；Windows 多屏矩阵"],"evidence":[]},
-    {"id":"T08","title":"打包、回归与交付","milestone":"M5","status":"todo","dependsOn":["T07"],"requirements":["R01","R13"],"acceptance":["A13"],"verify":["npm ci；CI；安装包验收"],"evidence":[]}
+    {
+      "id": "T00",
+      "title": "空分支内建立规划与约束",
+      "milestone": "M0",
+      "status": "done",
+      "dependsOn": [],
+      "requirements": [
+        "R01",
+        "R10"
+      ],
+      "acceptance": [
+        "A01"
+      ],
+      "verify": [
+        "npm run plan"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T00.md"
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "类型协议、领域控制器与工程构建",
+      "milestone": "M1",
+      "status": "done",
+      "dependsOn": [
+        "T00"
+      ],
+      "requirements": [
+        "R02",
+        "R05",
+        "R06",
+        "R08",
+        "R10"
+      ],
+      "acceptance": [
+        "A02"
+      ],
+      "verify": [
+        "npm test",
+        "npm run build"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T01.md"
+      ]
+    },
+    {
+      "id": "T02",
+      "title": "React 面板与浏览器布局验收",
+      "milestone": "M1",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R02",
+        "R10"
+      ],
+      "acceptance": [
+        "A03"
+      ],
+      "verify": [
+        "组件交互、520/460 宽布局验收"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/DESKTOP-001.md"
+      ],
+      "notes": "真实 DOM、输入/选择区、520/460 基础布局通过；密集工具、长消息与全部状态视觉仍待验收。"
+    },
+    {
+      "id": "T03",
+      "title": "Electron 截图与焦点真实输入闭环",
+      "milestone": "M2",
+      "status": "todo",
+      "dependsOn": [
+        "T02"
+      ],
+      "requirements": [
+        "R03",
+        "R04"
+      ],
+      "acceptance": [
+        "A04",
+        "A05"
+      ],
+      "verify": [
+        "输入控制器测试；Windows 真机时序"
+      ],
+      "evidence": [],
+      "notes": "已有部分实现；状态表示整项验收尚未完成，不能据此宣称能力已交付。"
+    },
+    {
+      "id": "T04",
+      "title": "CLI、Agent 会话教学闭环",
+      "milestone": "M3",
+      "status": "todo",
+      "dependsOn": [
+        "T03"
+      ],
+      "requirements": [
+        "R01",
+        "R05",
+        "R06"
+      ],
+      "acceptance": [
+        "A06"
+      ],
+      "verify": [
+        "CLI/Electron smoke；真实 Agent 教学"
+      ],
+      "evidence": [],
+      "notes": "已有部分实现；状态表示整项验收尚未完成，不能据此宣称能力已交付。"
+    },
+    {
+      "id": "T05",
+      "title": "完整指引、画板、审批与 HTML 安全",
+      "milestone": "M4",
+      "status": "todo",
+      "dependsOn": [
+        "T04"
+      ],
+      "requirements": [
+        "R07",
+        "R08",
+        "R09",
+        "R13"
+      ],
+      "acceptance": [
+        "A07",
+        "A08",
+        "A12"
+      ],
+      "verify": [
+        "场景/审批/HTML 集成；穿透与资源限制真机实验"
+      ],
+      "evidence": [],
+      "notes": "已有部分实现；状态表示整项验收尚未完成，不能据此宣称能力已交付。"
+    },
+    {
+      "id": "T06",
+      "title": "语音、完整设置与三步引导",
+      "milestone": "M4",
+      "status": "todo",
+      "dependsOn": [
+        "T05"
+      ],
+      "requirements": [
+        "R03",
+        "R04",
+        "R12"
+      ],
+      "acceptance": [
+        "A09",
+        "A10"
+      ],
+      "verify": [
+        "语音异步/热键测试；Windows 麦克风验收"
+      ],
+      "evidence": [],
+      "notes": "已有部分实现；状态表示整项验收尚未完成，不能据此宣称能力已交付。"
+    },
+    {
+      "id": "T07",
+      "title": "多屏、缩放与断屏故障恢复",
+      "milestone": "M5",
+      "status": "todo",
+      "dependsOn": [
+        "T06"
+      ],
+      "requirements": [
+        "R11"
+      ],
+      "acceptance": [
+        "A11"
+      ],
+      "verify": [
+        "坐标测试；Windows 多屏矩阵"
+      ],
+      "evidence": [],
+      "notes": "已有部分实现；状态表示整项验收尚未完成，不能据此宣称能力已交付。"
+    },
+    {
+      "id": "T08",
+      "title": "打包、回归与交付",
+      "milestone": "M5",
+      "status": "todo",
+      "dependsOn": [
+        "T07"
+      ],
+      "requirements": [
+        "R01",
+        "R13"
+      ],
+      "acceptance": [
+        "A13"
+      ],
+      "verify": [
+        "npm ci；CI；安装包验收"
+      ],
+      "evidence": []
+    }
   ]
 }
