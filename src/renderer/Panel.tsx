@@ -3,6 +3,7 @@ import { canContinue, hasBoard, hasGuides } from '../shared/protocol.ts';
 import { useHost } from './use-host.ts';
 import { useMicrophone } from './use-microphone.ts';
 import { SettingsView } from './SettingsView.tsx';
+import { PanelIcon } from './PanelIcon.tsx';
 const bridge = window.companion;
 const phaseLabels = {
   offline: 'Agent 连接待确认，消息会保留',
@@ -18,6 +19,7 @@ export function Panel() {
   const [draft, setDraft] = useState('');
   const [attach, setAttach] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -28,6 +30,20 @@ export function Panel() {
     held: false,
   });
   const spoken = useRef<number | null>(null);
+  const dragging = useRef<{
+    pointer: number;
+    id: string;
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+  } | null>(null);
+  const endDrag = () => {
+    const drag = dragging.current;
+    if (!drag) return;
+    dragging.current = null;
+    act({ type: 'panel-drag', phase: 'end', dragId: drag.id, dx: drag.dx, dy: drag.dy });
+  };
   useEffect(() => {
     const last = state?.messages.findLast((m) => m.role === 'agent');
     if (!last || last.id === spoken.current) return;
@@ -48,7 +64,10 @@ export function Panel() {
     if (!input) return;
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-  }, [draft]);
+  }, [draft, state?.collapsed]);
+  useEffect(() => {
+    if (!state?.collapsed) setShowTools(false);
+  }, [state?.collapsed]);
   useEffect(() => {
     if (state?.input.phase === 'editing' && state.voice.phase === 'idle') inputRef.current?.focus();
   }, [state?.input.phase, state?.input.turnId, state?.voice.phase]);
@@ -62,7 +81,11 @@ export function Panel() {
     const report = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() =>
-        act({ type: 'resize', height: Math.ceil(el.getBoundingClientRect().height) + 2 }),
+        act({
+          type: 'resize',
+          height: Math.ceil(el.getBoundingClientRect().height) + 2,
+          collapsed: el.classList.contains('collapsed'),
+        }),
       );
     };
     const observer = new ResizeObserver(report);
@@ -105,6 +128,14 @@ export function Panel() {
       setSending(false);
     }
   };
+  const openSettings = async () => {
+    try {
+      if (state?.collapsed) await perform({ type: 'toggle-expanded' });
+      await perform({ type: 'settings-focus', on: !showSettings });
+      setShowSettings(!showSettings);
+      setShowTools(false);
+    } catch {}
+  };
   if (!bridge)
     return (
       <div className="browser-notice">
@@ -139,32 +170,64 @@ export function Panel() {
       onMouseEnter={() => act({ type: 'hover', on: true })}
       onMouseLeave={() => act({ type: 'hover', on: false })}
     >
-      <header className="header">
+      <header
+        className="header"
+        title="拖动此处移动面板"
+        onPointerDown={(e) => {
+          if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
+          e.preventDefault();
+          const id = crypto.randomUUID();
+          dragging.current = { pointer: e.pointerId, id, x: e.screenX, y: e.screenY, dx: 0, dy: 0 };
+          e.currentTarget.setPointerCapture(e.pointerId);
+          act({ type: 'panel-drag', phase: 'start', dragId: id, dx: 0, dy: 0 });
+        }}
+        onPointerMove={(e) => {
+          const drag = dragging.current;
+          if (!drag || drag.pointer !== e.pointerId) return;
+          drag.dx = e.screenX - drag.x;
+          drag.dy = e.screenY - drag.y;
+          act({ type: 'panel-drag', phase: 'move', dragId: drag.id, dx: drag.dx, dy: drag.dy });
+        }}
+        onPointerUp={(e) => {
+          const drag = dragging.current;
+          if (!drag || drag.pointer !== e.pointerId) return;
+          drag.dx = e.screenX - drag.x;
+          drag.dy = e.screenY - drag.y;
+          endDrag();
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }}
+        onLostPointerCapture={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <span className="drag-grip" aria-hidden="true">
+          ⠿
+        </span>
         <span
           className={`dot ${state.session?.phase || 'offline'}`}
           title={state.session ? phaseLabels[state.session.phase] : phaseLabels.offline}
         />
         <p title={title}>{title}</p>
         {!state.collapsed && (
-          <button
-            className="icon"
-            title="设置"
-            aria-label="设置"
-            onClick={() => {
-              act({ type: 'settings-focus', on: !showSettings });
-              setShowSettings(!showSettings);
-            }}
-          >
+          <button className="icon" title="设置" aria-label="设置" onClick={openSettings}>
             ⚙
           </button>
         )}
+        <button
+          className="icon expand-toggle"
+          aria-label={state.collapsed ? '展开对话' : '收起对话'}
+          title={state.collapsed ? '展开对话' : '收起对话'}
+          aria-expanded={!state.collapsed}
+          onClick={() => act({ type: 'toggle-expanded' })}
+        >
+          <PanelIcon name={state.collapsed ? 'expand' : 'collapse'} />
+        </button>
         <button
           className="icon"
           title={active ? '结束教学' : '关闭应用'}
           aria-label={active ? '结束教学' : '关闭应用'}
           onClick={() => act({ type: active ? 'end' : 'quit' })}
         >
-          ×
+          <PanelIcon name="close" />
         </button>
       </header>
       <div hidden={state.collapsed}>
@@ -284,8 +347,11 @@ export function Panel() {
           placeholder={
             state.input.phase === 'preparing'
               ? '正在准备画面…'
-              : '说一句…  Enter 发送，Shift+Enter 换行'
+              : state.collapsed
+                ? '问一句…'
+                : '说一句…  Enter 发送，Shift+Enter 换行'
           }
+          title="Enter 发送，Shift+Enter 换行"
           onPointerDown={(e) => {
             if (!editable) {
               e.preventDefault();
@@ -312,6 +378,7 @@ export function Panel() {
         <div className="tools">
           <button
             type="button"
+            className="tool-icon"
             title="按住说话，点一下打字（Ctrl+Alt+W）"
             aria-label="按住说话，点一下打字"
             disabled={!active || !!draft.trim() || !['idle', 'editing'].includes(state.input.phase)}
@@ -348,16 +415,45 @@ export function Panel() {
               }
             }}
           >
-            {state.voice.phase === 'recording' ? '在听…' : '麦克风'}
+            <PanelIcon name="mic" />
+            <span className="tool-label">
+              {state.voice.phase === 'recording' ? '在听…' : '麦克风'}
+            </span>
           </button>
           <button
             type="button"
+            className="tool-icon"
+            aria-label="画板"
             aria-pressed={state.editing}
             title="打开你的画板：图形、文字、自由画、橡皮与撤销"
             onClick={() => act({ type: 'edit', on: !state.editing })}
           >
-            {state.editing ? '正在画' : '画板'}
+            <PanelIcon name="board" />
+            <span className="tool-label">{state.editing ? '正在画' : '画板'}</span>
           </button>
+          {state.collapsed && (
+            <button
+              type="button"
+              className="tool-icon"
+              aria-label="更多工具"
+              title="附件、清理与设置"
+              aria-expanded={showTools}
+              onClick={() => setShowTools(!showTools)}
+            >
+              <PanelIcon name="more" />
+            </button>
+          )}
+          <button
+            className="send"
+            type="submit"
+            disabled={!editable || !draft.trim() || sending}
+            title="发送（Enter）"
+            aria-label="发送"
+          >
+            <PanelIcon name="send" />
+          </button>
+        </div>
+        <div className="aux-tools" hidden={state.collapsed && !showTools}>
           <label className="attach">
             <input
               type="checkbox"
@@ -386,23 +482,11 @@ export function Panel() {
               {state.guidesHidden ? '显示指引' : '隐藏指引'}
             </button>
           )}
-          <span className="spacer" />
-          <button
-            type="button"
-            aria-expanded={!state.collapsed}
-            onClick={() => act({ type: 'toggle-expanded' })}
-          >
-            {state.collapsed ? '展开' : '收起'}
-          </button>
-          <button
-            className="send"
-            type="submit"
-            disabled={!editable || !draft.trim() || sending}
-            title="发送（Enter）"
-            aria-label="发送"
-          >
-            ↑
-          </button>
+          {state.collapsed && (
+            <button type="button" onClick={openSettings}>
+              设置
+            </button>
+          )}
         </div>
       </form>
     </section>

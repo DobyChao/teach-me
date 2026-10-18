@@ -64,6 +64,16 @@ ADR-008 仍在每次输入切换 Electron setFocusable，Windows 会连带删除
 
 依据：[MIT 许可](https://github.com/excalidraw/excalidraw/blob/master/LICENSE)、[官方集成方式](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/integration)、[官方导出 API](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/utils/export)、[tldraw 许可](https://tldraw.dev/community/license)。
 
+## ADR-012 · 接受 · 2026-10-18 · 可移动 mini 输入面
+
+收起宽 360 DIP、空态约 76 DIP，展开宽 520 DIP；多行输入自动增高，始终复用同一 textarea。状态栏保留拖动把手与展开入口，语音/画板/发送使用图标，附件/清理/设置收进可增高的“更多”，不使用会被原生窗口裁掉的悬空菜单。
+
+Windows 实验中 CSS 原生拖动区域存在但窗口未随鼠标移动，因此标题区用 Pointer Capture 接收手势。Renderer 只通过固定 panel-drag 白名单发送手势 id 与屏幕 DIP 位移；主进程校验范围、绑定原窗口起点、忽略结束后的晚回调，按钮和输入区不启动拖动。不发送窗口句柄，不改变现有 NOACTIVATE/截图/任务栏策略。位移随事件采样，避免 IPC 延迟导致主进程事后读取鼠标位置而丢失起点。ResizeObserver 带收起状态，过时尺寸报告不跨模式应用。
+
+宿主在本地 panel-position.json 保存屏幕 id 和右下锚点，独立于教学屏幕；展开/收起向左上增长，不能容纳时限制在工作区。显示器移除或布局变化时回退到可用屏幕并夹紧；负坐标/小工作区由纯几何测试覆盖，多屏不同缩放的实际拖动仍须真机另验。配置和截图均不进 Git。
+
+参考：[Electron 官方拖动区域说明](https://www.electronjs.org/docs/latest/tutorial/custom-window-interactions)。CSS 区域通过不替代 Windows 实际拖动通过。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

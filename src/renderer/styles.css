@@ -105,6 +105,21 @@ input[type='checkbox'] {
   gap: 8px;
   padding: 9px 10px;
   flex: none;
+  -webkit-app-region: no-drag;
+  user-select: none;
+  touch-action: none;
+  cursor: move;
+}
+.header button,
+.header button *,
+.composer {
+  -webkit-app-region: no-drag;
+}
+.drag-grip {
+  flex: none;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
 }
 .header p {
   flex: 1;
@@ -145,6 +160,9 @@ input[type='checkbox'] {
   line-height: 20px;
   padding: 0;
   color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .thread {
   display: flex;
@@ -232,21 +250,24 @@ input[type='checkbox'] {
   color: var(--muted);
   font-size: 13px;
 }
-.tools {
+.tools,
+.aux-tools {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 2px;
   margin-top: 5px;
 }
-.tools button {
+.tools button,
+.aux-tools button {
   padding: 4px 6px;
   border: 0;
   background: transparent;
   color: var(--muted);
   font-size: 12px;
 }
-.tools button:hover:not(:disabled) {
+.tools button:hover:not(:disabled),
+.aux-tools button:hover:not(:disabled) {
   background: var(--surface-2);
   color: var(--text);
 }
@@ -273,6 +294,70 @@ input[type='checkbox'] {
   color: white;
   font-size: 22px;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+.tools .tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+}
+.collapsed .header {
+  padding: 3px 6px 0;
+  gap: 6px;
+}
+.collapsed .header p {
+  font-size: 11px;
+}
+.collapsed .header .icon {
+  width: 21px;
+  height: 21px;
+}
+.collapsed .composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 4px;
+  margin: 2px 6px 6px;
+  padding: 4px 4px 4px 8px;
+  border-color: transparent;
+  border-radius: 10px;
+}
+.collapsed .composer:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.collapsed .composer textarea {
+  font-size: 13px;
+  min-height: 25px;
+}
+.collapsed .tools {
+  flex-wrap: nowrap;
+  margin: 0;
+  gap: 1px;
+}
+.collapsed .tool-label {
+  display: none;
+}
+.collapsed .tools .tool-icon {
+  width: 26px;
+  min-width: 26px;
+  padding: 0;
+}
+.collapsed .tools .send {
+  width: 28px;
+  height: 28px;
+  margin-left: 2px;
+}
+.collapsed .aux-tools {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
 }
 .tools .send:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 85%, white);

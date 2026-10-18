@@ -30,6 +30,8 @@ Agent 从命令行启动教学：`node bin/teach-me.mjs start --topic '学习使
 
 UI 不包含浏览器模拟后端，必须由 Electron 加载；`npm run dev` 只用于前端开发，不能代替真实桌面运行。
 
+输入面板默认采用约 360 × 76 DIP 的 mini 布局；拖动上方状态栏可移动，重启记住位置。右上角箭头展开完整对话，输入与草稿保持同一份；“更多”中提供附画板、清理和设置。
+
 用户画板复用 [Excalidraw](https://github.com/excalidraw/excalidraw)（MIT，见 [第三方声明](THIRD-PARTY-NOTICES.md)）。在面板点击“画板”打开编辑工具，无需先连接 Agent。右上角“完成画板”恢复点击穿透；再次打开可继续编辑。首次连接 Agent 会保留已画内容，勾选“附画板”随消息发送透明图片。用户清除与 Agent 清除独立；画板内容仅在本次应用运行内存中保留。
 
 当前实现与未验证能力详见接续记录。本分支尚未完成全部 v1 功能。

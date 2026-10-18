@@ -379,6 +379,34 @@
         "docs/rebuild/evidence/T15.md"
       ],
       "notes": "基础工具、附件与分层集成通过；真实鼠标矩形及布局已观察，原生键盘焦点等完整验收继续记录。"
+    },
+    {
+      "id": "T16",
+      "title": "mini 输入面与面板位置记忆",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R02",
+        "R10",
+        "R21"
+      ],
+      "acceptance": [
+        "A21"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/mini-panel.mjs",
+        "node scripts/smoke.mjs",
+        "node scripts/board-smoke.mjs",
+        "Windows 标题拖动/输入区选择/布局与重启观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T16.md"
+      ],
+      "notes": "360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。"
     }
   ]
 }

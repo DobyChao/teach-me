@@ -24,6 +24,7 @@
 | A18 | 旧远端 master SHA 在独立备份分支可取回；本地当前 master 与远端 master SHA 一致；只在旧 SHA 未变时替换远端 | git fetch/ls-remote/ref 检查、先推备份再 force-with-lease |
 | A19 | 真实启动器重复启动保留原 PID；静置保持在线；外部终止即使没有 host quit 也记录非零退出码；正常退出记录 0；异常日志不含正文/凭据；远控可见实例现场有浮窗，原生 TOPMOST 位存在。用户最初自行退出原因须独立确认 | launch-smoke + 日志隐私测试 + Windows 原生样式与现场观察；未复现退出不得标 done |
 | A20 | 用户画板使用本地 Excalidraw；矩形/箭头/椭圆/笔/文字、颜色/粗细、橡皮、撤销重做有效；完成/重开保留内容，清用户不清 Agent，旧 epoch 不复活；发送透明 PNG 不带工具栏，DPR 与 Agent 层坐标正确；远程字体/嵌入不加载 | board-smoke 实际 React/IPC/Canvas/消息队列 + Windows 鼠标/布局；原生键盘、图片导入与跨屏矩阵另记录 |
+| A21 | mini 宽 360 DIP、空态高不超过 90 DIP；更多操作无裁切；多行/展开/收起保持同一输入及选区；标题可拖、按钮和输入区不拖；拖动不换 HWND，位置重启恢复；过时拖动/尺寸回调失效；边缘可见，跨屏缩放另验 | mini-panel Electron/纯几何测试 + Windows 实际鼠标与布局观察 |
 
 ## 证据格式
 

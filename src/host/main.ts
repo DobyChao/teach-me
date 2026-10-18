@@ -27,6 +27,7 @@ import { pruneSessions } from './storage.ts';
 import { IMAGE_EDGE } from '../shared/limits.ts';
 import { setWindowInput } from './window-policy.ts';
 import { failureMetadata, writeRuntimeEvent } from './runtime-log.ts';
+import { panelBounds } from '../core/panel-layout.ts';
 
 app.setName('Teach me, Agent');
 app.commandLine.appendSwitch('enable-features', 'AllowWindowCaptureExclusionInRemoteSessions');
@@ -59,7 +60,16 @@ let collapsed = true,
   guidesHidden = false,
   editing = false;
 let expandedHeight = 420,
-  collapsedHeight = 142;
+  collapsedHeight = 76;
+const panelPositionSchema = z.object({
+  version: z.literal(1),
+  displayId: z.number().int(),
+  right: z.number().finite(),
+  bottom: z.number().finite(),
+});
+let panelPosition: z.infer<typeof panelPositionSchema> | null = null;
+let movingPanel = false;
+let pointerDrag: { id: string; bounds: { x: number; y: number } } | null = null;
 let guides: Guide[] = [];
 let userBoard = { epoch: 0, count: 0 };
 function clearUserBoard() {
@@ -166,22 +176,41 @@ async function foreground() {
   return lastExternal;
 }
 function setBounds(height: number) {
-  const area = target().workArea;
-  const h = Math.min(Math.max(100, height), Math.max(100, area.height - 16));
-  const bounds = {
-    x: area.x + Math.max(0, area.width - 536),
-    y: area.y + area.height - h - 8,
-    width: Math.min(520, area.width),
-    height: h,
-  };
+  if (movingPanel) return;
+  const display =
+    screen.getAllDisplays().find((d) => d.id === panelPosition?.displayId) || target();
+  const bounds = panelBounds(height, collapsed, display.workArea, panelPosition);
   const current = panel.getBounds();
-  if (Object.entries(bounds).some(([key, value]) => current[key as keyof typeof current] !== value))
+  if (
+    Object.entries(bounds).some(
+      ([key, value]) => Math.abs(current[key as keyof typeof current] - value) > 1,
+    )
+  )
     panel.setBounds(bounds);
 }
 function place() {
   const d = target();
   overlay.setBounds(d.bounds);
   setBounds(collapsed ? collapsedHeight : expandedHeight);
+}
+function finishPanelMove() {
+  movingPanel = false;
+  const bounds = panel.getBounds();
+  const display = screen.getDisplayMatching(bounds);
+  panelPosition = {
+    version: 1,
+    displayId: display.id,
+    right: bounds.x + bounds.width,
+    bottom: bounds.y + bounds.height,
+  };
+  setBounds(collapsed ? collapsedHeight : expandedHeight);
+  const clamped = panel.getBounds();
+  panelPosition.right = clamped.x + clamped.width;
+  panelPosition.bottom = clamped.y + clamped.height;
+  fs.writeFile(path.join(home, 'panel-position.json'), JSON.stringify(panelPosition)).catch((e) =>
+    runtimeEvent('panel-position-save-failed', failureMetadata(e)),
+  );
+  autoCollapse();
 }
 function expand() {
   if (collapsed) {
@@ -195,6 +224,7 @@ function autoCollapse() {
   if (collapseTimer) clearTimeout(collapseTimer);
   if (
     !collapsed &&
+    !movingPanel &&
     !hover &&
     !panel.isFocused() &&
     input.state.phase === 'idle' &&
@@ -205,6 +235,7 @@ function autoCollapse() {
     collapseTimer = setTimeout(() => {
       if (
         input.state.phase === 'idle' &&
+        !movingPanel &&
         !hover &&
         !panel.isFocused() &&
         !captureState &&
@@ -497,10 +528,28 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'resize':
-      if (collapsed) collapsedHeight = Math.min(280, a.height);
+      if (a.collapsed !== collapsed) break;
+      if (collapsed) collapsedHeight = Math.min(560, a.height);
       else expandedHeight = Math.max(240, Math.min(560, a.height));
       setBounds(collapsed ? collapsedHeight : expandedHeight);
       break;
+    case 'panel-drag': {
+      if (a.phase === 'start') {
+        pointerDrag = { id: a.dragId, bounds: panel.getBounds() };
+        movingPanel = true;
+        if (collapseTimer) clearTimeout(collapseTimer);
+      } else if (pointerDrag?.id === a.dragId) {
+        panel.setPosition(
+          Math.round(pointerDrag.bounds.x + a.dx),
+          Math.round(pointerDrag.bounds.y + a.dy),
+        );
+        if (a.phase === 'end') {
+          pointerDrag = null;
+          finishPanelMove();
+        }
+      }
+      break;
+    }
     case 'toggle-guides':
       guidesHidden = !guidesHidden;
       break;
@@ -866,6 +915,13 @@ app
     runtimeEvent('startup');
     await pruneSessions(home, 7);
     await readSettings();
+    try {
+      panelPosition = panelPositionSchema.parse(
+        JSON.parse(await fs.readFile(path.join(home, 'panel-position.json'), 'utf8')),
+      );
+    } catch {
+      panelPosition = null;
+    }
     const preferences = {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -874,8 +930,8 @@ app
     };
     panel = new BrowserWindow({
       title: 'Teach me, Agent',
-      width: 520,
-      height: 142,
+      width: 360,
+      height: 76,
       show: false,
       frame: false,
       transparent: true,
