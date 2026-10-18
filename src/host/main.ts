@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  clipboard,
   desktopCapturer,
   globalShortcut,
   ipcMain,
@@ -527,11 +528,20 @@ async function action(a: Action) {
   switch (a.type) {
     case 'prepare':
       error = null;
+      if (!session || session.phase === 'ended') {
+        expand();
+        break;
+      }
       changePanel('input');
       broadcast();
       if (voice.state.phase !== 'idle') throw new Error('请先完成或撤回语音输入');
       requireSession();
       await input.prepare();
+      break;
+    case 'copy-connect':
+      clipboard.writeText(
+        `请连接本机 Teach me, Agent，开始一次教学。\n请运行：node "${path.join(app.getAppPath(), 'bin', 'teach-me.mjs')}" start\n连接后用 wait 等待我的提问，用 say 回复。`,
+      );
       break;
     case 'submit':
       await input.submit(a.turnId, a.text, a.attachBoard);

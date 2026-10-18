@@ -436,6 +436,36 @@
         "docs/rebuild/evidence/T17.md"
       ],
       "notes": "三档布局、草稿/审批保护和同窗口动画已实现；麦克风、多屏与完整原生输入另验。"
+    },
+    {
+      "id": "T18",
+      "title": "实际试用并修复连接入口、阅读跳动与长草稿布局",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R02",
+        "R10",
+        "R23"
+      ],
+      "acceptance": [
+        "A23"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/dogfood.mjs --verify",
+        "node scripts/panel-modes.mjs",
+        "node scripts/mini-panel.mjs",
+        "node scripts/smoke.mjs",
+        "node scripts/board-smoke.mjs",
+        "Windows 原生滚动、长文本、Enter 与 CLI wait/say"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T18.md"
+      ],
+      "notes": "三项局部体验问题已复现并修复，原生阅读与文本收发闭环通过；系统剪贴板用 stub，完整语音/IME/焦点/多屏仍由原任务验收。"
     }
   ]
 }

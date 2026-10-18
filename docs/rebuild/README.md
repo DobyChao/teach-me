@@ -1,6 +1,6 @@
 # 重建计划
 
-更新：2026-10-17。空分支基线：`f5e1e56`（设计参考快照 `54623c6`）。本目录是随 Git 演进的工程规划，外部聊天和 agent 私有记忆不是进度来源。
+更新：2026-10-18。空分支基线：`f5e1e56`（设计参考快照 `54623c6`）。本目录是随 Git 演进的工程规划，外部聊天和 agent 私有记忆不是进度来源。
 
 当前主线为 `master`，从重建分支提升；原 master 位于 `codex/master-backup-20261017`（本地与 origin 均已保存）。详情见 `evidence/T13.md`；功能验收仍以 tasks.json 为准。
 
@@ -28,6 +28,8 @@
 ## 如何继续
 
 运行 `npm run plan`，检查 `tasks.json` 里依赖已完成的最早任务。未解决的产品/平台决策在 `DECISIONS.md` 的开放问题表，开工前关闭对应问题。
+
+最近一次实际试用的问题、修复与后续优化建议见 [T18 试用记录](evidence/T18.md)。隔离运行 `npm run build` 后执行 `node scripts/dogfood.mjs`，自动验证用 `node scripts/dogfood.mjs --verify`；不会占用正常应用的快捷键，截图附件默认关闭，测试数据位于忽略的 `.runtime/dogfood`。
 
 ## 变更规则
 

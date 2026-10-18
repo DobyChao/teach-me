@@ -83,6 +83,7 @@ export const panelModeSchema = z.enum(['mini', 'compose', 'conversation']);
 export type PanelMode = z.infer<typeof panelModeSchema>;
 export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('prepare') }),
+  z.object({ type: z.literal('copy-connect') }),
   z.object({
     type: z.literal('submit'),
     turnId: z.string(),

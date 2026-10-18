@@ -4,6 +4,7 @@ import { useHost } from './use-host.ts';
 import { useMicrophone } from './use-microphone.ts';
 import { SettingsView } from './SettingsView.tsx';
 import { PanelIcon } from './PanelIcon.tsx';
+import { useThreadScroll } from './use-thread-scroll.ts';
 const bridge = window.companion;
 const phaseLabels = {
   offline: 'Agent 连接待确认，消息会保留',
@@ -26,7 +27,12 @@ export function Panel() {
   );
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLElement>(null);
-  const threadRef = useRef<HTMLDivElement>(null);
+  const thread = useThreadScroll(
+    state?.messages || [],
+    state?.session?.id,
+    !!state && !state.collapsed && !state.panelAnimating && !showSettings,
+  );
+  const [copiedConnection, setCopiedConnection] = useState(false);
   const preparing = useRef(false);
   const pointer = useRef<{ timer: ReturnType<typeof setTimeout> | null; held: boolean }>({
     timer: null,
@@ -107,9 +113,6 @@ export function Panel() {
     state?.panelMode,
     state?.panelAnimating,
   ]);
-  useEffect(() => {
-    threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight });
-  }, [state?.messages.length]);
   useEffect(() => {
     const el = panelRef.current;
     if (!el || !bridge) return;
@@ -202,7 +205,7 @@ export function Panel() {
       ? state.voice.text || voiceLabels[state.voice.phase]
       : state.session?.phase === 'ended' || state.session?.phase === 'offline'
         ? phaseLabels[state.session.phase]
-        : last || (state.session ? phaseLabels[state.session.phase] : phaseLabels.offline);
+        : last || (state.session ? phaseLabels[state.session.phase] : '尚未连接 Agent');
   const editable = state.input.phase === 'editing' && state.voice.phase === 'idle';
   const mini = state.panelMode === 'mini';
   return (
@@ -261,7 +264,7 @@ export function Panel() {
         </button>
         <span
           className={`dot ${state.session?.phase || 'offline'}`}
-          title={state.session ? phaseLabels[state.session.phase] : phaseLabels.offline}
+          title={state.session ? phaseLabels[state.session.phase] : '尚未连接 Agent'}
         />
         <p title={title}>{title}</p>
         {!state.collapsed && (
@@ -295,7 +298,7 @@ export function Panel() {
           <PanelIcon name="close" />
         </button>
       </header>
-      <div hidden={state.collapsed}>
+      <div className="panel-details" hidden={state.collapsed}>
         {state.selectingDisplay && (
           <div className="request">
             <b>选择这次教学的屏幕</b>
@@ -359,24 +362,44 @@ export function Panel() {
             }}
           />
         ) : (
-          <div className="thread" ref={threadRef} aria-live="polite">
-            {!state.messages.length && (
-              <div className="empty">
-                <span>TEACH ME, AGENT</span>
-                <h1>你操作，它来指路。</h1>
-                <p>
-                  先在你的 Agent 里开始一次教学，
-                  <br />
-                  然后在这里问一句。
-                </p>
-              </div>
+          <div className="thread-pane">
+            <div className="thread" ref={thread.ref} onScroll={thread.onScroll} aria-live="polite">
+              {(!state.messages.length || !active) && (
+                <div className="empty">
+                  <span>TEACH ME, AGENT</span>
+                  <h1>{active ? '你操作，它来指路。' : '先连接你的 Agent'}</h1>
+                  <p>
+                    {active
+                      ? '教学已连接，在下面问一句即可。'
+                      : '把连接说明粘贴给你正在使用的 Agent。连接后，就能在这里提问；也可以先打开画板。'}
+                  </p>
+                  {!active && (
+                    <button
+                      className="connect-help"
+                      onClick={async () => {
+                        try {
+                          await perform({ type: 'copy-connect' });
+                          setCopiedConnection(true);
+                        } catch {}
+                      }}
+                    >
+                      {copiedConnection ? '已复制连接说明' : '复制连接说明'}
+                    </button>
+                  )}
+                </div>
+              )}
+              {state.messages.map((m) => (
+                <div className={`message ${m.role}`} key={m.id}>
+                  <p>{m.text}</p>
+                  {m.shots.length > 0 && <small>已附 {m.shots.length} 张画面</small>}
+                </div>
+              ))}
+            </div>
+            {thread.pending > 0 && (
+              <button className="new-messages" onClick={thread.jump}>
+                有 {thread.pending} 条新回复 ↓
+              </button>
             )}
-            {state.messages.map((m) => (
-              <div className={`message ${m.role}`} key={m.id}>
-                <p>{m.text}</p>
-                {m.shots.length > 0 && <small>已附 {m.shots.length} 张画面</small>}
-              </div>
-            ))}
           </div>
         )}
       </div>
@@ -413,9 +436,11 @@ export function Panel() {
           placeholder={
             state.input.phase === 'preparing'
               ? '正在准备画面…'
-              : state.collapsed
-                ? '问一句…'
-                : '说一句…  Enter 发送，Shift+Enter 换行'
+              : !active
+                ? '连接 Agent 后就能发送消息'
+                : state.collapsed
+                  ? '问一句…'
+                  : '说一句…  Enter 发送，Shift+Enter 换行'
           }
           title="Enter 发送，Shift+Enter 换行"
           onPointerDown={(e) => {

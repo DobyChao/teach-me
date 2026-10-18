@@ -42,6 +42,9 @@ body {
   margin: 0;
   background: transparent;
 }
+body:not(.overlay-body) {
+  overflow: hidden;
+}
 button,
 input,
 textarea,
@@ -205,7 +208,7 @@ input[type='checkbox'] {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   overflow-wrap: anywhere;
   font-size: 13px;
 }
@@ -240,6 +243,23 @@ input[type='checkbox'] {
   align-items: center;
   justify-content: center;
 }
+.panel-details {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.panel-details > .request {
+  flex: none;
+}
+.thread-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+}
 .thread {
   display: flex;
   flex-direction: column;
@@ -248,6 +268,18 @@ input[type='checkbox'] {
   max-height: 330px;
   overflow: auto;
   border-top: 1px solid var(--line);
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.new-messages {
+  position: absolute;
+  right: 22px;
+  bottom: 8px;
+  border-color: var(--accent);
+  border-radius: 20px;
+  background: var(--surface);
+  font-size: 12px;
+  box-shadow: 0 2px 10px #0004;
 }
 .empty {
   padding: 26px 12px;
@@ -462,6 +494,7 @@ input[type='checkbox'] {
   overflow: auto;
 }
 .settings-view {
+  min-height: 0;
   padding: 12px 16px;
   max-height: 330px;
   overflow: auto;
