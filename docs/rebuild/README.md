@@ -6,9 +6,11 @@
 
 ## 工作流
 
+先从根 [MEMORY.md](../../MEMORY.md) 恢复项目意图与权威来源，运行 `npm run context:check`。自动生成的 [CONTEXT.md](CONTEXT.md) 提供任务全貌与优先接续项；变更源文件后运行 `npm run context`，审阅差异并随实现提交。生成器不依赖聊天、个人记忆、运行中的应用或绝对机器路径。
+
 规格 `PRODUCT.md` → 决策 `DECISIONS.md` → 任务 `tasks.json` → 验收 `ACCEPTANCE.md` → 证据 `evidence/` → 接续记录 `PROGRESS.md`。
 
-`tasks.json` 是任务状态的唯一来源，不维护第二份手写勾选看板。`PROGRESS.md` 只记录当前结论、验证限制和下一步。
+`tasks.json` 是任务状态的唯一来源；nextUp只引用任务并写优先理由和下一步。CONTEXT.md是生成视图，不维护第二份手写勾选看板。`PROGRESS.md` 只记录当前结论、验证限制与入口，旧正文归档在 history/，不让历史状态混入当前结论。
 
 状态：`todo`、`in_progress`、`blocked`、`done`。done 必须有证据且所有依赖 done；blocked 必须写原因。证据至少包含命令、结果、限制；真机任务必须有实际桌面观察记录。规划检查器只能验证结构，不能替人判断证据真假。
 
@@ -27,10 +29,12 @@
 
 ## 如何继续
 
-运行 `npm run plan`，检查 `tasks.json` 里依赖已完成的最早任务。未解决的产品/平台决策在 `DECISIONS.md` 的开放问题表，开工前关闭对应问题。
+运行 `npm run plan`，按 `tasks.json.nextUp` 的建议排序检查依赖、验收与证据；用户新请求可改变排序。未解决的产品/平台决策在 `DECISIONS.md` 的开放问题表，需要对应决策的工作开始前先形成明确结论。
 
 最近一次实际试用的问题、修复与后续优化建议见 [T18 试用记录](evidence/T18.md)。隔离运行 `npm run build` 后执行 `node scripts/dogfood.mjs`，自动验证用 `node scripts/dogfood.mjs --verify`；不会占用正常应用的快捷键，截图附件默认关闭，测试数据位于忽略的 `.runtime/dogfood`。
 
 ## 变更规则
 
 交互变化：同一提交修改规格、ADR、相关验收和任务；工程变化：修改架构、任务及验证；仅进度变化：任务 + 证据 + PROGRESS。发现旧文档矛盾时保留原始讨论，由 ADR 写明取舍。
+
+记忆闭环：新意图/纠正写来源，决策写理由，失败写条件与观察，未验证项保留；收尾更新任务、证据与接续，运行 `npm run context` 和 `npm run check`。CONTEXT的源摘要覆盖规范入口、src/bin/scripts/test/docs与CI文件及依赖声明；源代码或规划改变而未刷新会失败。检查不读.runtime、Git元数据、用户配置或日志；不校验文档事实是否真实，不代替验收。使用方法见 [MEMORY.md](../../MEMORY.md)。

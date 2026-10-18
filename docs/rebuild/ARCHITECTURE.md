@@ -50,3 +50,9 @@ Electron contextIsolation + sandbox，关闭 nodeIntegration。远程/自定义 
 共享 token 管颜色、字体、间距、圆角；组件按职责拆分 Header/Thread/ContinueOffer/Composer。收起只隐藏消息区域，不卸载输入组件。CSS 不承担业务状态机。
 
 单测验证领域判定和取消/去重；组件测试验证交互；协议测试走桥接双方；浏览器验证布局与可访问性；Windows 真机验证焦点、截图、穿透、多屏。jsdom 不承担布局验收。Vite 构建外单跑 tsc。
+
+## 项目记忆的所有权
+
+根 MEMORY.md 负责恢复入口、长期意图和信息归属，不另存任务状态。tasks.json负责状态/依赖/nextUp，PRODUCT/DECISIONS/ACCEPTANCE/evidence负责规格、理由、完成条件和实际观察；PROGRESS只保留当前接续，旧正文归档。`scripts/project-memory.cjs`从任务生成CONTEXT.md，并对显式白名单内的工程源文件计算摘要；不包含自身输出、Git元数据或运行数据，不依赖HEAD或时间戳，避免提交后自失效。文本行尾统一，Windows/CI检出方式不影响结果。
+
+`context:check`检查规范入口链接、复用plan引用校验并只读比较生成内容；源文件变化后必须显式生成并审阅。`npm run check`和CI调用同一命令。该机制只保证结构与同步，无法证明人工接续完整或验证结论真实；功能、平台证据仍按原验收要求管理。实现工具仅用于工程开发，不进入Electron/renderer运行边界。

@@ -60,6 +60,29 @@ function validatePlan(plan, { requirements, acceptance, exists }) {
     visited.add(id);
   }
   for (const id of tasks.keys()) walk(id);
+  if (plan.nextUp !== undefined) {
+    if (!Array.isArray(plan.nextUp) || !plan.nextUp.length) errors.push('nextUp must be nonempty');
+    else {
+      const seen = new Set();
+      for (const item of plan.nextUp) {
+        const id = item?.taskId;
+        const task = tasks.get(id);
+        if (!task || seen.has(id)) errors.push(`nextUp unknown/duplicate task: ${id}`);
+        seen.add(id);
+        if (task?.status === 'done') errors.push(`nextUp task already done: ${id}`);
+        if (task && task.dependsOn?.some((dep) => tasks.get(dep)?.status !== 'done'))
+          errors.push(`nextUp dependency not done: ${id}`);
+        if (
+          !item ||
+          typeof item.reason !== 'string' ||
+          !item.reason.trim() ||
+          typeof item.action !== 'string' ||
+          !item.action.trim()
+        )
+          errors.push(`nextUp needs reason and action: ${id}`);
+      }
+    }
+  }
   for (const id of requirements)
     if (!plan.tasks.some((t) => t.requirements?.includes(id)))
       errors.push(`unassigned requirement: ${id}`);
@@ -69,30 +92,30 @@ function validatePlan(plan, { requirements, acceptance, exists }) {
   return errors;
 }
 
-if (require.main === module) {
-  const root = path.join(__dirname, '..');
+function readPlan(root) {
   const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
   const ids = (file, prefix) =>
     new Set(
       [...read(file).matchAll(new RegExp(`^\\| (${prefix}\\d{2}) \\|`, 'gm'))].map((m) => m[1]),
     );
+  const plan = JSON.parse(read('docs/rebuild/tasks.json'));
+  const errors = validatePlan(plan, {
+    requirements: ids('docs/rebuild/PRODUCT.md', 'R'),
+    acceptance: ids('docs/rebuild/ACCEPTANCE.md', 'A'),
+    exists: (file) => fs.existsSync(path.join(root, file)),
+  });
+  if (errors.length) throw new Error(errors.join('\n'));
+  return plan;
+}
+if (require.main === module) {
   try {
-    const plan = JSON.parse(read('docs/rebuild/tasks.json'));
-    const errors = validatePlan(plan, {
-      requirements: ids('docs/rebuild/PRODUCT.md', 'R'),
-      acceptance: ids('docs/rebuild/ACCEPTANCE.md', 'A'),
-      exists: (file) => fs.existsSync(path.join(root, file)),
-    });
-    if (errors.length) {
-      console.error(errors.join('\n'));
-      process.exitCode = 1;
-    } else
-      console.log(
-        `Plan OK: ${plan.tasks.length} tasks; ${plan.tasks.filter((t) => t.status === 'done').length} done.`,
-      );
+    const plan = readPlan(path.join(__dirname, '..'));
+    console.log(
+      `Plan OK: ${plan.tasks.length} tasks; ${plan.tasks.filter((t) => t.status === 'done').length} done.`,
+    );
   } catch (e) {
     console.error(e.message);
     process.exitCode = 1;
   }
 }
-module.exports = { validatePlan };
+module.exports = { validatePlan, readPlan };

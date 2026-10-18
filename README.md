@@ -6,6 +6,8 @@
 
 ## 项目规划
 
+- [项目即记忆：新 Agent 从这里开始](MEMORY.md)
+- [自动生成的当前上下文](docs/rebuild/CONTEXT.md)
 - [计划入口](docs/rebuild/README.md)
 - [产品规格](docs/rebuild/PRODUCT.md)
 - [架构](docs/rebuild/ARCHITECTURE.md)
@@ -17,6 +19,8 @@
 ## 开发
 
 Windows + Node.js 24。
+
+开始工作先运行 `npm run context:check`；每轮将新决议、任务、验证证据与接续要点写回项目，再用 `npm run context` 刷新摘要。`npm run check` 与 CI 会拒绝过期上下文，详见 [项目记忆](MEMORY.md)。
 
 ```powershell
 npm ci

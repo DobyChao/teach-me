@@ -63,3 +63,44 @@ test('blocked requires actionable reason and duplicate IDs fail', () => {
   );
   assert.ok(check([task('T00'), task('T00')]).some((e) => e.includes('duplicate')));
 });
+
+test('nextUp accepts actionable unfinished tasks and rejects unknown or duplicate references', () => {
+  const next = { taskId: 'T00', reason: 'needs attention', action: 'inspect the failing case' };
+  const plan = { version: 1, tasks: [task('T00')], nextUp: [next] };
+  assert.deepEqual(validatePlan(plan, options), []);
+  assert.ok(
+    validatePlan({ ...plan, nextUp: [next, next] }, options).some((e) => e.includes('duplicate')),
+  );
+  assert.ok(
+    validatePlan({ ...plan, nextUp: [{ ...next, taskId: 'T99' }] }, options).some((e) =>
+      e.includes('unknown'),
+    ),
+  );
+});
+
+test('nextUp rejects completed tasks, unmet dependencies and missing next steps', () => {
+  const next = { taskId: 'T00', reason: 'needs attention', action: 'inspect the failing case' };
+  assert.ok(
+    validatePlan(
+      {
+        version: 1,
+        tasks: [{ ...task('T00'), status: 'done', evidence: ['docs/rebuild/evidence/T00.md'] }],
+        nextUp: [next],
+      },
+      options,
+    ).some((e) => e.includes('already done')),
+  );
+  assert.ok(
+    validatePlan(
+      { version: 1, tasks: [task('T01'), { ...task('T00'), dependsOn: ['T01'] }], nextUp: [next] },
+      options,
+    ).some((e) => e.includes('dependency not done')),
+  );
+  assert.ok(
+    validatePlan(
+      { version: 1, tasks: [task('T00')], nextUp: [{ ...next, action: ' ' }] },
+      options,
+    ).some((e) => e.includes('reason and action')),
+  );
+  assert.ok(validatePlan({ version: 1, tasks: [task('T00')], nextUp: [null] }, options).length);
+});

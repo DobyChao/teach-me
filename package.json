@@ -28,11 +28,13 @@
     "app": "npm run build && node scripts/launch.mjs",
     "test": "node --test test/*.test.cjs test/*.test.ts",
     "plan": "node scripts/check-plan.cjs",
+    "context": "node scripts/project-memory.cjs",
+    "context:check": "node scripts/project-memory.cjs --check",
     "smoke": "npm run build && node scripts/smoke.mjs",
     "format": "prettier --write src bin scripts test package.json tsconfig.json vite.config.ts",
     "format:check": "prettier --check src bin scripts test package.json tsconfig.json vite.config.ts",
     "boundaries": "node scripts/check-boundaries.mjs",
-    "check": "npm run plan && npm run boundaries && npm run format:check && npm test && npm run build"
+    "check": "npm run plan && npm run context:check && npm run boundaries && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",

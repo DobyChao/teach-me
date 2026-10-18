@@ -466,6 +466,50 @@
         "docs/rebuild/evidence/T18.md"
       ],
       "notes": "三项局部体验问题已复现并修复，原生阅读与文本收发闭环通过；系统剪贴板用 stub，完整语音/IME/焦点/多屏仍由原任务验收。"
+    },
+    {
+      "id": "T19",
+      "title": "建立项目即记忆的入口、接续与自动过期检查",
+      "milestone": "M0",
+      "status": "done",
+      "dependsOn": [
+        "T00",
+        "T01"
+      ],
+      "requirements": [
+        "R24"
+      ],
+      "acceptance": [
+        "A24"
+      ],
+      "verify": [
+        "npm run context",
+        "npm run context:check",
+        "项目记忆新鲜度、链接和优先任务负例测试",
+        "npm run check",
+        "仅用仓库文件恢复上下文演练"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T19.md"
+      ],
+      "notes": "根入口、当前/历史分离、nextUp与自动摘要已建立；新增8项测试和仓库接续演练通过。检查保证结构与同步，不代替人工事实审阅或真机验收。"
+    }
+  ],
+  "nextUp": [
+    {
+      "taskId": "T14",
+      "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",
+      "action": "先读 T14 证据和启动诊断实现，复核 npm run app 的静置/退出/重复启动；记录终端退出码与宿主事件，区分进程退出和捕获不可见，再决定修复。"
+    },
+    {
+      "taskId": "T17",
+      "reason": "三档交互已实现，完整输入与切换体验仍需补齐；先保护草稿与连续使用。",
+      "action": "读 PANEL-MODES.md 与 T17/T18 证据，跑 panel-modes 和 dogfood 回归；补原生IME组合输入、连续切换与编辑保护，真实麦克风和多屏分别验收。"
+    },
+    {
+      "taskId": "T02",
+      "reason": "局部布局已修复，但密集工具、审批、长消息等完整视觉状态仍未验收。",
+      "action": "按 A03 覆盖520/460宽与多行草稿、长历史、审批/工具满载的实际布局，记录边界；不以构建或DOM断言替代桌面观察。"
     }
   ]
 }
