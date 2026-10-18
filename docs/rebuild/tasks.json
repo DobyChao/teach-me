@@ -407,6 +407,35 @@
         "docs/rebuild/evidence/T16.md"
       ],
       "notes": "360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。"
+    },
+    {
+      "id": "T17",
+      "title": "小中大三档与情境平滑切换",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R02",
+        "R10",
+        "R22"
+      ],
+      "acceptance": [
+        "A22"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/panel-modes.mjs",
+        "node scripts/mini-panel.mjs",
+        "node scripts/smoke.mjs",
+        "node scripts/board-smoke.mjs",
+        "Windows 三档切换与胶囊拖动观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T17.md"
+      ],
+      "notes": "三档布局、草稿/审批保护和同窗口动画已实现；麦克风、多屏与完整原生输入另验。"
     }
   ]
 }

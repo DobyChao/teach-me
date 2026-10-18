@@ -98,6 +98,82 @@ input[type='checkbox'] {
   border-radius: 14px;
   background: var(--bg);
   overflow: hidden;
+  transition: border-radius 200ms ease;
+}
+.panel > * {
+  transition: opacity 120ms ease;
+}
+.panel.is-switching {
+  height: 100vh;
+}
+.panel.is-switching > * {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.has-unread {
+  position: relative;
+}
+.has-unread::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  right: 1px;
+  top: 1px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.panel.mode-mini {
+  height: 48px;
+  border-radius: 24px;
+  flex-direction: row;
+  align-items: center;
+}
+.panel.mode-mini.is-switching {
+  height: 100vh;
+}
+.panel.mode-mini .header {
+  flex: 1;
+  padding: 4px 2px 4px 6px;
+  gap: 2px;
+}
+.panel.mode-mini .header > :not(.drag-grip):not(.mini-write),
+.panel.mode-mini .tools > :not(:first-child),
+.mode-mini > .error,
+.mode-mini > .voice-review {
+  display: none;
+}
+.panel.mode-mini .drag-grip {
+  font-size: 12px;
+  width: 12px;
+}
+.panel.mode-mini .header .mini-write,
+.panel.mode-mini .tools .tool-icon {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--text);
+}
+.mode-mini svg {
+  width: 21px;
+  height: 21px;
+}
+.panel.mode-mini .composer {
+  display: block;
+  flex: none;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  margin: 0 4px 0 0;
+  padding: 0 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel > * {
+    transition: none;
+  }
 }
 .header {
   display: flex;

@@ -28,6 +28,14 @@ import { IMAGE_EDGE } from '../shared/limits.ts';
 import { setWindowInput } from './window-policy.ts';
 import { failureMetadata, writeRuntimeEvent } from './runtime-log.ts';
 import { panelBounds } from '../core/panel-layout.ts';
+import {
+  canCompact,
+  transitionPanel,
+  type PanelActivity,
+  type PanelEvent,
+  type PanelState,
+} from '../core/panel-mode.ts';
+import { PanelMotion } from './panel-motion.ts';
 
 app.setName('Teach me, Agent');
 app.commandLine.appendSwitch('enable-features', 'AllowWindowCaptureExclusionInRemoteSessions');
@@ -55,12 +63,17 @@ let panel: BrowserWindow;
 let overlay: BrowserWindow;
 let settings: Settings = { ...defaults };
 let displayId: number | null = null;
-let collapsed = true,
-  hover = false,
+let hover = false,
   guidesHidden = false,
   editing = false;
-let expandedHeight = 420,
-  collapsedHeight = 76;
+let panelState: PanelState = { mode: 'mini', unread: false };
+const panelHeights = { mini: 48, compose: 76, conversation: 420 };
+let panelAnimating = false;
+let panelMotion: PanelMotion | null = null;
+let hasDraft = false,
+  toolsOpen = false,
+  settingsOpen = false,
+  reducedMotion = true;
 const panelPositionSchema = z.object({
   version: z.literal(1),
   displayId: z.number().int(),
@@ -127,7 +140,10 @@ function snapshot(): Snapshot {
     guidesHidden,
     userBoard,
     editing,
-    collapsed,
+    collapsed: panelState.mode !== 'conversation',
+    panelMode: panelState.mode,
+    panelAnimating,
+    unreadReply: panelState.unread,
     settings,
     capture: captureState,
     connection,
@@ -153,6 +169,7 @@ function broadcast() {
 }
 function fail(e: unknown) {
   error = e instanceof Error ? e.message : String(e);
+  if (panelState.mode === 'mini') changePanel('compose');
   broadcast();
 }
 function ours(handle: string) {
@@ -175,23 +192,17 @@ async function foreground() {
   lastForeground = current;
   return lastExternal;
 }
-function setBounds(height: number) {
+function setBounds(height = panelHeights[panelState.mode], animate = false) {
   if (movingPanel) return;
   const display =
     screen.getAllDisplays().find((d) => d.id === panelPosition?.displayId) || target();
-  const bounds = panelBounds(height, collapsed, display.workArea, panelPosition);
-  const current = panel.getBounds();
-  if (
-    Object.entries(bounds).some(
-      ([key, value]) => Math.abs(current[key as keyof typeof current] - value) > 1,
-    )
-  )
-    panel.setBounds(bounds);
+  const bounds = panelBounds(height, panelState.mode, display.workArea, panelPosition);
+  panelMotion?.move(bounds, animate && !reducedMotion);
 }
 function place() {
   const d = target();
   overlay.setBounds(d.bounds);
-  setBounds(collapsed ? collapsedHeight : expandedHeight);
+  setBounds();
 }
 function finishPanelMove() {
   movingPanel = false;
@@ -203,7 +214,7 @@ function finishPanelMove() {
     right: bounds.x + bounds.width,
     bottom: bounds.y + bounds.height,
   };
-  setBounds(collapsed ? collapsedHeight : expandedHeight);
+  setBounds();
   const clamped = panel.getBounds();
   panelPosition.right = clamped.x + clamped.width;
   panelPosition.bottom = clamped.y + clamped.height;
@@ -212,40 +223,49 @@ function finishPanelMove() {
   );
   autoCollapse();
 }
-function expand() {
-  if (collapsed) {
-    collapsed = false;
-    setBounds(expandedHeight);
+function panelActivity(): PanelActivity {
+  return {
+    input: input.state.phase,
+    voice: voice.state.phase,
+    draft: hasDraft,
+    hover,
+    focused: !!panel && panel.isFocused(),
+    moving: movingPanel,
+    tools: toolsOpen,
+    settings: settingsOpen,
+    board: editing,
+    request: !!captureState || !!connection || !!displayRequest,
+    error: !!error || !!input.state.error || !!voice.state.error,
+  };
+}
+function changePanel(event: PanelEvent) {
+  const next = transitionPanel(panelState, event, panelActivity());
+  const changed = next.mode !== panelState.mode;
+  if (changed && movingPanel) {
+    pointerDrag = null;
+    finishPanelMove();
   }
+  panelState = next;
+  if (changed) setBounds(undefined, true);
+}
+function expand(event: 'reply' | 'attention' = 'attention') {
+  changePanel(event);
   broadcast();
   autoCollapse();
 }
 function autoCollapse() {
   if (collapseTimer) clearTimeout(collapseTimer);
-  if (
-    !collapsed &&
-    !movingPanel &&
-    !hover &&
-    !panel.isFocused() &&
-    input.state.phase === 'idle' &&
-    !captureState &&
-    !connection &&
-    settings.autoCollapseSec > 0
-  ) {
-    collapseTimer = setTimeout(() => {
-      if (
-        input.state.phase === 'idle' &&
-        !movingPanel &&
-        !hover &&
-        !panel.isFocused() &&
-        !captureState &&
-        !connection
-      ) {
-        collapsed = true;
-        setBounds(collapsedHeight);
+  if (panelState.mode !== 'mini' && canCompact(panelActivity()) && settings.autoCollapseSec > 0) {
+    const last = session?.messages.findLast((m) => m.role === 'agent')?.text || '';
+    const readingSeconds =
+      panelState.mode === 'conversation' ? Math.min(30, Math.ceil(last.length / 18)) : 0;
+    collapseTimer = setTimeout(
+      () => {
+        changePanel('idle');
         broadcast();
-      }
-    }, settings.autoCollapseSec * 1000);
+      },
+      Math.max(settings.autoCollapseSec, readingSeconds) * 1000,
+    );
   }
 }
 function requireSession() {
@@ -407,11 +427,15 @@ const input = new InputController({
     s.push(text, all, id);
     if (frames[0]) lastShot = frames[0];
   },
-  changed: broadcast,
+  changed: () => {
+    broadcast();
+    autoCollapse();
+  },
 });
 const voice = new VoiceController({
   prepare: async () => {
     requireSession();
+    changePanel('input');
     await input.prepare(false);
   },
   start: async () => {
@@ -446,10 +470,13 @@ const voice = new VoiceController({
   },
   submit: async (text) => {
     await input.submit(input.state.turnId!, text, true);
-    expand();
+    autoCollapse();
   },
   cancel: () => input.cancel(),
-  changed: broadcast,
+  changed: () => {
+    broadcast();
+    autoCollapse();
+  },
   confirmMs: () => settings.voice.confirmMs,
 });
 
@@ -500,6 +527,8 @@ async function action(a: Action) {
   switch (a.type) {
     case 'prepare':
       error = null;
+      changePanel('input');
+      broadcast();
       if (voice.state.phase !== 'idle') throw new Error('请先完成或撤回语音输入');
       requireSession();
       await input.prepare();
@@ -519,8 +548,24 @@ async function action(a: Action) {
       break;
     }
     case 'toggle-expanded':
-      collapsed = !collapsed;
-      setBounds(collapsed ? collapsedHeight : expandedHeight);
+      changePanel(panelState.mode === 'conversation' ? 'compose' : 'conversation');
+      autoCollapse();
+      break;
+    case 'panel-mode': {
+      const next = transitionPanel(panelState, a.mode, panelActivity());
+      if (next.mode === 'mini' && panelState.mode !== 'mini') {
+        settingsOpen = false;
+        await input.cancel();
+      }
+      changePanel(a.mode);
+      autoCollapse();
+      break;
+    }
+    case 'panel-context':
+      hasDraft = a.hasDraft;
+      toolsOpen = a.toolsOpen;
+      reducedMotion = a.reducedMotion;
+      if (reducedMotion) panelMotion?.finish();
       autoCollapse();
       break;
     case 'hover':
@@ -528,13 +573,16 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'resize':
-      if (a.collapsed !== collapsed) break;
-      if (collapsed) collapsedHeight = Math.min(560, a.height);
-      else expandedHeight = Math.max(240, Math.min(560, a.height));
-      setBounds(collapsed ? collapsedHeight : expandedHeight);
+      if (a.mode !== panelState.mode || panelAnimating) break;
+      panelHeights[a.mode] =
+        a.mode === 'mini'
+          ? 48
+          : Math.max(a.mode === 'conversation' ? 240 : 64, Math.min(560, a.height));
+      setBounds();
       break;
     case 'panel-drag': {
       if (a.phase === 'start') {
+        panelMotion?.finish();
         pointerDrag = { id: a.dragId, bounds: panel.getBounds() };
         movingPanel = true;
         if (collapseTimer) clearTimeout(collapseTimer);
@@ -559,6 +607,7 @@ async function action(a: Action) {
       break;
     case 'edit':
       editing = a.on;
+      if (editing) changePanel('input');
       overlay.setIgnoreMouseEvents(!editing);
       await setWindowInput(overlay, editing, false, windows);
       if (editing) {
@@ -592,7 +641,9 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'settings-focus':
+      settingsOpen = a.on;
       if (a.on) {
+        changePanel('attention');
         await foreground();
         await setWindowInput(panel, true, true, windows);
         if (!panel.isVisible()) panel.show();
@@ -790,7 +841,7 @@ async function startServer() {
             break;
           case '/say':
             active.say(z.string().trim().min(1).max(8000).parse(data.text));
-            expand();
+            expand('reply');
             result = { ok: true };
             break;
           case '/show': {
@@ -807,7 +858,7 @@ async function startServer() {
             htmlHost.clear();
             if (html[0]) await htmlHost.show(html[0], target());
             active.say(scene.say);
-            expand();
+            expand('reply');
             result = { drawn: guides.length };
             break;
           }
@@ -888,6 +939,7 @@ async function startServer() {
 async function shutdown(reason: string) {
   if (quitting) return;
   quitting = true;
+  panelMotion?.dispose();
   runtimeEvent('shutdown', { reason });
   htmlHost.clear();
   await voice.cancel();
@@ -930,8 +982,8 @@ app
     };
     panel = new BrowserWindow({
       title: 'Teach me, Agent',
-      width: 360,
-      height: 76,
+      width: 120,
+      height: 48,
       show: false,
       frame: false,
       transparent: true,
@@ -943,6 +995,11 @@ app
       alwaysOnTop: true,
       webPreferences: preferences,
     });
+    panelMotion = new PanelMotion(panel, (active) => {
+      panelAnimating = active;
+      broadcast();
+    });
+    panel.on('blur', () => autoCollapse());
     overlay = new BrowserWindow({
       title: 'Teach me Overlay',
       ...target().bounds,

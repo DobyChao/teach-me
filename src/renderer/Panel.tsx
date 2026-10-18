@@ -21,6 +21,9 @@ export function Panel() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [sending, setSending] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(
+    () => matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -45,6 +48,15 @@ export function Panel() {
     act({ type: 'panel-drag', phase: 'end', dragId: drag.id, dx: drag.dx, dy: drag.dy });
   };
   useEffect(() => {
+    const media = matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    act({ type: 'panel-context', hasDraft: !!draft, toolsOpen: showTools, reducedMotion });
+  }, [!!draft, showTools, reducedMotion, act]);
+  useEffect(() => {
     const last = state?.messages.findLast((m) => m.role === 'agent');
     if (!last || last.id === spoken.current) return;
     spoken.current = last.id;
@@ -61,16 +73,40 @@ export function Panel() {
   );
   useLayoutEffect(() => {
     const input = inputRef.current;
-    if (!input) return;
+    if (!input || state?.panelAnimating) return;
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-  }, [draft, state?.collapsed]);
+  }, [draft, state?.panelMode, state?.panelAnimating]);
   useEffect(() => {
     if (!state?.collapsed) setShowTools(false);
   }, [state?.collapsed]);
   useEffect(() => {
-    if (state?.input.phase === 'editing' && state.voice.phase === 'idle') inputRef.current?.focus();
-  }, [state?.input.phase, state?.input.turnId, state?.voice.phase]);
+    if (state?.panelMode !== 'conversation' && showSettings) {
+      setShowSettings(false);
+      act({ type: 'settings-focus', on: false });
+    }
+  }, [state?.panelMode, showSettings, act]);
+  useEffect(() => {
+    if (state?.panelMode === 'mini') {
+      setShowTools(false);
+      setShowSettings(false);
+    }
+  }, [state?.panelMode]);
+  useEffect(() => {
+    if (
+      state?.input.phase === 'editing' &&
+      state.voice.phase === 'idle' &&
+      state.panelMode !== 'mini' &&
+      !state.panelAnimating
+    )
+      inputRef.current?.focus();
+  }, [
+    state?.input.phase,
+    state?.input.turnId,
+    state?.voice.phase,
+    state?.panelMode,
+    state?.panelAnimating,
+  ]);
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight });
   }, [state?.messages.length]);
@@ -84,7 +120,11 @@ export function Panel() {
         act({
           type: 'resize',
           height: Math.ceil(el.getBoundingClientRect().height) + 2,
-          collapsed: el.classList.contains('collapsed'),
+          mode: el.classList.contains('mode-mini')
+            ? 'mini'
+            : el.classList.contains('collapsed')
+              ? 'compose'
+              : 'conversation',
         }),
       );
     };
@@ -95,7 +135,7 @@ export function Panel() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [!!state, act]);
+  }, [!!state, state?.panelAnimating, act]);
   const prepare = async () => {
     if (
       preparing.current ||
@@ -130,7 +170,8 @@ export function Panel() {
   };
   const openSettings = async () => {
     try {
-      if (state?.collapsed) await perform({ type: 'toggle-expanded' });
+      if (state?.panelMode !== 'conversation')
+        await perform({ type: 'panel-mode', mode: 'conversation' });
       await perform({ type: 'settings-focus', on: !showSettings });
       setShowSettings(!showSettings);
       setShowTools(false);
@@ -163,10 +204,11 @@ export function Panel() {
         ? phaseLabels[state.session.phase]
         : last || (state.session ? phaseLabels[state.session.phase] : phaseLabels.offline);
   const editable = state.input.phase === 'editing' && state.voice.phase === 'idle';
+  const mini = state.panelMode === 'mini';
   return (
     <section
       ref={panelRef}
-      className={`panel ${state.collapsed ? 'collapsed' : 'expanded'}`}
+      className={`panel mode-${state.panelMode} ${state.collapsed ? 'collapsed' : 'expanded'} ${state.panelAnimating ? 'is-switching' : ''}`}
       onMouseEnter={() => act({ type: 'hover', on: true })}
       onMouseLeave={() => act({ type: 'hover', on: false })}
     >
@@ -199,9 +241,24 @@ export function Panel() {
         onLostPointerCapture={endDrag}
         onPointerCancel={endDrag}
       >
-        <span className="drag-grip" aria-hidden="true">
+        <span className={`drag-grip ${state.unreadReply ? 'has-unread' : ''}`} aria-hidden="true">
           ⠿
         </span>
+        <button
+          className="mini-write icon"
+          hidden={!mini}
+          aria-label="开始输入"
+          title={
+            state.unreadReply
+              ? '开始输入 · 有新回复'
+              : draft
+                ? '继续草稿（Ctrl+Alt+W）'
+                : '开始输入（Ctrl+Alt+W）'
+          }
+          onClick={prepare}
+        >
+          <PanelIcon name="compose" />
+        </button>
         <span
           className={`dot ${state.session?.phase || 'offline'}`}
           title={state.session ? phaseLabels[state.session.phase] : phaseLabels.offline}
@@ -213,13 +270,21 @@ export function Panel() {
           </button>
         )}
         <button
-          className="icon expand-toggle"
+          className={`icon expand-toggle ${state.unreadReply ? 'has-unread' : ''}`}
           aria-label={state.collapsed ? '展开对话' : '收起对话'}
           title={state.collapsed ? '展开对话' : '收起对话'}
           aria-expanded={!state.collapsed}
           onClick={() => act({ type: 'toggle-expanded' })}
         >
           <PanelIcon name={state.collapsed ? 'expand' : 'collapse'} />
+        </button>
+        <button
+          className="icon minimize-toggle"
+          aria-label="收成小胶囊"
+          title="收成小胶囊，保留草稿"
+          onClick={() => act({ type: 'panel-mode', mode: 'mini' })}
+        >
+          <PanelIcon name="minimize" />
         </button>
         <button
           className="icon"
@@ -339,6 +404,7 @@ export function Panel() {
         }}
       >
         <textarea
+          hidden={mini}
           ref={inputRef}
           aria-label="给 Agent 的消息"
           rows={1}
@@ -415,7 +481,7 @@ export function Panel() {
               }
             }}
           >
-            <PanelIcon name="mic" />
+            <PanelIcon name={mini ? 'wave' : 'mic'} />
             <span className="tool-label">
               {state.voice.phase === 'recording' ? '在听…' : '麦克风'}
             </span>
@@ -453,7 +519,7 @@ export function Panel() {
             <PanelIcon name="send" />
           </button>
         </div>
-        <div className="aux-tools" hidden={state.collapsed && !showTools}>
+        <div className="aux-tools" hidden={mini || (state.collapsed && !showTools)}>
           <label className="attach">
             <input
               type="checkbox"

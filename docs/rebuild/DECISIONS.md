@@ -74,6 +74,12 @@ Windows 实验中 CSS 原生拖动区域存在但窗口未随鼠标移动，因�
 
 参考：[Electron 官方拖动区域说明](https://www.electronjs.org/docs/latest/tutorial/custom-window-interactions)。CSS 区域通过不替代 Windows 实际拖动通过。
 
+## ADR-013 · 接受 · 2026-10-18 · 三档面板与情境切换
+
+用户追加双入口小胶囊参考图；将 ADR-012 的360宽布局保留为中号，默认小号120×48，大号520。具体切换矩阵、保护条件与阅读时间见 [PANEL-MODES.md](PANEL-MODES.md)。状态策略在 core，宿主负责计时/原生尺寸与焦点，renderer只报告草稿存在性、工具打开与减少动态效果偏好；保留唯一输入。回复不打断用户编辑；审批必须可见；悬停不放大，空闲才收小。
+
+Windows 通过宿主200ms插值同一窗口尺寸实现过渡；更新的目标替换旧目标，拖动前结束动画。设置与系统减少动态效果受尊重。依据：[Electron setBounds API](https://www.electronjs.org/docs/latest/api/browser-window#winsetboundsbounds-animate)、[W3C 交互动画与减少动态效果](https://www.w3.org/WAI/WCAG22/Techniques/css/C39.html)。这些资料支持实现与可访问性边界；切换时机是本项目设计决议。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

@@ -79,6 +79,8 @@ export const defaults: Settings = {
   continueText: '下一步呢？',
   voice: { engine: 'system', localCommand: '', customUrl: '', confirmMs: 1500, tts: false },
 };
+export const panelModeSchema = z.enum(['mini', 'compose', 'conversation']);
+export type PanelMode = z.infer<typeof panelModeSchema>;
 export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('prepare') }),
   z.object({
@@ -90,6 +92,13 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('cancel') }),
   z.object({ type: z.literal('continue') }),
   z.object({ type: z.literal('toggle-expanded') }),
+  z.object({ type: z.literal('panel-mode'), mode: panelModeSchema }),
+  z.object({
+    type: z.literal('panel-context'),
+    hasDraft: z.boolean(),
+    toolsOpen: z.boolean(),
+    reducedMotion: z.boolean(),
+  }),
   z.object({ type: z.literal('hover'), on: z.boolean() }),
   z.object({ type: z.literal('toggle-guides') }),
   z.object({ type: z.literal('clear'), layer: z.enum(['agent', 'user', 'all']) }),
@@ -112,7 +121,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('resize'),
     height: z.number().min(48).max(800),
-    collapsed: z.boolean(),
+    mode: panelModeSchema,
   }),
   z.object({
     type: z.literal('panel-drag'),
@@ -173,6 +182,9 @@ export interface Snapshot {
   userBoard: { epoch: number; count: number };
   editing: boolean;
   collapsed: boolean;
+  panelMode: PanelMode;
+  panelAnimating: boolean;
+  unreadReply: boolean;
   settings: Settings;
   capture: { phase: 'pending' | 'countdown'; remaining: number } | null;
   connection: { kind: 'start' | 'attach'; topic: string } | null;

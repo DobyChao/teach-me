@@ -82,7 +82,11 @@ async function run() {
   }
   assert.ok(panel);
   const js = (code) => panel.webContents.executeJavaScript(code);
-  const perform = (action) => js(`window.companion.perform(${JSON.stringify(action)})`);
+  const perform = async (action) => {
+    const result = await js(`window.companion.perform(${JSON.stringify(action)})`);
+    while (await js(`window.companion.snapshot().then(s=>s.panelAnimating)`)) await pause(20);
+    return result;
+  };
   const initial = await js('window.companion.snapshot()');
   const overlay = BrowserWindow.getAllWindows().find((w) =>
     w.webContents.getURL().includes('mode=overlay'),

@@ -1,7 +1,8 @@
-const { app, BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow, screen, globalShortcut } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+globalShortcut.register = () => true;
 require('../../dist/host/main.cjs');
 const home = process.env.TEACH_ME_AGENT_HOME;
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,8 +33,14 @@ async function run() {
     w.webContents.getURL().includes('mode=panel'),
   );
   const js = (code) => panel.webContents.executeJavaScript(code);
-  const perform = (a) => js(`window.companion.perform(${JSON.stringify(a)})`);
+  const perform = async (a) => {
+    const result = await js(`window.companion.perform(${JSON.stringify(a)})`);
+    while (await js(`window.companion.snapshot().then(s=>s.panelAnimating)`)) await pause(20);
+    await pause(50);
+    return result;
+  };
   await pause(250);
+  await perform({ type: 'panel-mode', mode: 'compose' });
   const first = panel.getBounds();
   const identity = panel.getNativeWindowHandle().toString('hex');
   const clipped = () =>
@@ -116,7 +123,7 @@ async function run() {
     const settled = panel.getBounds();
     await perform({ ...drag, dx: 500, dy: 500, phase: 'move' });
     assert.deepEqual(panel.getBounds(), settled, 'late drag callback must be ignored');
-    await perform({ type: 'resize', height: 500, collapsed: false });
+    await perform({ type: 'resize', height: 500, mode: 'conversation' });
     assert.deepEqual(panel.getBounds(), settled, 'stale expanded resize must be ignored');
     await pause(120);
     const saved = JSON.parse(await fs.readFile(path.join(home, 'panel-position.json'), 'utf8'));
