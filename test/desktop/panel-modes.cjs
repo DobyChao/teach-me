@@ -200,6 +200,10 @@ async function run() {
   assert.equal(hides, 0);
   assert.equal(shows, 0);
   checks.push('reduced motion switches directly; HWND is stable with zero hide/show');
+  await require('./motion-lifecycle.cjs')({ panel, state, perform, mode, settled, home });
+  checks.push(
+    'native handoff and dragging do not rescale the visual frame or apply stale measurements',
+  );
   await fs.writeFile(path.join(home, 'result.json'), JSON.stringify({ passed: true, checks }));
   console.log(JSON.stringify({ passed: true, checks }));
   if (process.env.TMA_PANEL_INTERACTIVE) {

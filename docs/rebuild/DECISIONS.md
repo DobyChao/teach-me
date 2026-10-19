@@ -118,6 +118,14 @@ tasks.json 仍是状态唯一来源，新增 nextUp 引用任务、记录优先�
 
 实现参考：[Electron无框窗口](https://www.electronjs.org/docs/latest/tutorial/custom-window-styles)、[nativeTheme](https://www.electronjs.org/docs/latest/api/native-theme)、[Element.animate](https://developer.mozilla.org/en-US/docs/Web/API/Element/animate)。保留thickFrame以支持边缘调整；禁用它会失去该能力，见[BaseWindow](https://www.electronjs.org/docs/latest/api/base-window)。
 
+## ADR-018 · 接受 · 2026-10-19 · 稳定终点与拖动尺寸所有权
+
+用户反馈T21完成时偶闪、移动放大。故障注入确认旧背景基于动态原生包围范围缩放，原生先收紧而旧效果未清理时会再次缩小；拖动中测高虽未立即setBounds，仍改了缓存高度，释放时应用并再反向动画；此外本机125%下setPosition自身回读高度逐次增大。不能将这三项归结为动画时长或主观感受。
+
+背景以固定目标宽高做FLIP，终点为identity，锚点随视口收紧保持；拖动进入前先冻结形变/尺寸所有权，固定逻辑宽高平移。测高引入panelLayoutVersion，跨模式与拖动边界作废，拖动中不写缓存；释放后重新测当前布局。用故障注入检查原生先收紧、迟到测高和连续拖动中的瞬态，补足T21只收集中间帧的遗漏。
+
+本条修正ADR-017的终点/拖动实现，保留同HWND、单输入面、主题与设置方案。公开最佳实践、具体采用与能力边界见[MOTION.md](MOTION.md)，证据见T22。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

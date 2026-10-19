@@ -131,6 +131,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('quit') }),
   z.object({
     type: z.literal('resize'),
+    layoutVersion: z.number().int().nonnegative(),
     height: z.number().min(48).max(800),
     mode: panelModeSchema,
   }),
@@ -180,6 +181,7 @@ export interface Message {
   shots: Shot[];
 }
 export interface Snapshot {
+  panelLayoutVersion: number;
   colorScheme: ColorScheme;
   panelTransition: PanelTransition | null;
   selectingDisplay: boolean;

@@ -133,7 +133,12 @@ async function run() {
     const settled = panel.getBounds();
     await perform({ ...drag, dx: 500, dy: 500, phase: 'move' });
     assert.deepEqual(panel.getBounds(), settled, 'late drag callback must be ignored');
-    await perform({ type: 'resize', height: 500, mode: 'conversation' });
+    await perform({
+      type: 'resize',
+      height: 500,
+      mode: 'conversation',
+      layoutVersion: await js('window.companion.snapshot().then(s=>s.panelLayoutVersion)'),
+    });
     assert.deepEqual(panel.getBounds(), settled, 'stale expanded resize must be ignored');
     await pause(120);
     const saved = JSON.parse(await fs.readFile(path.join(home, 'panel-position.json'), 'utf8'));

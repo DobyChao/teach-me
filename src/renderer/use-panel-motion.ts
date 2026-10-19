@@ -13,8 +13,9 @@ export function usePanelMotion(
     const background = frame.current;
     const content = panel.current;
     if (!background || !content || !motion) return;
+    // FLIP against a fixed final box; the last frame stays identity across the native resize.
     const transform = (b: typeof motion.from) =>
-      `translate(${b.x}px, ${b.y}px) scale(${b.width / motion.width}, ${b.height / motion.height})`;
+      `translate(${b.x + b.width - motion.to.x - motion.to.width}px, ${b.y + b.height - motion.to.y - motion.to.height}px) scale(${b.width / motion.to.width}, ${b.height / motion.to.height})`;
     const options = {
       duration: motion.duration,
       easing: 'cubic-bezier(0.333333, 1, 0.666667, 1)',
@@ -55,11 +56,19 @@ export function usePanelMotion(
   }, [motion?.id, act, panel]);
   return {
     frame,
+    frameStyle: motion
+      ? {
+          width: motion.to.width,
+          height: motion.to.height,
+          right: `max(0px, calc(100vw - ${motion.to.x + motion.to.width}px))`,
+          bottom: `max(0px, calc(100vh - ${motion.to.y + motion.to.height}px))`,
+        }
+      : undefined,
     panelStyle: motion
       ? {
           width: motion.to.width,
-          right: motion.width - motion.to.x - motion.to.width,
-          bottom: motion.height - motion.to.y - motion.to.height,
+          right: `max(0px, calc(100vw - ${motion.to.x + motion.to.width}px))`,
+          bottom: `max(0px, calc(100vh - ${motion.to.y + motion.to.height}px))`,
         }
       : undefined,
   };

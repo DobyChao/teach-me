@@ -117,6 +117,7 @@ export function Panel() {
       frame = requestAnimationFrame(() =>
         act({
           type: 'resize',
+          layoutVersion: state!.panelLayoutVersion,
           height: Math.ceil(el.getBoundingClientRect().height) + 2,
           mode: el.classList.contains('mode-mini')
             ? 'mini'
@@ -133,7 +134,7 @@ export function Panel() {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [!!state, state?.panelAnimating, act]);
+  }, [!!state, state?.panelMode, state?.panelLayoutVersion, act]);
   const prepare = async () => {
     if (
       preparing.current ||
@@ -201,7 +202,12 @@ export function Panel() {
   const mini = state.panelMode === 'mini';
   return (
     <>
-      <div className={`panel-frame ${state.panelMode}`} ref={motion.frame} aria-hidden="true" />
+      <div
+        className={`panel-frame ${state.panelMode}`}
+        style={motion.frameStyle}
+        ref={motion.frame}
+        aria-hidden="true"
+      />
       <section
         ref={panelRef}
         style={motion.panelStyle}

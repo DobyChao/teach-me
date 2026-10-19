@@ -86,7 +86,12 @@ const panelPositionSchema = z.object({
 });
 let panelPosition: z.infer<typeof panelPositionSchema> | null = null;
 let movingPanel = false;
-let pointerDrag: { id: string; bounds: { x: number; y: number } } | null = null;
+let panelLayoutVersion = 0;
+let pointerDrag: {
+  id: string;
+  bounds: Electron.Rectangle;
+  size: { width: number; height: number };
+} | null = null;
 let settingsDrag: { id: string; bounds: Electron.Rectangle; content: Electron.Rectangle } | null =
   null;
 let settingsClientSize: { width: number; height: number } | null = null;
@@ -137,6 +142,7 @@ const target = () =>
 
 function snapshot(): Snapshot {
   return {
+    panelLayoutVersion,
     colorScheme: resolveScheme(settings.appearance.mode, nativeTheme.shouldUseDarkColors),
     panelTransition: panelMotion?.transition || null,
     selectingDisplay: !!displayRequest,
@@ -217,6 +223,7 @@ function place() {
 }
 function finishPanelMove() {
   movingPanel = false;
+  panelLayoutVersion++;
   const bounds = panel.getBounds();
   const display = screen.getDisplayMatching(bounds);
   panelPosition = {
@@ -257,7 +264,10 @@ function changePanel(event: PanelEvent) {
     finishPanelMove();
   }
   panelState = next;
-  if (changed) setBounds(undefined, true);
+  if (changed) {
+    panelLayoutVersion++;
+    setBounds(undefined, true);
+  }
 }
 function expand(event: 'reply' | 'attention' = 'attention') {
   changePanel(event);
@@ -599,7 +609,8 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'resize':
-      if (a.mode !== panelState.mode) break;
+      if (movingPanel || a.mode !== panelState.mode || a.layoutVersion !== panelLayoutVersion)
+        break;
       panelHeights[a.mode] =
         a.mode === 'mini'
           ? 48
@@ -638,15 +649,24 @@ async function action(a: Action) {
     }
     case 'panel-drag': {
       if (a.phase === 'start') {
-        panelMotion?.finish();
-        pointerDrag = { id: a.dragId, bounds: panel.getBounds() };
+        if (pointerDrag) break;
         movingPanel = true;
+        panelLayoutVersion++;
+        panelMotion?.finish();
+        const bounds = panel.getBounds();
+        const intent = panelMotion?.destination || bounds;
+        pointerDrag = {
+          id: a.dragId,
+          bounds,
+          size: { width: intent.width, height: intent.height },
+        };
         if (collapseTimer) clearTimeout(collapseTimer);
       } else if (pointerDrag?.id === a.dragId) {
-        panel.setPosition(
-          Math.round(pointerDrag.bounds.x + a.dx),
-          Math.round(pointerDrag.bounds.y + a.dy),
-        );
+        panel.setBounds({
+          x: Math.round(pointerDrag.bounds.x + a.dx),
+          y: Math.round(pointerDrag.bounds.y + a.dy),
+          ...pointerDrag.size,
+        });
         if (a.phase === 'end') {
           pointerDrag = null;
           finishPanelMove();

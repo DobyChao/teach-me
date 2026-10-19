@@ -547,6 +547,32 @@
         "docs/rebuild/evidence/T21.md"
       ],
       "notes": "合成过渡、无框指针标题、浅/深/系统及token注册表已实现；62项检查、5组dogfood与原桌面回归通过，原生拖动/预览/关闭已观察，分数DPI多手势尺寸稳定。真实OS配色变化、跨屏/高刷新率及完整输入矩阵仍在原任务；主题包和宠物资产仅规划。"
+    },
+    {
+      "id": "T22",
+      "title": "定位并修复动效收尾闪烁和拖动放大",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R27"
+      ],
+      "acceptance": [
+        "A27"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/panel-modes.mjs",
+        "node scripts/mini-panel.mjs",
+        "原生视口先收紧和过期测高故障注入",
+        "Windows实际拖动和收尾观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T22.md"
+      ],
+      "notes": "固定目标FLIP终点、布局版本和固定逻辑尺寸拖动已实现；62项检查、7组panel-modes及全部原桌面回归通过，Windows单屏三档原生拖动已观察。高刷新率/跨屏/远控逐帧仍在原任务；详见T22。"
     }
   ],
   "nextUp": [

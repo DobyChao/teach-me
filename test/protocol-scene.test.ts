@@ -21,6 +21,7 @@ const shot: Shot = {
   at: 0,
 };
 const state: Snapshot = {
+  panelLayoutVersion: 0,
   colorScheme: 'dark',
   panelTransition: null,
   selectingDisplay: false,

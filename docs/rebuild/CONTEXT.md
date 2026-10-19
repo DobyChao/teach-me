@@ -63,6 +63,7 @@
 | T19 建立项目即记忆的入口、接续与自动过期检查 | done | T00、T01 | [T19.md](evidence/T19.md) |
 | T20 修复可见过渡并将设置拆为独立窗口 | done | T01 | [T20.md](evidence/T20.md) |
 | T21 合成层平滑过渡、统一设置标题及外观主题基础 | done | T01 | [T21.md](evidence/T21.md) |
+| T22 定位并修复动效收尾闪烁和拖动放大 | done | T01 | [T22.md](evidence/T22.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -85,4 +86,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 0ed6ad313b9fa4a3607a07af583490e6a4c49432749052f3985b83ca15a59e12 -->
+<!-- source-sha256: b3d60bca6f17e2795f851587d704ed5ead2a2e4b7b586984993b2ae5456fa1d2 -->

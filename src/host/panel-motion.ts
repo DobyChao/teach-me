@@ -28,6 +28,9 @@ export class PanelMotion {
     this.changed = changed;
     this.clock = timing;
   }
+  get destination(): Rectangle | null {
+    return this.target ? { ...this.target } : null;
+  }
   private visualBounds(): Rectangle {
     if (!this.transition || !this.from || !this.target) return this.window.getBounds();
     const p = Math.min(1, (this.clock.now() - this.started) / this.transition.duration);

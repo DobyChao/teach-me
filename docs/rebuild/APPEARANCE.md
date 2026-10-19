@@ -25,3 +25,5 @@ shared/appearance.ts是内建主题注册表：id、显示名及light/dark两套
 视觉过渡220ms，由Chromium的transform/opacity/clipPath完成。宿主只分配起终点包围范围，结束再收紧原生窗口；无逐帧setBounds。保留同一HWND和textarea，文字按目标宽度布局，不整体缩放文字。重定向使用当前视觉几何，递增transition id防旧完成回调生效；重复目标不重启，Renderer完成通知收尾，500ms兜底避免永久占据透明范围。
 
 减少动态效果直接切换。透明包围范围在过渡期间可能短暂接收鼠标，这是Windows透明窗口限制；正常220ms收尾，Renderer异常时最多兜底500ms。仍需单独验收第三方远控、高刷新率、跨屏DPI和设备负载，不能由一组帧采样保证所有机器主观流畅。
+
+后续收尾/拖动故障由ADR-018修正：固定目标盒做FLIP且终点identity；拖动固定逻辑宽高，带版本的测高跨边界作废。当前契约和公开参考见[MOTION.md](MOTION.md)，历史T21中段帧采样不代替T22全过程验证。
