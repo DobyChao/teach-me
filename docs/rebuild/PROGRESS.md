@@ -4,6 +4,8 @@
 
 ## 本轮变化
 
+2026-10-19用户纠正README过度绑定Codex、skill安装不明显。T25将双语公开入口改为Agent无关，前置通用三步、显式技能目录、结果/status、手动复制与重载连接；Codex保留为可选位置预设，现有setup行为兼容。自定义目录实际安装/重复安装/手动复制与链接检查通过，68项检查通过；不据此声称其他宿主发现或模型行为通过。见[T25](evidence/T25.md)、ADR-021。
+
 2026-10-19用户要求CLI帮助和默认README使用英文，并附中文README。T24将`tma help`及帮助别名改为英文，README.md英文/README.zh-CN.md中文互链，修正安装锚点并把译文纳入上下文摘要。实际全局帮助各入口一致，68项检查通过；App语言与其他真机验收范围不变。见[T24](evidence/T24.md)、ADR-020。
 
 2026-10-19用户追加App、全局CLI和可安装Agent skill的产品形态。T23提供源码setup、全局`tma`及Codex `$teach-me`，已在本机注册/安装；仓库外启动App、原生输入→wait→say→自动ack→stop闭环通过。68项检查与5组dogfood通过，技能保护和校验通过。见[T23](evidence/T23.md)、ADR-019及[安装说明](../../README.md#install-for-your-agent)。独立安装包仍是T08，新对话模型行为未由文件校验推定。

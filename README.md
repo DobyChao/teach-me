@@ -4,57 +4,73 @@ English | [简体中文](README.zh-CN.md)
 
 Stay in your current software and learn by doing. Your Agent guides you one step at a time with short explanations and on-screen annotations.
 
-This project was rebuilt from an empty branch. The previous implementation is preserved at `54623c6` on `codex/companion-rebuild`.
+Teach me, Agent is agent-agnostic: it connects your existing Agent to a desktop teaching panel through a local CLI. Your Agent needs local command execution, the ability to open returned images, and support for keeping a `tma wait` call active during teaching.
 
-## Project planning
-
-- [Project as memory: start here](MEMORY.md)
-- [Generated project context](docs/rebuild/CONTEXT.md)
-- [Planning guide](docs/rebuild/README.md)
-- [Product specification](docs/rebuild/PRODUCT.md)
-- [Architecture](docs/rebuild/ARCHITECTURE.md)
-- [Task status](docs/rebuild/tasks.json)
-- [Current handoff notes and limitations](docs/rebuild/PROGRESS.md)
-- [Acceptance criteria](docs/rebuild/ACCEPTANCE.md)
-- [Original design decisions](docs/DESIGN-NOTES.md)
-
-## Development
-
-Requires Windows and Node.js 24.
-
-Start with `npm run context:check`. Record new decisions, tasks, verification evidence, and handoff notes in the repository, then regenerate the context with `npm run context`. Both `npm run check` and CI reject stale context. See [project memory](MEMORY.md).
-
-```powershell
-npm ci
-npm run check
-npm run app
-```
+[Install App / CLI](#1-install-the-app-and-cli) · [Install the skill](#2-install-the-skill) · [Connect your Agent](#3-connect-your-agent)
 
 ## Install for your Agent
 
-The desktop App, global CLI, and Agent skill work together. To install from source, run `npm ci` in this checkout, then:
+### 1. Install the App and CLI
+
+Requires Windows and Node.js 24. From this repository:
 
 ```powershell
-npm run setup
-```
-
-This builds the App, registers the global `tma` command with `npm link --offline` (keeping the `teach-me-agent` alias), and installs the `$teach-me` skill for Codex. The CLI links to this checkout; register it again if you move or delete the repository. A standalone installer and release remain part of T08 and have not been delivered.
-
-From any directory:
-
-```powershell
+npm ci
+npm run build
+npm link --offline
 tma --version
-tma skill status
-tma start --topic 'Learn to use this software'
 ```
 
-In a new Codex conversation, invoke `$teach-me`, for example: "Use $teach-me to connect to the local App and teach me how to use Paint." Existing conversations may need to reload skills. During teaching, the Agent uses `wait` for your replies and `say`/`show` for guidance; you operate the software yourself. Run `tma help` for commands and `tma protocol` for the full Agent protocol.
+This registers `tma` and the compatible `teach-me-agent` alias. The CLI links to this checkout; register it again after moving the repository. A standalone installer has not been delivered yet (T08).
 
-You can also install each part separately: after building, run `npm link --offline`, then `tma skill install --agent codex`. The skill is copied to `CODEX_HOME/skills/teach-me`, or `~/.codex/skills/teach-me` when `CODEX_HOME` is unset. Use `tma skill path` to inspect the destination, or `--skills-dir DIR` to specify the skills parent directory for another compatible host. The versioned source is [skills/teach-me/SKILL.md](skills/teach-me/SKILL.md); run the install command again after changing it. The installer updates only its own unmodified files and stops if it finds an unrelated skill with the same name or local edits.
+### 2. Install the skill
 
-If your terminal cannot find `tma`, use `npm prefix -g` to locate the global command directory, check that it is in PATH, and reopen the terminal. Before global registration, you can still use `node bin/teach-me.mjs`. Setup does not start a teaching session or modify other Agent configuration.
+The skill teaches your Agent the connection, screenshot, and teaching loop. Choose the **skills parent directory recognized by your Agent**, then replace `<your-agent-skills-directory>` below with that real directory:
 
-See the [Agent protocol and supported features](docs/AGENT-PROTOCOL.md). Each Agent should use a distinct `--client` or `TEACH_ME_CLIENT`.
+```powershell
+tma skill install --skills-dir "<your-agent-skills-directory>"
+tma skill path --skills-dir "<your-agent-skills-directory>"
+tma skill status --skills-dir "<your-agent-skills-directory>"
+```
+
+Installation creates:
+
+```text
+<your-agent-skills-directory>/
+  teach-me/
+    SKILL.md
+```
+
+The status command should report `"status": "installed"`. This confirms the files were installed; skill discovery and invocation follow your Agent host's own loading rules.
+
+**Manual installation:** copy the entire [skills/teach-me](skills/teach-me) folder into that skills parent directory. If your Agent cannot load skills, give it [SKILL.md](skills/teach-me/SKILL.md) as instructions and use `tma protocol` for the command details. The CLI connection works independently of a native skill loader.
+
+For CLI-managed installations, rerun the install command with the **same directory** after repository updates. The installer updates its own unmodified files and stops if it finds an unrelated skill or local edits. For manual installations, update your copied folder manually and preserve any local edits.
+
+### 3. Connect your Agent
+
+Reload skills or open a new Agent session, then use your host's skill invocation flow. For example:
+
+> Use the teach-me skill to connect to the local Teach me, Agent App and teach me how to use Paint.
+
+The Agent can also connect directly through the CLI:
+
+```powershell
+tma start --client my-lesson --topic 'Learn to use Paint'
+```
+
+Each Agent needs a distinct `--client` or `TEACH_ME_CLIENT`. During teaching, the Agent uses `wait` for replies and `say`/`show` for guidance while you operate the software. See `tma help` and the [Agent protocol](docs/AGENT-PROTOCOL.md), also available through `tma protocol`.
+
+### Optional: Codex preset
+
+Codex is the currently built-in skill-location preset. Codex users can replace step 2 with:
+
+```powershell
+tma skill install --agent codex
+tma skill status --agent codex
+```
+
+Its destination is `CODEX_HOME/skills/teach-me`, or `~/.codex/skills/teach-me` when unset. In a new Codex conversation, use `$teach-me`. The existing `npm run setup` shortcut builds the App, registers the CLI, and installs this Codex preset. Other hosts use the explicit directory flow above; their skill discovery has not been verified here.
 
 ## Using the App
 
@@ -70,7 +86,35 @@ Settings open in a separate window that can be moved and resized. Save and cance
 
 The [T21 refinements](docs/rebuild/evidence/T21.md) use renderer compositing for transitions, remove the system title bar from settings, and add light, dark, and system color modes. Settings preview changes locally; saving applies them to all windows and the board toolbar. See the [appearance contract](docs/rebuild/APPEARANCE.md) for theme tokens and future desktop-pet plans.
 
+## Project planning
+
+- [Project as memory: start here](MEMORY.md)
+- [Generated project context](docs/rebuild/CONTEXT.md)
+- [Planning guide](docs/rebuild/README.md)
+- [Product specification](docs/rebuild/PRODUCT.md)
+- [Architecture](docs/rebuild/ARCHITECTURE.md)
+- [Task status](docs/rebuild/tasks.json)
+- [Current handoff notes and limitations](docs/rebuild/PROGRESS.md)
+- [Acceptance criteria](docs/rebuild/ACCEPTANCE.md)
+- [Original design decisions](docs/DESIGN-NOTES.md)
+
+## Development
+
+This project was rebuilt from an empty branch. The previous implementation is preserved at `54623c6` on `codex/companion-rebuild`.
+
+Requires Windows and Node.js 24.
+
+Start with `npm run context:check`. Record new decisions, tasks, verification evidence, and handoff notes in the repository, then regenerate the context with `npm run context`. Both `npm run check` and CI reject stale context. See [project memory](MEMORY.md).
+
+```powershell
+npm ci
+npm run check
+npm run app
+```
+
 ## Status and troubleshooting
+
+If your terminal cannot find `tma`, use `npm prefix -g` to locate the global command directory, check that it is in PATH, and reopen the terminal. Before global registration, use `node bin/teach-me.mjs` from the checkout. Installing files does not start teaching or modify other Agent configuration.
 
 See the handoff notes for implemented features and unverified behavior. This branch has not completed all v1 functionality.
 

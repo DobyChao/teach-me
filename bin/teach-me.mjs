@@ -100,7 +100,7 @@ try {
       const { version } = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
       out({
         ...(await installSkill({ ...options, version })),
-        next: '在新 Codex 对话中使用 $teach-me；现有对话可能需要重新加载技能。',
+        next: "Reload your Agent skills or open a new session, then invoke the teach-me skill using your host's loading rules.",
       });
     } else
       throw new Error('用法：tma skill install|status|path [--agent codex] [--skills-dir 目录]');
@@ -122,14 +122,15 @@ Commands:
   clear [--all]                       Clear Agent annotations; all also clears user drawings
   board / status                      Inspect the board or session status
   stop                                Close the App
-  skill install                       Install or update the Codex skill
+  skill install                       Install or update the teaching skill
   skill status / path                 Inspect skill status or destination
   protocol                            Print the full Agent protocol
   --help, -h                          Show this help
   --version, -v                       Print the version
 
 Use --client NAME on session commands to identify each Agent.
-Skill commands accept --agent codex and --skills-dir DIR.
+Use --skills-dir DIR to install into your Agent's skills directory.
+The optional --agent codex flag selects the built-in location preset.
 Default skill directory: CODEX_HOME/skills or ~/.codex/skills.
 
 Example scene: {"say":"Click here","pattern":"point","to":[100,100]}

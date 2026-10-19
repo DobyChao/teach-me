@@ -14,6 +14,7 @@
 | 记住什么 | 为什么／权威来源 |
 | --- | --- |
 | 伴随教学，只指不代操作，复用用户已有 Agent | [PRODUCT R01](docs/rebuild/PRODUCT.md)、[Agent 协议](docs/AGENT-PROTOCOL.md) |
+| 产品与协议Agent无关；通用安装前置，具体宿主只作为可选预设 | 用户2026-10-19纠正README；[ADR-021](docs/rebuild/DECISIONS.md)、[skill安装步骤](README.md#2-install-the-skill)；文件安装与宿主发现分别验收 |
 | CLI帮助与默认README使用英文，另保留中文README并互链 | 用户2026-10-19要求；[ADR-020](docs/rebuild/DECISIONS.md)、[English](README.md)、[简体中文](README.zh-CN.md) |
 | 产品由桌面App、全局tma命令和可安装Agent skill组成 | 用户2026-10-19明确要求；[ADR-019](docs/rebuild/DECISIONS.md)、[安装入口](README.md#install-for-your-agent)、[技能源码](skills/teach-me/SKILL.md)；当前是源码安装，独立安装包仍待交付 |
 | 用户认可原设计方向，要求从空工程重建 | [ADR-001](docs/rebuild/DECISIONS.md#adr-001--接受--2026-10-17--独立重建)，旧快照只供追溯 |

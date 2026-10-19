@@ -66,6 +66,7 @@
 | T22 定位并修复动效收尾闪烁和拖动放大 | done | T01 | [T22.md](evidence/T22.md) |
 | T23 建立App、全局tma与可安装Agent skill入口 | done | T01 | [T23.md](evidence/T23.md) |
 | T24 CLI英文帮助与中英文README入口 | done | T23 | [T24.md](evidence/T24.md) |
+| T25 Agent无关的README与明显的skill安装步骤 | done | T23、T24 | [T25.md](evidence/T25.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -88,4 +89,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 960a9471e1d3cd4e089348795282178c2d16b2e5d81bd792f3bd0704301798fc -->
+<!-- source-sha256: 066cd44a4b3c6dfad84d06b66d6ce18115fccbc51c26feb156d5fd47dba91589 -->

@@ -622,6 +622,31 @@
         "docs/rebuild/evidence/T24.md"
       ],
       "notes": "英文帮助及示例、英文README和独立中文README已完成；互链/安装锚点与译文摘要已维护。全局help各别名输出一致，68项检查通过；不扩大App语言和真机验收范围。"
+    },
+    {
+      "id": "T25",
+      "title": "Agent无关的README与明显的skill安装步骤",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T23",
+        "T24"
+      ],
+      "requirements": [
+        "R30"
+      ],
+      "acceptance": [
+        "A30"
+      ],
+      "verify": [
+        "双语README结构、命令与链接审阅",
+        "自定义目录实际安装/状态验证及未修改默认目录检查",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T25.md"
+      ],
+      "notes": "双语README前置Agent无关三步安装，明确技能目录/结果/status/手动复制/重载，Codex仅可选预设；CLI安装措辞同步。自定义目录真实安装/幂等/默认技能不变及手动复制通过，68项检查通过；其他宿主发现/模型行为未据此宣称验收。"
     }
   ],
   "nextUp": [

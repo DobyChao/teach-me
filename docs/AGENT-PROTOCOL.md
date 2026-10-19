@@ -1,6 +1,6 @@
 # Agent 使用协议（重建版本）
 
-全局 CLI：`tma`（兼容 `teach-me-agent`）；未注册时用 `node bin/teach-me.mjs`。源码安装：`npm ci` 后 `npm run setup`，见[安装说明](../README.md#install-for-your-agent)。App 由 start 按需启动，skill 可用 `tma skill install` 单独安装。源技能见[SKILL.md](../skills/teach-me/SKILL.md)。
+全局 CLI：`tma`（兼容 `teach-me-agent`）；未注册时用 `node bin/teach-me.mjs`。产品与协议Agent无关，需要宿主能执行本地命令、查看图片并保持wait。源码安装：`npm ci`、`npm run build`、`npm link --offline`，再按[skill安装步骤](../README.md#2-install-the-skill)显式选择宿主技能父目录。App由start按需启动，源技能见[SKILL.md](../skills/teach-me/SKILL.md)。
 
 每个 Agent 使用稳定、不同的 `--client 名称`，或设置 `TEACH_ME_CLIENT`。有 CODEX_THREAD_ID 时默认使用它；无法识别宿主时默认 default。同名 client 会复用连接凭据，不能代表两个独立 Agent。以下命令均以 `tma` 为前缀。
 
@@ -29,10 +29,12 @@ wait 先把结果写到 stdout 并等待写入回调，再确认消息；未确�
 | stop | 结束并关闭应用 |
 | help / --help / --version | 查看英文命令帮助与版本，不启动 App |
 | protocol | 输出本协议，不依赖当前工作目录 |
-| skill install [--agent codex] | 显式安装/更新 Codex skill；兼容 install-skill 别名 |
+| skill install --skills-dir 目录 | 安装/更新通用教学skill；支持--agent codex位置预设与install-skill别名 |
 | skill status / path | 查看安装状态/目标；--skills-dir 可指定技能父目录 |
 
-默认技能位置为 CODEX_HOME/skills/teach-me 或 ~/.codex/skills/teach-me。安装器不会修改其他 Agent 配置，不覆盖外来技能或已修改的安装内容；再次 install 可更新本工具管理且未经修改的版本。新对话发现技能，当前对话可能需要重新加载。CLI start/attach 输出属于本地连接结果，含凭据，不要把完整结果或客户端文件复制到聊天/仓库。
+通用安装用--skills-dir指定宿主认可的技能父目录，安装器会在其中创建teach-me/SKILL.md；status使用同一目录验证。文件安装与宿主发现分别确认，不支持skill加载时可让Agent直接读取指引并调用CLI。未指定目录时仍兼容Codex预设，位置为CODEX_HOME/skills/teach-me或~/.codex/skills/teach-me；现有npm run setup也保留构建/link/安装Codex预设的快捷行为。
+
+安装器不会修改其他Agent配置，不覆盖外来技能或已修改的安装内容；再次install可更新本工具管理且未经修改的版本，之后按宿主规则重载。CLI start/attach输出属于本地连接结果，含凭据，不要把完整结果或客户端文件复制到聊天/仓库。
 
 ## 场景
 
