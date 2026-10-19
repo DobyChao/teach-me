@@ -6,7 +6,17 @@ Stay in your current software and learn by doing. Your Agent guides you one step
 
 Teach me, Agent is agent-agnostic: it connects your existing Agent to a desktop teaching panel through a local CLI. Your Agent needs local command execution, the ability to open returned images, and support for keeping a `tma wait` call active during teaching.
 
-[Install App / CLI](#1-install-the-app-and-cli) · [Install the skill](#2-install-the-skill) · [Connect your Agent](#3-connect-your-agent)
+[Let your Agent install it](#let-your-agent-install-it) · [Manual installation](#install-for-your-agent)
+
+## Let your Agent install it
+
+With this repository open in your Agent, copy this request:
+
+```text
+Read INSTALL.md in this repository, install Teach me, Agent and its skill for your current Agent environment, and verify the installation.
+```
+
+The [Agent installation guide](INSTALL.md) covers setup, choosing the right skill directory, installation, and verification. Your Agent handles those steps. The manual alternative follows below.
 
 ## Install for your Agent
 
@@ -25,10 +35,20 @@ This registers `tma` and the compatible `teach-me-agent` alias. The CLI links to
 
 ### 2. Install the skill
 
-The skill teaches your Agent the connection, screenshot, and teaching loop. Choose the **skills parent directory recognized by your Agent**, then replace `<your-agent-skills-directory>` below with that real directory:
+For manual installation, choose the **skills parent directory recognized by your Agent** and replace the placeholder below. Only this command installs the skill:
 
 ```powershell
 tma skill install --skills-dir "<your-agent-skills-directory>"
+```
+
+On success, this command already returns the destination and installation status.
+
+<details>
+<summary>Optional: inspect the destination and installation status</summary>
+
+These commands only inspect the installation; they do not install anything:
+
+```powershell
 tma skill path --skills-dir "<your-agent-skills-directory>"
 tma skill status --skills-dir "<your-agent-skills-directory>"
 ```
@@ -42,6 +62,8 @@ Installation creates:
 ```
 
 The status command should report `"status": "installed"`. This confirms the files were installed; skill discovery and invocation follow your Agent host's own loading rules.
+
+</details>
 
 **Manual installation:** copy the entire [skills/teach-me](skills/teach-me) folder into that skills parent directory. If your Agent cannot load skills, give it [SKILL.md](skills/teach-me/SKILL.md) as instructions and use `tma protocol` for the command details. The CLI connection works independently of a native skill loader.
 
@@ -67,8 +89,9 @@ Codex is the currently built-in skill-location preset. Codex users can replace s
 
 ```powershell
 tma skill install --agent codex
-tma skill status --agent codex
 ```
+
+Optionally check it with `tma skill status --agent codex`.
 
 Its destination is `CODEX_HOME/skills/teach-me`, or `~/.codex/skills/teach-me` when unset. In a new Codex conversation, use `$teach-me`. The existing `npm run setup` shortcut builds the App, registers the CLI, and installs this Codex preset. Other hosts use the explicit directory flow above; their skill discovery has not been verified here.
 

@@ -67,6 +67,7 @@
 | T23 建立App、全局tma与可安装Agent skill入口 | done | T01 | [T23.md](evidence/T23.md) |
 | T24 CLI英文帮助与中英文README入口 | done | T23 | [T24.md](evidence/T24.md) |
 | T25 Agent无关的README与明显的skill安装步骤 | done | T23、T24 | [T25.md](evidence/T25.md) |
+| T26 一句话委托Agent安装并拆开可选检查 | done | T25 | [T26.md](evidence/T26.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -89,4 +90,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 066cd44a4b3c6dfad84d06b66d6ce18115fccbc51c26feb156d5fd47dba91589 -->
+<!-- source-sha256: f8e1d3b42fa2484fc66c9ceacda26584fb51a494d56b7889d97a531c1f886df4 -->

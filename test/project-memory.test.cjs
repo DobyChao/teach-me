@@ -21,6 +21,7 @@ function fixture(t) {
     'MEMORY.md',
     'README.md',
     'README.zh-CN.md',
+    'INSTALL.md',
     'docs/rebuild/README.md',
     'docs/rebuild/PROGRESS.md',
     'docs/rebuild/ARCHITECTURE.md',

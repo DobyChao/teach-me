@@ -34,6 +34,7 @@
 | R28 | 产品提供桌面App、可从任意目录调用的全局tma CLI及可安装Agent skill；源码安装可复现，安装不覆盖外来/已修改技能，使用协议与源码随Git维护；独立安装包另行验收 | 2026-10-19 用户明确要求App、全局命令与Agent skill |
 | R29 | tma help及帮助别名使用英文；根README.md为英文入口，另附README.zh-CN.md中文版本，两者互链并保留一致的安装/使用和交付边界 | 2026-10-19 用户明确要求CLI英文帮助、英文README并附中文README |
 | R30 | 产品与教学协议保持Agent无关，README先展示通用App/CLI与skill安装/验证/连接步骤；具体宿主只作可选预设，不能把默认安装目录写成产品依赖。中英文同步，说明能力前提和实际支持范围 | 2026-10-19 用户纠正README过度绑定Codex，并反馈skill安装指引不明显 |
+| R31 | README主安装入口提供可复制给Agent的一句话请求，指向仓库内真实INSTALL.md；Agent负责按当前宿主安装App/CLI/skill并检查。手动skill安装只展示一条install命令，path/status明确为可选检查 | 2026-10-19 用户指出三行误导，要求“Agent读取xxx然后安装”的一句话指引 |
 
 ## 明确纠正的历史歧义
 

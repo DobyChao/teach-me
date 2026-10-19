@@ -6,7 +6,17 @@
 
 Teach me, Agent 与具体 Agent 无关，通过本地 CLI 连接你已有的 Agent 和桌面教学面板。Agent 需要能够执行本地命令、打开返回的图片，并在教学期间持续运行 `tma wait`。
 
-[安装 App / CLI](#1-安装-app-和-cli) · [安装 skill](#2-安装-skill) · [让 Agent 连接](#3-让-agent-连接)
+[让 Agent 安装](#让-agent-帮你安装) · [手动安装](#安装本机-agent-入口)
+
+## 让 Agent 帮你安装
+
+在 Agent 中打开本仓库，把下面这句话发给它：
+
+```text
+请读取本仓库的 INSTALL.md，按指引为当前 Agent 环境安装 Teach me, Agent 和 skill，并检查安装结果。
+```
+
+[Agent 安装指南](INSTALL.md)包含环境准备、技能目录识别、安装和验证，由 Agent 完成这些步骤。下面保留手动安装方式。
 
 ## 安装本机 Agent 入口
 
@@ -25,10 +35,20 @@ tma --version
 
 ### 2. 安装 skill
 
-skill 告诉 Agent 如何连接、看截图并维持教学循环。先找到**你的 Agent 认可的技能父目录**，把下面的 `<your-agent-skills-directory>` 替换成这个真实目录：
+手动安装时，找到**你的 Agent 认可的技能父目录**并替换下面的路径占位符。安装 skill 只需这一条命令：
 
 ```powershell
 tma skill install --skills-dir "<your-agent-skills-directory>"
+```
+
+成功后，这条命令本身就会返回安装位置和状态。
+
+<details>
+<summary>可选：查看安装位置和状态</summary>
+
+下面两条只做检查，不执行安装：
+
+```powershell
 tma skill path --skills-dir "<your-agent-skills-directory>"
 tma skill status --skills-dir "<your-agent-skills-directory>"
 ```
@@ -42,6 +62,8 @@ tma skill status --skills-dir "<your-agent-skills-directory>"
 ```
 
 状态命令应返回 `"status": "installed"`。这表示文件安装成功；技能发现与调用仍遵循你的 Agent 宿主自身的加载规则。
+
+</details>
 
 **手动安装：**把整个 [skills/teach-me](skills/teach-me) 文件夹复制到该技能父目录。如果 Agent 不支持加载 skill，可以让它直接读取 [SKILL.md](skills/teach-me/SKILL.md) 作为指引，再通过 `tma protocol` 查看命令协议；CLI 连接本身不依赖原生 skill 加载器。
 
@@ -67,8 +89,9 @@ tma start --client my-lesson --topic '学习使用画图'
 
 ```powershell
 tma skill install --agent codex
-tma skill status --agent codex
 ```
+
+需要检查时，可选运行 `tma skill status --agent codex`。
 
 目标目录是 `CODEX_HOME/skills/teach-me`，未设置时为 `~/.codex/skills/teach-me`；新 Codex 对话可使用 `$teach-me`。现有 `npm run setup` 快捷方式会构建 App、注册 CLI 并安装这个 Codex 预设。其他宿主使用上面的显式目录流程，其技能发现尚未在本工程验收。
 

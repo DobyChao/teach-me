@@ -647,6 +647,30 @@
         "docs/rebuild/evidence/T25.md"
       ],
       "notes": "双语README前置Agent无关三步安装，明确技能目录/结果/status/手动复制/重载，Codex仅可选预设；CLI安装措辞同步。自定义目录真实安装/幂等/默认技能不变及手动复制通过，68项检查通过；其他宿主发现/模型行为未据此宣称验收。"
+    },
+    {
+      "id": "T26",
+      "title": "一句话委托Agent安装并拆开可选检查",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T25"
+      ],
+      "requirements": [
+        "R31"
+      ],
+      "acceptance": [
+        "A31"
+      ],
+      "verify": [
+        "双语一句话入口/INSTALL指南/单命令与可选检查审阅",
+        "自定义技能目录安装及检查命令核对",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T26.md"
+      ],
+      "notes": "双语一句话委托Agent读取INSTALL.md，手动skill主安装仅一条命令，path/status明确可选；指南已纳入上下文。隔离目录单条安装直接返回路径/状态，68项检查通过；独立Agent/线上发布/新机器安装未据此宣称验收。"
     }
   ],
   "nextUp": [

@@ -34,6 +34,7 @@
 | A28 | tma与兼容别名注册成功，任意cwd可help/version/protocol/start；Codex技能安装/重装/更新与自定义目录有效，外来/本地修改/目录链接保护，缺参数不误装；全局CLI能启动隔离App、收发与关闭，凭据不入Git；源码安装与独立包明确区分 | 安装器/CLI隔离测试、skill校验、Windows全局命令和真实App收发；新对话的模型行为不由安装校验推定 |
 | A29 | tma help/--help/-h及子命令--help输出英文，兼容命令入口有效；README.md英文、README.zh-CN.md中文互链且命令/能力限制对应；安装入口旧锚点修复，中文README纳入上下文摘要 | 实际CLI输出审阅、双语文档及本地链接核对、npm run check；不扩大到App语言或新增真机验收 |
 | A30 | README双语首屏可找到skill安装入口；通用流程明确App/CLI、技能父目录、teach-me/SKILL.md结果、status验证、重载与连接；手动安装和无技能加载宿主路径明确；Codex仅可选预设且不虚构其他宿主验证。CLI安装说明/完成提示使用通用技能措辞，默认行为保持兼容 | 双语及链接审阅、自定义目录实际安装/状态验证、npm run check；文件安装不等于宿主发现/Agent行为已验收 |
+| A31 | 双语README顶部有可复制的一句话Agent安装请求，链接INSTALL.md真实文件；指南覆盖宿主目录识别、App/CLI与skill安装和结果反馈，不静默使用错误宿主默认值；手动主安装代码块仅install，path/status在可选检查中，宿主预设也不混入必做检查 | 文档/命令/链接核对、自定义目录安装与检查、npm run check；不将文件安装推定为独立Agent行为验证 |
 
 ## 证据格式
 
