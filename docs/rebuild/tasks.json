@@ -701,7 +701,7 @@
     },
     {
       "id": "T28",
-      "title": "实现并验证宿主原生唤醒适配与wait降级",
+      "title": "补齐通用接收能力并验证Agent所选原生通路",
       "milestone": "M3",
       "status": "todo",
       "dependsOn": [
@@ -714,7 +714,7 @@
         "A33"
       ],
       "verify": [
-        "一个宿主现有会话的外部输入/空闲唤醒隔离实验",
+        "Agent自主选择通路后，当前会话外部输入/空闲唤醒隔离实验",
         "TMA队列投递、ack、重复/失败/停止与单消费者切换",
         "原生idle健康状态与fallback回归",
         "真实宿主端到端验收"
@@ -722,14 +722,38 @@
       "evidence": [
         "docs/rebuild/evidence/T28.md"
       ],
-      "notes": "已完成六种宿主官方文档研究，区分hook、受控会话API和用户现有会话桥；仅有研究和接收契约，适配器尚未实现。按HOST-INTEGRATION.md先验证可访问的现有宿主会话投递，再接队列与可靠ack；不能仅安装hook或恢复历史就宣称已唤醒。"
+      "notes": "已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。"
+    },
+    {
+      "id": "T29",
+      "title": "由Agent自主选择接收机制的通用skill",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T27"
+      ],
+      "requirements": [
+        "R34"
+      ],
+      "acceptance": [
+        "A34"
+      ],
+      "verify": [
+        "通用接收选择、同会话唤醒、失败降级与单消费者案例审阅",
+        "skill-creator quick_validate与安装副本同步",
+        "npm run context及npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T29.md"
+      ],
+      "notes": "通用skill已改为Agent自主选择并按需接通，移除具体宿主提示和必须预装桥/另开任务限制；保留同会话验证、可靠接收、单消费者和wait兜底。安装副本及SHA256一致，技能校验/六类人工规则审阅/68项工程检查通过；未进行真实Agent hook唤醒实验。"
     }
   ],
   "nextUp": [
     {
       "taskId": "T28",
-      "reason": "要让wait实际降为兜底，必须完成宿主原生消息桥，不能靠skill文字开启唤醒。",
-      "action": "读HOST-INTEGRATION.md与T28研究证据；按用户当前宿主选择可访问的现有会话做外部投递/空闲回复实验，本机Codex queue/turn-start只是候选；再接TMA可靠ack、单消费者交接与idle健康状态，失败保留wait。"
+      "reason": "原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。",
+      "action": "按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。"
     },
     {
       "taskId": "T14",

@@ -11,11 +11,11 @@
 
 以下排序来自 tasks.json.nextUp；用户新请求可改变排序，动手前先核对工作区。
 
-### 1. T28 · 实现并验证宿主原生唤醒适配与wait降级
+### 1. T28 · 补齐通用接收能力并验证Agent所选原生通路
 
-状态：`todo`。优先理由：要让wait实际降为兜底，必须完成宿主原生消息桥，不能靠skill文字开启唤醒。
+状态：`todo`。优先理由：原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。
 
-下一步：读HOST-INTEGRATION.md与T28研究证据；按用户当前宿主选择可访问的现有会话做外部投递/空闲回复实验，本机Codex queue/turn-start只是候选；再接TMA可靠ack、单消费者交接与idle健康状态，失败保留wait。
+下一步：按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。
 
 验收入口：A33；证据：[T28.md](evidence/T28.md)
 
@@ -77,7 +77,8 @@
 | T25 Agent无关的README与明显的skill安装步骤 | done | T23、T24 | [T25.md](evidence/T25.md) |
 | T26 一句话委托Agent安装并拆开可选检查 | done | T25 | [T26.md](evidence/T26.md) |
 | T27 修订主动视觉取证与原生唤醒优先的skill规则 | done | T23、T26 | [T27.md](evidence/T27.md) |
-| T28 实现并验证宿主原生唤醒适配与wait降级 | todo | T27 | [T28.md](evidence/T28.md) |
+| T28 补齐通用接收能力并验证Agent所选原生通路 | todo | T27 | [T28.md](evidence/T28.md) |
+| T29 由Agent自主选择接收机制的通用skill | done | T27 | [T29.md](evidence/T29.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -94,11 +95,11 @@
 - **T15**：基础工具、附件与分层集成通过；真实鼠标矩形及布局已观察，原生键盘焦点等完整验收继续记录。
 - **T16**：360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。
 - **T17**：三档布局、草稿/审批保护和同窗口动画已实现；麦克风、多屏与完整原生输入另验。
-- **T28**：已完成六种宿主官方文档研究，区分hook、受控会话API和用户现有会话桥；仅有研究和接收契约，适配器尚未实现。按HOST-INTEGRATION.md先验证可访问的现有宿主会话投递，再接队列与可靠ack；不能仅安装hook或恢复历史就宣称已唤醒。
+- **T28**：已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 997d261acbc9c78b47e7a67cd5b6f5ecfca7790b9a8da4a7bc9f67cc0cf1a1f9 -->
+<!-- source-sha256: 2a99865e17bafe40cd49e36752d7e0c7562d2f1b569023a4bb5de1295a66014a -->

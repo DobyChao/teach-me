@@ -4,6 +4,8 @@
 
 ## 本轮变化
 
+2026-10-19用户要求由Agent自行决定是否使用hook，不对具体Agent写说明。T29修订通用skill、协议和双语入口，允许按需接通当前环境支持的会话级通路，保留验证/单消费者/可靠接收与wait兜底。六家对照仅作历史研究；T28调整为通用接收能力与所选通路验收，不预设逐家适配器。技能校验、本机副本同步与哈希、六类规则审阅、68项检查通过。见ADR-024及[T29](evidence/T29.md)；本轮未启动教学或实际hook实验。
+
 2026-10-19用户追问其他Agent的调查范围。T28补查Gemini CLI、Cursor、GitHub Copilot，连同前轮三种形成[六宿主对照](HOST-INTEGRATION.md)；区分生命周期hook、客户端会话API和用户现有会话桥，Cursor云端能力不代表本地IDE支持。仅完成官方文档研究，未接通或启动新试用，验收仍待实施；见[T28研究证据](evidence/T28.md)。
 
 2026-10-19用户结束快速试用，指出Agent不主动capture及wait应为兜底。T27已修订skill并更新本机安装副本：视觉证据不足/指错时主动capture与zoom，接收优先已验证原生桥，否则一个wait。68项检查与技能结构/规则案例审阅通过，不冒称新版Agent实测。官方宿主差异见[HOST-INTEGRATION.md](HOST-INTEGRATION.md)；当前没有原生适配器，真实桥接和idle/ack/降级由T28继续，见[T27](evidence/T27.md)、ADR-023。

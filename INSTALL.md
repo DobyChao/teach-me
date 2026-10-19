@@ -46,6 +46,6 @@ If the host has no native skill loader, explain that limitation and offer the [t
 
 Follow the host's supported skill-reload procedure, or tell the user to start a new Agent session. Distinguish installed files from verified host discovery.
 
-Installing the skill does not register host hooks or enable a wakeup bridge. Teaching prefers a separately verified native delivery path, with `tma wait` as fallback; this checkout currently ships only that fallback. See the [host integration contract](docs/rebuild/HOST-INTEGRATION.md) before claiming native delivery is available.
+Installing the skill does not register hooks or enable wakeups. During teaching, the Agent chooses a suitable receive mechanism from its current environment and may connect a session-scoped hook or event route using supported facilities. It must verify delivery and idle handling in the current conversation before relying on that route; otherwise it uses the included `tma wait` transport. No host-specific setup recipe is required by the teaching skill.
 
 Report the App build result, whether the global `tma` command resolves, the skill destination and status, and any required reload. Installation does not start teaching: wait for the user to request a connection before running `tma start`. A standalone App installer remains unshipped; this is installation from source.
