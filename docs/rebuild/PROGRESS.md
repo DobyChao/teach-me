@@ -4,7 +4,9 @@
 
 ## 本轮变化
 
-2026-10-19用户追加App、全局CLI和可安装Agent skill的产品形态。T23提供源码setup、全局`tma`及Codex `$teach-me`，已在本机注册/安装；仓库外启动App、原生输入→wait→say→自动ack→stop闭环通过。68项检查与5组dogfood通过，技能保护和校验通过。见[T23](evidence/T23.md)、ADR-019及[安装说明](../../README.md#安装本机-agent-入口)。独立安装包仍是T08，新对话模型行为未由文件校验推定。
+2026-10-19用户要求CLI帮助和默认README使用英文，并附中文README。T24将`tma help`及帮助别名改为英文，README.md英文/README.zh-CN.md中文互链，修正安装锚点并把译文纳入上下文摘要。实际全局帮助各入口一致，68项检查通过；App语言与其他真机验收范围不变。见[T24](evidence/T24.md)、ADR-020。
+
+2026-10-19用户追加App、全局CLI和可安装Agent skill的产品形态。T23提供源码setup、全局`tma`及Codex `$teach-me`，已在本机注册/安装；仓库外启动App、原生输入→wait→say→自动ack→stop闭环通过。68项检查与5组dogfood通过，技能保护和校验通过。见[T23](evidence/T23.md)、ADR-019及[安装说明](../../README.md#install-for-your-agent)。独立安装包仍是T08，新对话模型行为未由文件校验推定。
 
 2026-10-19用户纠正T21仍有收尾偶闪、拖动放大。T22复现并修复原生先收紧造成背景二次缩放、拖动测高缓存污染和125% DPI下移动尺寸累积；以固定目标FLIP、布局版本及固定逻辑尺寸平移修正。62项检查、7组panel-modes及原桌面回归通过；单屏原生三档拖动已观察。见[T22](evidence/T22.md)、ADR-018和[动效契约](MOTION.md)。T21外观基础保留，主题/桌宠、语音/多屏等范围没有因此扩大。
 

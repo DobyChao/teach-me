@@ -598,6 +598,30 @@
         "docs/rebuild/evidence/T23.md"
       ],
       "notes": "源码App/setup、全局tma及Codex教学skill已实现；68项检查、6项安装器测试/技能校验及5组dogfood通过，本机注册/安装和仓库外真实App收发/自动ack/关闭通过。新对话模型行为、其他宿主、独立App包未据此宣称完成；T08等原任务保留。"
+    },
+    {
+      "id": "T24",
+      "title": "CLI英文帮助与中英文README入口",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T23"
+      ],
+      "requirements": [
+        "R29"
+      ],
+      "acceptance": [
+        "A29"
+      ],
+      "verify": [
+        "实际tma help/--help/-h及兼容入口输出审阅",
+        "双语README命令、链接与交付限制核对",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T24.md"
+      ],
+      "notes": "英文帮助及示例、英文README和独立中文README已完成；互链/安装锚点与译文摘要已维护。全局help各别名输出一致，68项检查通过；不扩大App语言和真机验收范围。"
     }
   ],
   "nextUp": [

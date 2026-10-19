@@ -20,6 +20,7 @@ function fixture(t) {
     'AGENTS.md',
     'MEMORY.md',
     'README.md',
+    'README.zh-CN.md',
     'docs/rebuild/README.md',
     'docs/rebuild/PROGRESS.md',
     'docs/rebuild/ARCHITECTURE.md',

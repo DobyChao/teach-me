@@ -1,6 +1,6 @@
 # Agent 使用协议（重建版本）
 
-全局 CLI：`tma`（兼容 `teach-me-agent`）；未注册时用 `node bin/teach-me.mjs`。源码安装：`npm ci` 后 `npm run setup`，见[安装说明](../README.md#安装本机-agent-入口)。App 由 start 按需启动，skill 可用 `tma skill install` 单独安装。源技能见[SKILL.md](../skills/teach-me/SKILL.md)。
+全局 CLI：`tma`（兼容 `teach-me-agent`）；未注册时用 `node bin/teach-me.mjs`。源码安装：`npm ci` 后 `npm run setup`，见[安装说明](../README.md#install-for-your-agent)。App 由 start 按需启动，skill 可用 `tma skill install` 单独安装。源技能见[SKILL.md](../skills/teach-me/SKILL.md)。
 
 每个 Agent 使用稳定、不同的 `--client 名称`，或设置 `TEACH_ME_CLIENT`。有 CODEX_THREAD_ID 时默认使用它；无法识别宿主时默认 default。同名 client 会复用连接凭据，不能代表两个独立 Agent。以下命令均以 `tma` 为前缀。
 
@@ -27,7 +27,7 @@ wait 先把结果写到 stdout 并等待写入回调，再确认消息；未确�
 | clear | 仅清 Agent 指引；--all 也清用户笔迹，需要用户授权 |
 | board | 报告用户和 Agent 笔迹数量 |
 | stop | 结束并关闭应用 |
-| help / --help / --version | 查看命令与版本，不启动 App |
+| help / --help / --version | 查看英文命令帮助与版本，不启动 App |
 | protocol | 输出本协议，不依赖当前工作目录 |
 | skill install [--agent codex] | 显式安装/更新 Codex skill；兼容 install-skill 别名 |
 | skill status / path | 查看安装状态/目标；--skills-dir 可指定技能父目录 |

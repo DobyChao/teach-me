@@ -106,7 +106,35 @@ try {
       throw new Error('用法：tma skill install|status|path [--agent codex] [--skills-dir 目录]');
   } else if (command === 'help') {
     out(
-      `Teach me, Agent · 只指不代操作\n\ntma <命令>（兼容 teach-me-agent / node bin/teach-me.mjs）\n  start [--topic 主题]  启动应用并开始教学\n  attach --session ID  请求连接已有教学\n  wait [--timeout 秒]  等待用户消息（默认 480 秒）\n  say 文字             在面板说一句\n  show JSON或文件      画指引，必须带 say\n  capture              经过用户审批取图\n  zoom --shot ID --rect x,y,w,h  裁切同一帧\n  clear [--all]        清 Agent 指引；all 也清用户笔迹\n  board / status       查看状态\n  stop                 退出应用\n  skill install        安装/更新 Codex skill\n  skill status / path  查看 skill 状态/位置\n  protocol             输出完整 Agent 协议\n  --version            查看版本\n\n会话命令使用 --client 名称区分 Agent。\nskill 支持 --agent codex、--skills-dir 目录；默认使用 CODEX_HOME/skills 或 ~/.codex/skills。\nshow 示例：{\"say\":\"点这里\",\"pattern\":\"point\",\"to\":[100,100]}\n坐标使用最近截图的像素。截图以路径返回，请用 Agent 的图片工具打开。`,
+      `Teach me, Agent - guide without taking control.
+
+Usage: tma <command> [options]
+Aliases: teach-me-agent / node bin/teach-me.mjs
+
+Commands:
+  start [--topic TOPIC] [--display ID]  Start the App and a teaching session
+  attach --session ID                 Request access to an existing session
+  wait [--timeout SECONDS]             Wait for user messages (default: 480)
+  say TEXT                            Send a short message to the panel
+  show JSON_OR_FILE                   Show annotations; requires a nonempty say
+  capture                             Take a screenshot with user approval
+  zoom --shot ID --rect x,y,w,h        Crop the same screenshot frame
+  clear [--all]                       Clear Agent annotations; all also clears user drawings
+  board / status                      Inspect the board or session status
+  stop                                Close the App
+  skill install                       Install or update the Codex skill
+  skill status / path                 Inspect skill status or destination
+  protocol                            Print the full Agent protocol
+  --help, -h                          Show this help
+  --version, -v                       Print the version
+
+Use --client NAME on session commands to identify each Agent.
+Skill commands accept --agent codex and --skills-dir DIR.
+Default skill directory: CODEX_HOME/skills or ~/.codex/skills.
+
+Example scene: {"say":"Click here","pattern":"point","to":[100,100]}
+Coordinates are pixels in the latest screenshot. Open each returned image
+path with your Agent's image tool.`,
     );
   } else if (command === 'start') {
     let secret = '';
