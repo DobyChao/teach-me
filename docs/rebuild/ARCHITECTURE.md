@@ -13,6 +13,8 @@ CLI / Agent（保留公开命令语义）
 
 领域状态不依赖 Electron、React 或 DOM。控制器拥有异步操作和取消令牌；Renderer 不发起系统截图，也不保存原窗口句柄。
 
+教学取证与接收传输分离：skill要求画面不足时主动capture；接收优先已验证的宿主桥，wait兜底。当前Session队列/CLI仅实现长轮询，原生适配器是T28，不能把Renderer广播或宿主hook存在当成已唤醒。未来桥拥有会话绑定、可靠接收/ack及健康状态，Renderer边界不变，见[宿主接收契约](HOST-INTEGRATION.md)。
+
 ## 渐进目录
 
 当前工程：`src/core/`（领域控制器）、`src/shared/`（DTO + schema）、`src/host/`（Electron 与 Windows 适配）、`src/renderer/`（React）和 `bin/`（CLI）。不读取旧 UI 来渲染新界面。

@@ -17,13 +17,29 @@ Use a stable unique client for this teaching conversation: `tma start --client <
 
 Connection credentials stay in the local App data directory. Do not copy endpoint/client files or tokens into messages, scene files, or Git.
 
-## Teaching loop
+## Observe actively before guiding
 
-- Send one useful step with `tma say --client <id> "先打开文件菜单。"`.
-- Wait with `tma wait --client <id> --timeout 480`. The tool running it needs at least 490 seconds. Keep exactly one pending wait for this client; `wait` handles acknowledgement after output, so do not send a separate ack.
-- On a timeout, quietly wait again while teaching remains active. On `ended`, stop. Do not claim to be listening after the wait process has exited.
-- Read the user's text and open every `shots.path` with the agent's image tool before reasoning about the screen. Use the actual image width/height and the newest user frame.
-- Reply with `say`, or write a JSON scene file and run `tma show --client <id> <scene-file>`. Then return to `wait`.
+Take responsibility for obtaining the visual evidence a step needs. Do not wait for the user to attach a screenshot or explicitly ask you to capture.
+
+- For a screen-dependent lesson, call `tma capture --client <id>` before the first visual instruction if you have no adequate current frame. Open the returned `shot.path` with your image tool before choosing a control or coordinates.
+- Capture again when the user's action may have changed the app, page, dialog, or result and their new reply has no adequate current image. A text-only "done" is not visual confirmation. Capture when an annotation is reported wrong, an unexpected error appears, or the visible state is uncertain; inspect the new frame before correcting the instruction.
+- Open every user-supplied `shots.path`. Reuse a frame that actually shows the current relevant state; avoid a redundant capture when it already answers the visual question. A screenshot listed by `status` is a past frame, not a live view.
+- For a tiny or ambiguous icon, use `tma zoom --client <id> --shot <shot-id> --rect x,y,w,h` and inspect the crop before guessing. Give verbal clarification if the target still cannot be identified reliably.
+- Answer conceptual questions without unnecessary capture. Do not take screenshots on a fixed timer, on every wait timeout, or merely to keep a connection alive.
+
+Capture follows the App's approval policy. Request it through `tma capture` rather than asking the user to take a screenshot manually. Respect denial or cancellation; do not repeat the request in a loop or fall back to stale coordinates as if they were current.
+
+## Receive replies through the active transport
+
+Prefer a host-native wakeup or event mechanism **only when a Teach me bridge is already configured and verified to deliver App messages to this same Agent conversation and start or resume handling them**. A host having hooks, notifications, or a plugin API does not establish that bridge. Installing this skill does not enable wakeups. The current standalone `tma` CLI ships no native wakeup adapter, so use the fallback below unless a separately verified integration is present.
+
+With a verified native bridge, process the delivered input using its documented message/ack path, then yield to that mechanism. Do not also start a second inbox consumer or a permanent model-side `wait`. A bridge that only signals new input still needs its documented retrieval step. On bridge failure, retain pending messages and fall back after its consumer stops. Configuring a new bridge is a separate setup task.
+
+**Compatibility fallback:** run `tma wait --client <id> --timeout 480` when no reliable native delivery is active. The tool running it needs at least 490 seconds. Keep exactly one pending wait for this client; the CLI acknowledges after printing, so do not send a separate ack. On a timeout, quietly wait again while teaching is active. On `ended` or a user stop request, stop. Do not end the turn assuming an unconfigured hook will wake you, or claim to be listening after the wait process exits.
+
+## Teach one step at a time
+
+Read the reply, obtain or inspect the visual evidence it needs, then send one useful step with `tma say --client <id> "先打开文件菜单。"`, or write a scene file and run `tma show --client <id> <scene-file>`. Stay available through the active receive strategy; returning to a long wait is a fallback, not the teaching policy itself.
 
 For example, after inspecting screenshot `s1`, use coordinates from that image:
 
@@ -35,7 +51,7 @@ Every scene needs a nonempty `say`; one scene replaces the entire Agent layer. `
 
 ## Images and recovery
 
-Use user-provided frames first. When another frame is needed, `tma capture` follows the App's screenshot approval policy; do not bypass refusal. `tma zoom --shot s1 --rect x,y,w,h` crops that same frame. Draw in the returned image's pixel coordinates, including when using a zoom; do not multiply by desktop DPI yourself. After display changes, capture again instead of reusing old coordinates.
+Draw in the inspected image's pixel coordinates, including when using a zoom. Bind the scene to that frame's `shot` id; do not multiply by desktop DPI yourself. After display changes, capture again instead of reusing old coordinates.
 
 Run `tma protocol` for supported scene types, HTML limits, coordinate rules, and known limitations. Do not invent options from older versions.
 

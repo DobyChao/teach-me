@@ -4,7 +4,7 @@
 
 用户留在当前软件中操作，Agent 用短句和屏幕上的指引一步步教学。
 
-Teach me, Agent 与具体 Agent 无关，通过本地 CLI 连接你已有的 Agent 和桌面教学面板。Agent 需要能够执行本地命令、打开返回的图片，并在教学期间持续运行 `tma wait`。
+Teach me, Agent 与具体 Agent 无关，通过本地 CLI 连接你已有的 Agent 和桌面教学面板。Agent 需要能执行本地命令、查看图片并可靠接收App消息；优先使用经验证的宿主原生唤醒桥，`tma wait`作为兼容兜底。当前工程仅交付wait路径，原生适配器仍在[规划中](docs/rebuild/HOST-INTEGRATION.md)。
 
 [让 Agent 安装](#让-agent-帮你安装) · [手动安装](#安装本机-agent-入口)
 
@@ -81,7 +81,7 @@ Agent 也可以直接通过 CLI 连接：
 tma start --client my-lesson --topic '学习使用画图'
 ```
 
-每个 Agent 使用不同的 `--client` 或 `TEACH_ME_CLIENT`。教学期间 Agent 用 `wait` 等待回应、用 `say`/`show` 给出指引，用户自己操作软件。命令见 `tma help`，完整[Agent 协议](docs/AGENT-PROTOCOL.md)也可通过 `tma protocol` 查看。
+每个 Agent 使用不同的 `--client` 或 `TEACH_ME_CLIENT`。教学期间，视觉指引需要新画面时由Agent主动capture，用`say`/`show`给出步骤，通过当前接收策略收消息（现阶段为wait兜底）；用户自己操作软件。命令见`tma help`，完整[Agent协议](docs/AGENT-PROTOCOL.md)也可通过`tma protocol`查看。
 
 ### 可选：Codex 预设
 

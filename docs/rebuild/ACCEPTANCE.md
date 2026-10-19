@@ -35,6 +35,8 @@
 | A29 | tma help/--help/-h及子命令--help输出英文，兼容命令入口有效；README.md英文、README.zh-CN.md中文互链且命令/能力限制对应；安装入口旧锚点修复，中文README纳入上下文摘要 | 实际CLI输出审阅、双语文档及本地链接核对、npm run check；不扩大到App语言或新增真机验收 |
 | A30 | README双语首屏可找到skill安装入口；通用流程明确App/CLI、技能父目录、teach-me/SKILL.md结果、status验证、重载与连接；手动安装和无技能加载宿主路径明确；Codex仅可选预设且不虚构其他宿主验证。CLI安装说明/完成提示使用通用技能措辞，默认行为保持兼容 | 双语及链接审阅、自定义目录实际安装/状态验证、npm run check；文件安装不等于宿主发现/Agent行为已验收 |
 | A31 | 双语README顶部有可复制的一句话Agent安装请求，链接INSTALL.md真实文件；指南覆盖宿主目录识别、App/CLI与skill安装和结果反馈，不静默使用错误宿主默认值；手动主安装代码块仅install，path/status在可选检查中，宿主预设也不混入必做检查 | 文档/命令/链接核对、自定义目录安装与检查、npm run check；不将文件安装推定为独立Agent行为验证 |
+| A32 | skill明确视觉任务capture触发、足够新截图复用、打开shot.path、小图标zoom、拒绝/失败恢复；教学循环不固定回wait，优先已验证native、否则fallback，明确当前未实现桥接。不编造CLI选项；安装副本同步、场景规则审阅及技能/工程校验通过 | skill-creator结构校验、代码/协议核对、案例审阅、npm run check；规则审阅不等于独立Agent实测 |
+| A33 | 原生适配器把App用户消息投递到正确现有Agent对话并实际唤起回复；空闲/忙碌、重复/失败/取消/结束均覆盖，持久接收后才ack；单消费者切换与fallback、原生空闲健康状态正确，凭据留在主机，安装技能不冒称启用适配器 | 后续适配器隔离端到端实验及当前宿主真实验收；未实现保留todo |
 
 ## 证据格式
 

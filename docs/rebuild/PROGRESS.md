@@ -4,6 +4,8 @@
 
 ## 本轮变化
 
+2026-10-19用户结束快速试用，指出Agent不主动capture及wait应为兜底。T27已修订skill并更新本机安装副本：视觉证据不足/指错时主动capture与zoom，接收优先已验证原生桥，否则一个wait。68项检查与技能结构/规则案例审阅通过，不冒称新版Agent实测。官方宿主差异见[HOST-INTEGRATION.md](HOST-INTEGRATION.md)；当前没有原生适配器，真实桥接和idle/ack/降级由T28继续，见[T27](evidence/T27.md)、ADR-023。
+
 2026-10-19用户指出三行安装/检查误导，要求一句话让Agent读取指南后安装。T26在双语README顶部给出可复制请求，新增[INSTALL.md](../../INSTALL.md)给Agent处理环境、目录、安装与验证；手动主命令仅install，path/status可选折叠。隔离目录单命令安装直接返回路径/状态，68项检查通过；未冒称独立Agent或新机器安装验收。见[T26](evidence/T26.md)、ADR-022。
 
 2026-10-19用户纠正README过度绑定Codex、skill安装不明显。T25将双语公开入口改为Agent无关，前置通用三步、显式技能目录、结果/status、手动复制与重载连接；Codex保留为可选位置预设，现有setup行为兼容。自定义目录实际安装/重复安装/手动复制与链接检查通过，68项检查通过；不据此声称其他宿主发现或模型行为通过。见[T25](evidence/T25.md)、ADR-021。

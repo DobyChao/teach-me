@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 Stay in your current software and learn by doing. Your Agent guides you one step at a time with short explanations and on-screen annotations.
 
-Teach me, Agent is agent-agnostic: it connects your existing Agent to a desktop teaching panel through a local CLI. Your Agent needs local command execution, the ability to open returned images, and support for keeping a `tma wait` call active during teaching.
+Teach me, Agent is agent-agnostic: it connects your existing Agent to a desktop teaching panel through a local CLI. Your Agent needs local command execution, image reading, and reliable delivery of App replies. Prefer a verified host-native wakeup bridge when available; `tma wait` is the compatibility fallback. This checkout currently ships the wait path; native adapters remain [planned](docs/rebuild/HOST-INTEGRATION.md).
 
 [Let your Agent install it](#let-your-agent-install-it) · [Manual installation](#install-for-your-agent)
 
@@ -81,7 +81,7 @@ The Agent can also connect directly through the CLI:
 tma start --client my-lesson --topic 'Learn to use Paint'
 ```
 
-Each Agent needs a distinct `--client` or `TEACH_ME_CLIENT`. During teaching, the Agent uses `wait` for replies and `say`/`show` for guidance while you operate the software. See `tma help` and the [Agent protocol](docs/AGENT-PROTOCOL.md), also available through `tma protocol`.
+Each Agent needs a distinct `--client` or `TEACH_ME_CLIENT`. During teaching, the Agent actively requests a fresh capture when visual guidance needs one, sends steps with `say`/`show`, and receives replies through the active transport (currently the `wait` fallback). You operate the software. See `tma help` and the [Agent protocol](docs/AGENT-PROTOCOL.md), also available through `tma protocol`.
 
 ### Optional: Codex preset
 

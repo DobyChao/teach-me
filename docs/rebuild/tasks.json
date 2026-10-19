@@ -671,9 +671,64 @@
         "docs/rebuild/evidence/T26.md"
       ],
       "notes": "双语一句话委托Agent读取INSTALL.md，手动skill主安装仅一条命令，path/status明确可选；指南已纳入上下文。隔离目录单条安装直接返回路径/状态，68项检查通过；独立Agent/线上发布/新机器安装未据此宣称验收。"
+    },
+    {
+      "id": "T27",
+      "title": "修订主动视觉取证与原生唤醒优先的skill规则",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T23",
+        "T26"
+      ],
+      "requirements": [
+        "R32",
+        "R33"
+      ],
+      "acceptance": [
+        "A32"
+      ],
+      "verify": [
+        "官方宿主hook/会话投递文档与本地协议核对",
+        "capture/截图复用/原生与fallback案例审阅",
+        "skill-creator quick_validate及安装副本同步",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T27.md"
+      ],
+      "notes": "主动capture/新图复用/zoom、已验证原生优先与wait兜底规则已修订并同步本机安装副本；官方接口和当前代码已核对，技能校验/人工案例审阅、68项检查通过。新版独立Agent行为与原生桥未冒称实测；真实适配器另见T28。"
+    },
+    {
+      "id": "T28",
+      "title": "实现并验证宿主原生唤醒适配与wait降级",
+      "milestone": "M3",
+      "status": "todo",
+      "dependsOn": [
+        "T27"
+      ],
+      "requirements": [
+        "R33"
+      ],
+      "acceptance": [
+        "A33"
+      ],
+      "verify": [
+        "一个宿主现有会话的外部输入/空闲唤醒隔离实验",
+        "TMA队列投递、ack、重复/失败/停止与单消费者切换",
+        "原生idle健康状态与fallback回归",
+        "真实宿主端到端验收"
+      ],
+      "evidence": [],
+      "notes": "只有研究和接收契约，尚未实现。按HOST-INTEGRATION.md先验证可访问的现有宿主会话投递，再接队列与可靠ack；不能仅安装hook就宣称已唤醒。"
     }
   ],
   "nextUp": [
+    {
+      "taskId": "T28",
+      "reason": "要让wait实际降为兜底，必须完成宿主原生消息桥，不能靠skill文字开启唤醒。",
+      "action": "读HOST-INTEGRATION.md；先在隔离且可访问的现有Codex会话验证queue/turn-start空闲投递与实际回复，再设计TMA可靠接收/ack、单消费者交接和原生idle健康状态；失败保留wait。"
+    },
     {
       "taskId": "T14",
       "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",

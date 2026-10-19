@@ -14,6 +14,7 @@
 | 记住什么 | 为什么／权威来源 |
 | --- | --- |
 | 伴随教学，只指不代操作，复用用户已有 Agent | [PRODUCT R01](docs/rebuild/PRODUCT.md)、[Agent 协议](docs/AGENT-PROTOCOL.md) |
+| 视觉证据不足时Agent主动capture；原生唤醒优先，wait兜底 | 用户2026-10-19试用反馈；[ADR-023](docs/rebuild/DECISIONS.md)、[skill](skills/teach-me/SKILL.md)、[宿主契约](docs/rebuild/HOST-INTEGRATION.md)；当前尚无原生适配器，不能凭有hook就退出等待 |
 | 产品与协议Agent无关；通用安装前置，具体宿主只作为可选预设 | 用户2026-10-19纠正README；[ADR-021](docs/rebuild/DECISIONS.md)、[skill安装步骤](README.md#2-install-the-skill)；文件安装与宿主发现分别验收 |
 | 推荐把一句安装请求交给Agent，由它读取INSTALL.md完成安装与检查 | 用户2026-10-19纠正三行命令误导；[ADR-022](docs/rebuild/DECISIONS.md)、[Agent安装指南](INSTALL.md)；手动主命令仅install，path/status可选 |
 | CLI帮助与默认README使用英文，另保留中文README并互链 | 用户2026-10-19要求；[ADR-020](docs/rebuild/DECISIONS.md)、[English](README.md)、[简体中文](README.zh-CN.md) |
