@@ -498,7 +498,7 @@
       "id": "T20",
       "title": "修复可见过渡并将设置拆为独立窗口",
       "milestone": "M2",
-      "status": "in_progress",
+      "status": "done",
       "dependsOn": [
         "T01"
       ],
@@ -519,15 +519,37 @@
       "evidence": [
         "docs/rebuild/evidence/T20.md"
       ],
-      "notes": "过渡和独立设置已实现；58项检查与最终桌面回归通过，原生连续帧、打开/关闭/恢复输入及系统菜单移动已观察。鼠标标题栏拖动多次未移动、原因未确认，A25保留待验；多屏另验。"
+      "notes": "原T20原生resize与系统标题栏策略已由ADR-017/T21取代；独立设置及草稿保护保留，标题指针拖动已观察。历史未验不改写为当时通过，后续补验与新策略见T21/A26。"
+    },
+    {
+      "id": "T21",
+      "title": "合成层平滑过渡、统一设置标题及外观主题基础",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R25",
+        "R26"
+      ],
+      "acceptance": [
+        "A26"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/panel-modes.mjs",
+        "node scripts/dogfood.mjs --verify",
+        "外观迁移、保存/取消、跨窗口和画板回归",
+        "Windows合成过渡与无框设置拖动/关闭/浅深色观察"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T21.md"
+      ],
+      "notes": "合成过渡、无框指针标题、浅/深/系统及token注册表已实现；62项检查、5组dogfood与原桌面回归通过，原生拖动/预览/关闭已观察，分数DPI多手势尺寸稳定。真实OS配色变化、跨屏/高刷新率及完整输入矩阵仍在原任务；主题包和宠物资产仅规划。"
     }
   ],
   "nextUp": [
-    {
-      "taskId": "T20",
-      "reason": "2026-10-19两项反馈已实现；独立设置窗口鼠标移动尚缺有效原生证据。",
-      "action": "先读T20。系统菜单移动已通过，Computer Use三次标题拖动未使位置变化；在真实鼠标或可区分非客户区坐标的输入环境重验，确认是否应用问题，再补A25。不要重复把自动setBounds或键盘移动当鼠标拖动通过。"
-    },
     {
       "taskId": "T14",
       "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",

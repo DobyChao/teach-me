@@ -74,6 +74,15 @@ async function run() {
   panel.on('show', () => shows++);
   const frames = [];
   const timer = setInterval(() => frames.push(panel.getBounds()), 16);
+  let nativeWrites = 0;
+  const setBounds = panel.setBounds.bind(panel);
+  panel.setBounds = (...args) => {
+    nativeWrites++;
+    return setBounds(...args);
+  };
+  await js(
+    `window.__visualFrames=[];window.__sampleMotion=true;requestAnimationFrame(function sample(t){if(!window.__sampleMotion)return;const r=document.querySelector('.panel-frame').getBoundingClientRect();window.__visualFrames.push({at:t,width:r.width,height:r.height});requestAnimationFrame(sample)});true`,
+  );
   const initial = await state();
   sessionToken = (
     await call('start', { launchSecret: 'panel-modes-test', displayId: initial.displayId })
@@ -82,6 +91,13 @@ async function run() {
   await until(state, (s) => s.input.phase === 'editing');
   await settled();
   clearInterval(timer);
+  panel.setBounds = setBounds;
+  await js('window.__sampleMotion=false;true');
+  const visualFrames = await js('window.__visualFrames');
+  await fs.writeFile(
+    path.join(home, 'transition-metrics.json'),
+    JSON.stringify({ nativeWrites, visualFrames }),
+  );
   assert.equal((await state()).panelMode, 'compose');
   assert.ok(Math.abs(panel.getBounds().width - 360) <= 1);
   assert.ok(
@@ -90,10 +106,16 @@ async function run() {
   );
   assert.equal(await unclipped(), true);
   assert.ok(
-    frames.some((b) => b.width > 121 && b.width < 359),
-    'native window has intermediate animation frames',
+    visualFrames.filter((b) => b.width > 121 && b.width < 359).length >= 3,
+    'composited visual frame has continuous intermediate widths',
   );
-  checks.push('120x48 pill opens a 360 DIP composer through intermediate native window frames');
+  assert.ok(
+    nativeWrites <= 4,
+    `native allocation must be bounded rather than per-frame: ${nativeWrites}`,
+  );
+  checks.push(
+    '120x48 pill opens 360 composer through composited visual frames, with bounded native allocations',
+  );
   await panel.webContents.insertText('保留我的草稿与选区');
   await until(
     () => js(`document.querySelector('textarea').value`),

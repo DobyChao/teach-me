@@ -42,6 +42,8 @@ UI 不包含浏览器模拟后端，必须由 Electron 加载；`npm run dev` �
 
 设置入口打开独立窗口，可拖动、调整大小；保存/取消固定在底部，关闭后教学草稿继续保留。三档和内容高度重新测量均连续过渡，系统减少动态效果时直接切换；详情与验证范围见 [T20](docs/rebuild/evidence/T20.md)。
 
+后续体验修正在[T21](docs/rebuild/evidence/T21.md)：过渡使用页面合成层，设置去除系统标题栏，新增浅色/深色/跟随系统；当前设置窗口预览，保存后所有窗口与画板工具栏应用。主题token与后续桌宠规划见[外观契约](docs/rebuild/APPEARANCE.md)。
+
 当前实现与未验证能力详见接续记录。本分支尚未完成全部 v1 功能。
 
 若 `npm run app` 自行结束，终端会输出 Electron 的退出码、Windows 状态码和运行时长。诊断保存在 `%APPDATA%/teach-me-agent-v2/runtime.log`（设置 `TEACH_ME_AGENT_HOME` 时位于该目录）；不包含对话正文或 token。重复启动会提示已有实例，避免将第二个进程正常退出误认为原窗口退出。远控里有任务栏图标但没有浮窗时，同时检查设置中的远控可见开关。

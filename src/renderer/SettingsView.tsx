@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import type { Action, Settings, Snapshot } from '../shared/protocol.ts';
+import { PanelIcon } from './PanelIcon.tsx';
+import { useAppearancePreview } from './use-appearance.ts';
+import type { ColorMode } from '../shared/appearance.ts';
+import { useWindowDrag } from './use-window-drag.ts';
 export function SettingsView({
   state,
   perform,
@@ -10,6 +14,10 @@ export function SettingsView({
   const [draft, setDraft] = useState<Settings>(state.settings);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useAppearancePreview(draft.appearance);
+  const drag = useWindowDrag('settings-drag', (a) => {
+    perform(a).catch(() => {});
+  });
   const run = async (action: Action) => {
     setError('');
     try {
@@ -31,13 +39,59 @@ export function SettingsView({
     }
   };
   return (
-    <section className="settings-window" aria-label="设置">
-      <div className="section-title">
+    <section
+      className="settings-window"
+      aria-label="设置"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && !busy) run({ type: 'settings-focus', on: false });
+      }}
+    >
+      <header className="settings-header" title="拖动此处移动设置窗口" {...drag}>
         <h2>设置</h2>
+        <button
+          className="icon settings-close"
+          aria-label="关闭设置"
+          title="关闭设置"
+          disabled={busy}
+          onClick={() => run({ type: 'settings-focus', on: false })}
+        >
+          <PanelIcon name="close" />
+        </button>
+      </header>
+      <div className="settings-intro">
         <p className="muted">调整后保存，教学对话与草稿会保留。</p>
       </div>
       <div className="settings-content">
         <fieldset disabled={busy}>
+          <div className="appearance-setting">
+            <h3>外观</h3>
+            <div className="color-modes" role="group" aria-label="颜色模式">
+              {(
+                [
+                  ['light', '浅色'],
+                  ['dark', '深色'],
+                  ['system', '跟随系统'],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  data-color-mode={mode}
+                  aria-pressed={draft.appearance.mode === mode}
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      appearance: { ...draft.appearance, mode: mode as ColorMode },
+                    })
+                  }
+                >
+                  <span className={`color-swatch ${mode}`} aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="muted">当前窗口预览，保存后应用到所有窗口。</p>
+          </div>
           <label className="setting-row">
             <span>用户消息附带截图</span>
             <input

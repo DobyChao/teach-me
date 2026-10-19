@@ -47,6 +47,8 @@ Electron contextIsolation + sandbox，关闭 nodeIntegration。远程/自定义 
 
 ## UI 与验证
 
+外观DTO和内建语义token在shared/appearance.ts；宿主解析系统模式并广播，Renderer统一应用配色，设置表单提供局部预览。PanelMotion只管理原生包围范围/transition id/收尾，use-panel-motion驱动合成层，不逐帧跨进程resize。设置拖动仅接收该sender的限定指针增量与拖动id，保留客户区尺寸。主题和后续桌宠表现层边界见[APPEARANCE.md](APPEARANCE.md)。
+
 Renderer入口按mode分为教学面板、overlay和独立设置窗口。设置窗口是可复用的普通BrowserWindow，关闭时隐藏，不接管教学输入；其sender只有设置相关动作白名单。设置保存先持久化再更新运行配置，失败不关闭表单；捕获保护覆盖所有应用窗口。
 
 共享 token 管颜色、字体、间距、圆角；组件按职责拆分 Header/Thread/ContinueOffer/Composer。收起只隐藏消息区域，不卸载输入组件。CSS 不承担业务状态机。

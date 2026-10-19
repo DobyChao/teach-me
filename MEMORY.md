@@ -18,6 +18,7 @@
 | React + TypeScript + Vite，现有 CSS token；保持唯一输入面 | [ADR-001 / ADR-012–014](docs/rebuild/DECISIONS.md)、[架构边界](docs/rebuild/ARCHITECTURE.md) |
 | 冷灰与粉色；小／中／大按情境切换，保护草稿、录音与审批 | [R22](docs/rebuild/PRODUCT.md)、[切换矩阵](docs/rebuild/PANEL-MODES.md) |
 | 设置使用独立可移动窗口；主面板过渡包含内容测高，不在终点跳变 | 用户2026-10-19反馈；[ADR-016](docs/rebuild/DECISIONS.md)取代原内嵌设置和静止后直接测高 |
+| 用户纠正动效仍卡、系统标题框突兀；浅深/系统模式，主题与桌宠分别扩展 | [ADR-017](docs/rebuild/DECISIONS.md)、[外观契约](docs/rebuild/APPEARANCE.md)取代逐帧原生resize和系统标题栏；桌宠资源/动作尚未实施 |
 | 用户自己的画板采用本地 Excalidraw，与 Agent 指引分层 | [ADR-011](docs/rebuild/DECISIONS.md)；目前不跨应用重启保存，不能默认承诺保存 |
 | 聚焦前取图；取消后晚回调失效；成功投递才清草稿 | [AGENTS.md](AGENTS.md)、[输入事务](docs/rebuild/ARCHITECTURE.md) |
 | 项目规划和记忆直接放在工程里，随 Git 提交 | 用户2026-10-18明确要求“项目即记忆”；[ADR-004 / ADR-015](docs/rebuild/DECISIONS.md) |

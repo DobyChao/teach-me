@@ -1,18 +1,25 @@
 import type { BrowserWindow, Rectangle } from 'electron';
+import type { PanelTransition } from '../shared/protocol.ts';
 
-type Clock = { now: () => number; every: (tick: () => void) => () => void };
+type Clock = { now(): number; later(tick: () => void, ms: number): () => void };
 const clock: Clock = {
   now: () => performance.now(),
-  every: (tick) => {
-    const timer = setInterval(tick, 16);
-    return () => clearInterval(timer);
+  later: (tick, ms) => {
+    const timer = setTimeout(tick, ms);
+    return () => clearTimeout(timer);
   },
 };
+const equal = (a: Rectangle, b: Rectangle) =>
+  (['x', 'y', 'width', 'height'] as const).every((key) => Math.abs(a[key] - b[key]) <= 1);
 
-// Windows does not implement setBounds(..., true). Retarget the same native window.
+// Reserve once; Chromium animates the visual frame. Never resize a transparent HWND each frame.
 export class PanelMotion {
+  transition: PanelTransition | null = null;
   private cancel: (() => void) | null = null;
   private target: Rectangle | null = null;
+  private from: Rectangle | null = null;
+  private started = 0;
+  private sequence = 0;
   private window: BrowserWindow;
   private changed: (active: boolean) => void;
   private clock: Clock;
@@ -21,49 +28,62 @@ export class PanelMotion {
     this.changed = changed;
     this.clock = timing;
   }
+  private visualBounds(): Rectangle {
+    if (!this.transition || !this.from || !this.target) return this.window.getBounds();
+    const p = Math.min(1, (this.clock.now() - this.started) / this.transition.duration);
+    const eased = 1 - (1 - p) ** 3;
+    const v = (key: keyof Rectangle) =>
+      this.from![key] + (this.target![key] - this.from![key]) * eased;
+    return { x: v('x'), y: v('y'), width: v('width'), height: v('height') };
+  }
   move(bounds: Rectangle, animate: boolean) {
-    if (
-      this.cancel &&
-      animate &&
-      this.target &&
-      Object.entries(bounds).every(([k, v]) => this.target![k as keyof Rectangle] === v)
-    )
-      return;
-    const active = this.cancel !== null;
+    if (this.transition && animate && this.target && equal(bounds, this.target)) return;
+    const from = this.visualBounds();
+    const active = !!this.transition;
     this.dispose();
     this.target = bounds;
-    const from = this.window.getBounds();
-    if (
-      !animate ||
-      Object.entries(bounds).every(([k, v]) => Math.abs(from[k as keyof Rectangle] - v) <= 1)
-    ) {
-      if (Object.entries(bounds).some(([k, v]) => Math.abs(from[k as keyof Rectangle] - v) > 1))
-        this.window.setBounds(bounds);
+    if (!animate || equal(from, bounds)) {
+      this.transition = null;
+      if (!equal(this.window.getBounds(), bounds)) this.window.setBounds(bounds);
       if (active) this.changed(false);
       return;
     }
-    const start = this.clock.now();
-    if (!active) this.changed(true);
-    this.cancel = this.clock.every(() => {
-      if (this.window.isDestroyed()) return this.dispose();
-      const t = Math.min(1, (this.clock.now() - start) / 280);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const target = this.target!;
-      const value = (k: keyof Rectangle) => Math.round(from[k] + (target[k] - from[k]) * eased);
-      const b = { x: value('x'), y: value('y'), width: value('width'), height: value('height') };
-      this.window.setBounds(b);
-      if (t === 1) {
-        this.dispose();
-        this.changed(false);
-      }
-    });
+    const current = this.window.getBounds();
+    const x = Math.floor(Math.min(current.x, bounds.x));
+    const y = Math.floor(Math.min(current.y, bounds.y));
+    const envelope = {
+      x,
+      y,
+      width: Math.ceil(Math.max(current.x + current.width, bounds.x + bounds.width) - x),
+      height: Math.ceil(Math.max(current.y + current.height, bounds.y + bounds.height) - y),
+    };
+    const relative = (b: Rectangle) => ({ ...b, x: b.x - x, y: b.y - y });
+    this.from = from;
+    this.started = this.clock.now();
+    this.transition = {
+      id: ++this.sequence,
+      duration: 220,
+      width: envelope.width,
+      height: envelope.height,
+      from: relative(from),
+      to: relative(bounds),
+    };
+    if (!equal(current, envelope)) this.window.setBounds(envelope);
+    const id = this.transition.id;
+    // Renderer completion is primary. Bound the transparent reserve if a renderer stalls.
+    this.cancel = this.clock.later(() => this.complete(id), 500);
+    this.changed(true);
+  }
+  complete(id: number) {
+    if (this.transition?.id === id) this.finish();
   }
   finish() {
-    const active = this.cancel !== null;
-    if (!active) return;
+    if (!this.transition) return;
     this.dispose();
-    if (this.target && !this.window.isDestroyed()) this.window.setBounds(this.target);
-    if (active) this.changed(false);
+    this.transition = null;
+    if (this.target && !this.window.isDestroyed() && !equal(this.window.getBounds(), this.target))
+      this.window.setBounds(this.target);
+    this.changed(false);
   }
   dispose() {
     this.cancel?.();

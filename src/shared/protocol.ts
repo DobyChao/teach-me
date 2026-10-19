@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { defaultAppearance, themeIds } from './appearance.ts';
+import type { ColorScheme } from './appearance.ts';
 
 const point = z.tuple([z.number().finite(), z.number().finite()]);
 const rect = z.tuple([
@@ -55,6 +57,12 @@ export const sceneSchema = z.object({
 });
 export type Scene = z.infer<typeof sceneSchema>;
 export const settingsSchema = z.object({
+  appearance: z
+    .object({
+      mode: z.enum(['light', 'dark', 'system']),
+      theme: z.enum(themeIds),
+    })
+    .default(defaultAppearance),
   showInScreenCapture: z.boolean().default(false),
   attachScreenshot: z.boolean(),
   captureTier: z.enum(['ask', 'lesson', 'always']),
@@ -72,6 +80,7 @@ export const settingsSchema = z.object({
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaults: Settings = {
+  appearance: defaultAppearance,
   showInScreenCapture: false,
   attachScreenshot: true,
   captureTier: 'ask',
@@ -94,6 +103,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('continue') }),
   z.object({ type: z.literal('toggle-expanded') }),
   z.object({ type: z.literal('panel-mode'), mode: panelModeSchema }),
+  z.object({ type: z.literal('panel-motion-end'), id: z.number().int().positive() }),
   z.object({
     type: z.literal('panel-context'),
     hasDraft: z.boolean(),
@@ -131,6 +141,13 @@ export const actionSchema = z.discriminatedUnion('type', [
     dx: z.number().finite().min(-100000).max(100000),
     dy: z.number().finite().min(-100000).max(100000),
   }),
+  z.object({
+    type: z.literal('settings-drag'),
+    phase: z.enum(['start', 'move', 'end']),
+    dragId: z.string().uuid(),
+    dx: z.number().finite().min(-100000).max(100000),
+    dy: z.number().finite().min(-100000).max(100000),
+  }),
   z.object({ type: z.literal('voice-start') }),
   z.object({ type: z.literal('voice-stop') }),
   z.object({ type: z.literal('voice-cancel') }),
@@ -163,6 +180,8 @@ export interface Message {
   shots: Shot[];
 }
 export interface Snapshot {
+  colorScheme: ColorScheme;
+  panelTransition: PanelTransition | null;
   selectingDisplay: boolean;
   voice: {
     id: string | null;
@@ -198,6 +217,14 @@ export interface Bridge {
   snapshot(): Promise<Snapshot>;
   perform(action: Action): Promise<Snapshot>;
   subscribe(listener: (state: Snapshot) => void): () => void;
+}
+export interface PanelTransition {
+  id: number;
+  duration: number;
+  width: number;
+  height: number;
+  from: { x: number; y: number; width: number; height: number };
+  to: { x: number; y: number; width: number; height: number };
 }
 declare global {
   interface Window {

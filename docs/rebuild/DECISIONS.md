@@ -108,6 +108,16 @@ tasks.json 仍是状态唯一来源，新增 nextUp 引用任务、记录优先�
 
 现场曾出现首次show后收到focus事件、但isVisible为false且系统窗口列表没有设置窗口；改为show后检查可见性，必要时showInactive再focus，重跑原生入口与自动回归通过。最小实验也复现首个普通窗口的该现象。[Windows ShowWindow](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow)说明启动信息会影响首次显示请求；它与隐藏启动器有关是推断，不能据此宣称已定位T14的历史进程退出根因。标题栏使用系统边框；系统菜单移动已观察到位置改变，鼠标拖动尚未验证通过，见T20。
 
+## ADR-017 · 接受 · 2026-10-19 · 合成过渡、无框标题与外观扩展
+
+用户纠正T20动效仍卡、系统标题框不美观，要求亮暗色与未来主题/桌宠。替代ADR-016的逐帧原生尺寸插值及系统标题栏：原生窗口先分配包围范围，Chromium以220ms transform/opacity/clipPath完成视觉过渡，结束收紧；原A22/A25的“原生尺寸中间帧”要求由A26的视觉连续帧/有限原生写入取代。不能以存在动画帧否定用户反馈，也不能仅延长动画时长解决透明窗口resize重绘。
+
+设置使用frame:false的普通不透明窗口，保留原生边缘调整大小，顶部与内容统一配色、关闭按钮独立。原生app-region拖动实验未移动，改用主面板已有的Pointer Capture与限定sender动作，拖动id/工作区约束/关闭后清理；保存初始客户区尺寸防分数DPI移动累积变大。系统首次show的可见性回退继续保留。
+
+颜色模式与主题id独立存储；旧配置默认深色，设置内预览，保存后跨窗口应用。内建主题注册表集中完整语义token，画板使用库的theme属性保留内容；原生主题事件只在跟随系统时更新外观。桌宠作为后续独立表现层，复用现有状态与单一输入，不把资产包变成执行权限。契约和分阶段范围见[APPEARANCE.md](APPEARANCE.md)。
+
+实现参考：[Electron无框窗口](https://www.electronjs.org/docs/latest/tutorial/custom-window-styles)、[nativeTheme](https://www.electronjs.org/docs/latest/api/native-theme)、[Element.animate](https://developer.mozilla.org/en-US/docs/Web/API/Element/animate)。保留thickFrame以支持边缘调整；禁用它会失去该能力，见[BaseWindow](https://www.electronjs.org/docs/latest/api/base-window)。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

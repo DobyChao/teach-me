@@ -70,7 +70,11 @@ export default function UserBoard({
           throw new Error('画板范围太大，请缩小内容范围后重试');
         const image = await exportToCanvas({
           elements,
-          appState: { ...appState, exportBackground: false, exportWithDarkMode: true },
+          appState: {
+            ...appState,
+            exportBackground: false,
+            exportWithDarkMode: appState.theme === 'dark',
+          },
           files: api.getFiles(),
           exportPadding: 0,
           getDimensions: (width: number, height: number) => ({ width, height, scale }),
@@ -121,7 +125,7 @@ export default function UserBoard({
           },
         }}
         langCode="zh-CN"
-        theme="dark"
+        theme={state.colorScheme}
         viewModeEnabled={!state.editing}
         zenModeEnabled={!state.editing}
         gridModeEnabled={false}

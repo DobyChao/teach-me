@@ -6,6 +6,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   screen,
 } from 'electron';
 import { createServer } from 'node:http';
@@ -15,6 +16,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import { actionSchema, defaults, settingsSchema } from '../shared/protocol.ts';
+import { resolveScheme, themes } from '../shared/appearance.ts';
 import type { Action, Guide, Settings, Shot, Snapshot } from '../shared/protocol.ts';
 import { Session } from '../core/session.ts';
 import { InputController } from '../core/input.ts';
@@ -85,6 +87,9 @@ const panelPositionSchema = z.object({
 let panelPosition: z.infer<typeof panelPositionSchema> | null = null;
 let movingPanel = false;
 let pointerDrag: { id: string; bounds: { x: number; y: number } } | null = null;
+let settingsDrag: { id: string; bounds: Electron.Rectangle; content: Electron.Rectangle } | null =
+  null;
+let settingsClientSize: { width: number; height: number } | null = null;
 let guides: Guide[] = [];
 let userBoard = { epoch: 0, count: 0 };
 function clearUserBoard() {
@@ -132,6 +137,8 @@ const target = () =>
 
 function snapshot(): Snapshot {
   return {
+    colorScheme: resolveScheme(settings.appearance.mode, nativeTheme.shouldUseDarkColors),
+    panelTransition: panelMotion?.transition || null,
     selectingDisplay: !!displayRequest,
     voice: voice.state,
     revision,
@@ -584,6 +591,9 @@ async function action(a: Action) {
       if (reducedMotion) panelMotion?.finish();
       autoCollapse();
       break;
+    case 'panel-motion-end':
+      panelMotion?.complete(a.id);
+      break;
     case 'hover':
       hover = a.on;
       autoCollapse();
@@ -596,6 +606,36 @@ async function action(a: Action) {
           : Math.max(a.mode === 'conversation' ? 240 : 64, Math.min(560, a.height));
       setBounds(undefined, true);
       break;
+    case 'settings-drag': {
+      if (!settingsOpen || !settingsWindow.isVisible()) break;
+      if (a.phase === 'start') {
+        const content = settingsWindow.getContentBounds();
+        settingsClientSize ||= { width: content.width, height: content.height };
+        settingsDrag = {
+          id: a.dragId,
+          bounds: settingsWindow.getBounds(),
+          content: { ...content, ...settingsClientSize },
+        };
+      } else if (settingsDrag?.id === a.dragId) {
+        const b = settingsWindow.getBounds();
+        const next = {
+          ...b,
+          x: Math.round(settingsDrag.bounds.x + a.dx),
+          y: Math.round(settingsDrag.bounds.y + a.dy),
+        };
+        const area = screen.getDisplayMatching(next).workArea;
+        const x = Math.max(area.x, Math.min(next.x, area.x + area.width - b.width));
+        const y = Math.max(area.y, Math.min(next.y, area.y + area.height - b.height));
+        // Preserve client size: reapplying outer bounds drifts at fractional Windows DPI.
+        settingsWindow.setContentBounds({
+          ...settingsDrag.content,
+          x: settingsDrag.content.x + x - settingsDrag.bounds.x,
+          y: settingsDrag.content.y + y - settingsDrag.bounds.y,
+        });
+        if (a.phase === 'end') settingsDrag = null;
+      }
+      break;
+    }
     case 'panel-drag': {
       if (a.phase === 'start') {
         panelMotion?.finish();
@@ -653,6 +693,9 @@ async function action(a: Action) {
       if (voice.state.phase !== 'idle') await voice.cancel();
       await saveSettings(a.settings);
       settings = a.settings;
+      settingsWindow.setBackgroundColor(
+        themes[settings.appearance.theme][snapshot().colorScheme].bg,
+      );
       applyCaptureVisibility();
       autoCollapse();
       break;
@@ -977,6 +1020,7 @@ async function loadWindow(w: BrowserWindow, mode: string) {
   else await w.loadFile(path.join(__dirname, '../ui/index.html'), { query: { mode } });
 }
 async function closeSettings() {
+  settingsDrag = null;
   const focused = settingsWindow.isFocused();
   settingsOpen = false;
   settingsWindow.hide();
@@ -1047,6 +1091,7 @@ app
     const settingsHeight = Math.min(680, area.height);
     settingsWindow = new BrowserWindow({
       title: 'Teach me, Agent · 设置',
+      frame: false,
       modal: false,
       x: Math.round(area.x + (area.width - settingsWidth) / 2),
       y: Math.round(area.y + (area.height - settingsHeight) / 2),
@@ -1055,13 +1100,31 @@ app
       minWidth: Math.min(440, settingsWidth),
       minHeight: Math.min(420, settingsHeight),
       show: false,
-      backgroundColor: '#14161b',
+      backgroundColor: themes[settings.appearance.theme][snapshot().colorScheme].bg,
       minimizable: false,
       maximizable: false,
       alwaysOnTop: true,
       webPreferences: preferences,
     });
     settingsWindow.setMenu(null);
+    let manualSettingsResize = false;
+    settingsWindow.on('will-resize', () => {
+      manualSettingsResize = true;
+    });
+    settingsWindow.on('resized', () => {
+      if (!manualSettingsResize) return;
+      manualSettingsResize = false;
+      const { width, height } = settingsWindow.getContentBounds();
+      settingsClientSize = { width, height };
+    });
+    nativeTheme.on('updated', () => {
+      if (settings.appearance.mode === 'system' && !quitting) {
+        settingsWindow.setBackgroundColor(
+          themes[settings.appearance.theme][snapshot().colorScheme].bg,
+        );
+        broadcast();
+      }
+    });
     settingsWindow.on('close', (event) => {
       if (quitting) return;
       event.preventDefault();
@@ -1120,9 +1183,11 @@ app
       const parsed = actionSchema.parse(value);
       if (
         e.sender.id === settingsWindow.webContents.id &&
-        !['settings', 'settings-focus', 'select-display'].includes(parsed.type)
+        !['settings', 'settings-focus', 'settings-drag', 'select-display'].includes(parsed.type)
       )
         throw new Error('settings action rejected');
+      if (parsed.type === 'settings-drag' && e.sender.id !== settingsWindow.webContents.id)
+        throw new Error('settings drag sender rejected');
       if (e.sender.id === overlay.webContents.id && !['board-change', 'edit'].includes(parsed.type))
         throw new Error('overlay action rejected');
       if (parsed.type === 'board-change' && e.sender.id !== overlay.webContents.id)

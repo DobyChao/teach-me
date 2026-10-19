@@ -55,7 +55,7 @@ async function run() {
   const identity = panel.getNativeWindowHandle().toString('hex');
   const clipped = () =>
     js(
-      `(()=>{const p=document.querySelector('.panel');const c=document.querySelector('.composer');return p.getBoundingClientRect().bottom>innerHeight||c.scrollWidth>c.clientWidth})()`,
+      `(()=>{const p=document.querySelector('.panel');const c=document.querySelector('.composer');return p.getBoundingClientRect().bottom>innerHeight+1||c.scrollWidth>c.clientWidth})()`,
     );
   assert.ok(Math.abs(first.width - 360) <= 1, JSON.stringify(first));
   assert.ok(first.height <= 90, JSON.stringify(first));

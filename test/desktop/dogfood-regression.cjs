@@ -6,12 +6,13 @@ module.exports = async ({ panel, call, start, home, copied }) => {
   const checks = [];
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
   const until = async (read) => {
+    const waitingAt = new Error().stack;
     for (let i = 0; i < 150; i++) {
       const value = await read();
       if (value) return value;
       await pause(20);
     }
-    throw new Error('dogfood UI condition timed out');
+    throw new Error('dogfood UI condition timed out\n' + waitingAt);
   };
   const js = (code) => panel.webContents.executeJavaScript(code);
   const state = () => js('window.companion.snapshot()');
@@ -186,6 +187,17 @@ module.exports = async ({ panel, call, start, home, copied }) => {
     assert.deepEqual(panel.getBounds(), bounds);
     checks.push(
       'independent settings reuses its window, preserves panel bounds/composer/draft/selection, rejects unrelated actions, and retains settings on save failure before a successful persisted save',
+    );
+    await require('./appearance-regression.cjs')({
+      panel,
+      settingsWindow,
+      state,
+      act,
+      until,
+      home,
+    });
+    checks.push(
+      'frameless settings previews and cancels appearance locally, retains failed theme saves, persists and synchronizes light/dark/system across windows and the same board without losing its elements or message draft',
     );
     await fs.writeFile(path.join(home, 'result.json'), JSON.stringify({ passed: true, checks }));
     console.log(JSON.stringify({ passed: true, checks }));

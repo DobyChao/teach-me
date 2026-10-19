@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { applyAppearance } from './use-appearance.ts';
 import type { Action, Snapshot } from '../shared/protocol.ts';
 const bridge = window.companion;
 export function useHost() {
   const [state, setState] = useState<Snapshot | null>(null);
   const [failure, setFailure] = useState('');
+  useLayoutEffect(() => {
+    if (state) applyAppearance(state.settings.appearance, state.colorScheme);
+  }, [state?.settings.appearance.mode, state?.settings.appearance.theme, state?.colorScheme]);
   const receive = useCallback(
     (next: Snapshot) => setState((old) => (!old || next.revision >= old.revision ? next : old)),
     [],
