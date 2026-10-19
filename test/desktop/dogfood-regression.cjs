@@ -1,15 +1,31 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { BrowserWindow } = require('electron');
 module.exports = async ({ panel, call, start, home, copied }) => {
   const checks = [];
   const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+  const until = async (read) => {
+    for (let i = 0; i < 150; i++) {
+      const value = await read();
+      if (value) return value;
+      await pause(20);
+    }
+    throw new Error('dogfood UI condition timed out');
+  };
   const js = (code) => panel.webContents.executeJavaScript(code);
   const state = () => js('window.companion.snapshot()');
   const act = (a) => js(`window.companion.perform(${JSON.stringify(a)})`);
   const settle = async () => {
-    for (let i = 0; i < 100 && (await state()).panelAnimating; i++) await pause(20);
-    await pause(100);
+    await pause(40);
+    for (let i = 0; i < 100; i++) {
+      if (!(await state()).panelAnimating) {
+        await pause(40);
+        if (!(await state()).panelAnimating) return;
+      }
+      await pause(20);
+    }
+    throw new Error('dogfood panel animation did not settle');
   };
   const screenshot = async (name) =>
     fs.writeFile(path.join(home, name + '.png'), (await panel.capturePage()).toPNG());
@@ -45,9 +61,15 @@ module.exports = async ({ panel, call, start, home, copied }) => {
     await screenshot('reading-position');
     await js(`document.querySelector('button[aria-label="设置"]').click()`);
     await pause(100);
-    assert.ok(await js('!!document.querySelector(".settings-view")'));
+    const settingsWindow = BrowserWindow.getAllWindows().find((w) =>
+      w.webContents.getURL().includes('mode=settings'),
+    );
+    await until(() => settingsWindow.isVisible());
+    assert.match(settingsWindow.getTitle(), /设置/);
+    assert.equal(await js('!!document.querySelector(".settings-window")'), false);
     await call('say', { text: '设置中到达的回复也应保留阅读位置。' });
-    await js(`document.querySelector('button[aria-label="设置"]').click()`);
+    settingsWindow.close();
+    await until(() => !settingsWindow.isVisible());
     await pause(100);
     assert.ok(Math.abs((await js('document.querySelector(".thread").scrollTop')) - before) < 3);
     assert.match(await js('document.querySelector(".new-messages").textContent'), /2 条新回复/);
@@ -73,7 +95,7 @@ module.exports = async ({ panel, call, start, home, copied }) => {
     await settle();
     const draft = '我需要补充一段较长的反馈，输入区和发送按钮应始终可见。'.repeat(18);
     await panel.webContents.insertText(draft);
-    await pause(120);
+    await settle();
     const fits = await js(
       `(()=>{const c=document.querySelector('.composer').getBoundingClientRect();const s=document.querySelector('.send').getBoundingClientRect();const t=document.querySelector('.thread');return {composer:c.bottom,send:s.bottom,height:innerHeight,thread:t.clientHeight,outer:document.documentElement.scrollTop}})()`,
     );
@@ -91,6 +113,79 @@ module.exports = async ({ panel, call, start, home, copied }) => {
     assert.equal(await js('window.__composer.value'), '');
     checks.push(
       'long history plus maximum-height draft keeps the composer and send visible, with no outer-page scroll; submit still delivers and clears',
+    );
+    await call('say', { text: '检查独立设置窗口。' });
+    await act({ type: 'prepare' });
+    await settle();
+    await panel.webContents.insertText('设置前保留的草稿');
+    await pause(80);
+    await js('window.__composer.setSelectionRange(2,6);true');
+    const bounds = panel.getBounds();
+    await act({ type: 'settings-focus', on: true });
+    await pause(100);
+    const identity = settingsWindow.getNativeWindowHandle().toString('hex');
+    const count = BrowserWindow.getAllWindows().length;
+    await act({ type: 'settings-focus', on: true });
+    await pause(60);
+    assert.equal(BrowserWindow.getAllWindows().length, count);
+    assert.equal(settingsWindow.getNativeWindowHandle().toString('hex'), identity);
+    assert.deepEqual(panel.getBounds(), bounds);
+    await act({ type: 'prepare' });
+    assert.equal(
+      settingsWindow.isFocused(),
+      true,
+      'input completion must not steal settings focus',
+    );
+    const settingsJs = (code) => settingsWindow.webContents.executeJavaScript(code);
+    await assert.rejects(
+      settingsJs(`window.companion.perform({type:'prepare'})`),
+      /settings action rejected/,
+    );
+    const previousText = (await state()).settings.continueText;
+    await settingsJs(
+      `document.querySelector('input[maxlength="80"]').focus();document.querySelector('input[maxlength="80"]').select();true`,
+    );
+    await settingsWindow.webContents.insertText('继续教学');
+    const originalWrite = fs.writeFile;
+    fs.writeFile = async (file, ...args) => {
+      if (file === path.join(home, 'settings.json')) throw new Error('合成设置保存失败');
+      return originalWrite(file, ...args);
+    };
+    try {
+      await settingsJs('document.querySelector(".primary").click()');
+      await until(() => settingsJs('!!document.querySelector("[role=alert]")'));
+      assert.ok(settingsWindow.isVisible());
+      assert.match(
+        await settingsJs('document.querySelector("[role=alert]").textContent'),
+        /合成设置保存失败/,
+      );
+      assert.equal(
+        await settingsJs(`document.querySelector('input[maxlength="80"]').value`),
+        '继续教学',
+      );
+      assert.equal((await state()).settings.continueText, previousText);
+      assert.equal((await state()).error, null);
+    } finally {
+      fs.writeFile = originalWrite;
+    }
+    await settingsJs('document.querySelector(".primary").click()');
+    await until(() => !settingsWindow.isVisible());
+    await pause(100);
+    assert.equal(settingsWindow.isVisible(), false);
+    assert.equal((await state()).settings.continueText, '继续教学');
+    assert.equal(
+      JSON.parse(await fs.readFile(path.join(home, 'settings.json'), 'utf8')).continueText,
+      '继续教学',
+    );
+    assert.equal(await js('window.__composer.value'), '设置前保留的草稿');
+    assert.equal(await js('window.__composer===document.querySelector("textarea")'), true);
+    assert.deepEqual(
+      await js('({start:window.__composer.selectionStart,end:window.__composer.selectionEnd})'),
+      { start: 2, end: 6 },
+    );
+    assert.deepEqual(panel.getBounds(), bounds);
+    checks.push(
+      'independent settings reuses its window, preserves panel bounds/composer/draft/selection, rejects unrelated actions, and retains settings on save failure before a successful persisted save',
     );
     await fs.writeFile(path.join(home, 'result.json'), JSON.stringify({ passed: true, checks }));
     console.log(JSON.stringify({ passed: true, checks }));

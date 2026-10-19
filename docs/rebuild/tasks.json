@@ -493,9 +493,41 @@
         "docs/rebuild/evidence/T19.md"
       ],
       "notes": "根入口、当前/历史分离、nextUp与自动摘要已建立；新增8项测试和仓库接续演练通过。检查保证结构与同步，不代替人工事实审阅或真机验收。"
+    },
+    {
+      "id": "T20",
+      "title": "修复可见过渡并将设置拆为独立窗口",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R22",
+        "R25"
+      ],
+      "acceptance": [
+        "A25"
+      ],
+      "verify": [
+        "npm run check",
+        "node scripts/panel-modes.mjs",
+        "独立设置窗口、保存失败和sender边界回归",
+        "node scripts/dogfood.mjs --verify",
+        "Windows实际三档切换和设置窗口操作"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T20.md"
+      ],
+      "notes": "过渡和独立设置已实现；58项检查与最终桌面回归通过，原生连续帧、打开/关闭/恢复输入及系统菜单移动已观察。鼠标标题栏拖动多次未移动、原因未确认，A25保留待验；多屏另验。"
     }
   ],
   "nextUp": [
+    {
+      "taskId": "T20",
+      "reason": "2026-10-19两项反馈已实现；独立设置窗口鼠标移动尚缺有效原生证据。",
+      "action": "先读T20。系统菜单移动已通过，Computer Use三次标题拖动未使位置变化；在真实鼠标或可区分非客户区坐标的输入环境重验，确认是否应用问题，再补A25。不要重复把自动setBounds或键盘移动当鼠标拖动通过。"
+    },
     {
       "taskId": "T14",
       "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",

@@ -185,6 +185,7 @@ export interface Snapshot {
   collapsed: boolean;
   panelMode: PanelMode;
   panelAnimating: boolean;
+  settingsOpen: boolean;
   unreadReply: boolean;
   settings: Settings;
   capture: { phase: 'pending' | 'countdown'; remaining: number } | null;

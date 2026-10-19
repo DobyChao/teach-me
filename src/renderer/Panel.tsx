@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { canContinue, hasBoard, hasGuides } from '../shared/protocol.ts';
 import { useHost } from './use-host.ts';
 import { useMicrophone } from './use-microphone.ts';
-import { SettingsView } from './SettingsView.tsx';
 import { PanelIcon } from './PanelIcon.tsx';
 import { useThreadScroll } from './use-thread-scroll.ts';
 const bridge = window.companion;
@@ -19,7 +18,6 @@ export function Panel() {
   useMicrophone(state, act);
   const [draft, setDraft] = useState('');
   const [attach, setAttach] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [sending, setSending] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(
@@ -30,7 +28,7 @@ export function Panel() {
   const thread = useThreadScroll(
     state?.messages || [],
     state?.session?.id,
-    !!state && !state.collapsed && !state.panelAnimating && !showSettings,
+    !!state && !state.collapsed && !state.panelAnimating,
   );
   const [copiedConnection, setCopiedConnection] = useState(false);
   const preparing = useRef(false);
@@ -87,21 +85,15 @@ export function Panel() {
     if (!state?.collapsed) setShowTools(false);
   }, [state?.collapsed]);
   useEffect(() => {
-    if (state?.panelMode !== 'conversation' && showSettings) {
-      setShowSettings(false);
-      act({ type: 'settings-focus', on: false });
-    }
-  }, [state?.panelMode, showSettings, act]);
-  useEffect(() => {
     if (state?.panelMode === 'mini') {
       setShowTools(false);
-      setShowSettings(false);
     }
   }, [state?.panelMode]);
   useEffect(() => {
     if (
       state?.input.phase === 'editing' &&
       state.voice.phase === 'idle' &&
+      !state.settingsOpen &&
       state.panelMode !== 'mini' &&
       !state.panelAnimating
     )
@@ -112,6 +104,7 @@ export function Panel() {
     state?.voice.phase,
     state?.panelMode,
     state?.panelAnimating,
+    state?.settingsOpen,
   ]);
   useEffect(() => {
     const el = panelRef.current;
@@ -173,11 +166,7 @@ export function Panel() {
   };
   const openSettings = async () => {
     try {
-      if (state?.panelMode !== 'conversation')
-        await perform({ type: 'panel-mode', mode: 'conversation' });
-      await perform({ type: 'settings-focus', on: !showSettings });
-      setShowSettings(!showSettings);
-      setShowTools(false);
+      await perform({ type: 'settings-focus', on: true });
     } catch {}
   };
   if (!bridge)
@@ -352,56 +341,45 @@ export function Panel() {
             </div>
           </div>
         )}
-        {showSettings ? (
-          <SettingsView
-            state={state}
-            act={act}
-            onClose={() => {
-              setShowSettings(false);
-              act({ type: 'settings-focus', on: false });
-            }}
-          />
-        ) : (
-          <div className="thread-pane">
-            <div className="thread" ref={thread.ref} onScroll={thread.onScroll} aria-live="polite">
-              {(!state.messages.length || !active) && (
-                <div className="empty">
-                  <span>TEACH ME, AGENT</span>
-                  <h1>{active ? '你操作，它来指路。' : '先连接你的 Agent'}</h1>
-                  <p>
-                    {active
-                      ? '教学已连接，在下面问一句即可。'
-                      : '把连接说明粘贴给你正在使用的 Agent。连接后，就能在这里提问；也可以先打开画板。'}
-                  </p>
-                  {!active && (
-                    <button
-                      className="connect-help"
-                      onClick={async () => {
-                        try {
-                          await perform({ type: 'copy-connect' });
-                          setCopiedConnection(true);
-                        } catch {}
-                      }}
-                    >
-                      {copiedConnection ? '已复制连接说明' : '复制连接说明'}
-                    </button>
-                  )}
-                </div>
-              )}
-              {state.messages.map((m) => (
-                <div className={`message ${m.role}`} key={m.id}>
-                  <p>{m.text}</p>
-                  {m.shots.length > 0 && <small>已附 {m.shots.length} 张画面</small>}
-                </div>
-              ))}
-            </div>
-            {thread.pending > 0 && (
-              <button className="new-messages" onClick={thread.jump}>
-                有 {thread.pending} 条新回复 ↓
-              </button>
+        <div className="thread-pane">
+          <div className="thread" ref={thread.ref} onScroll={thread.onScroll} aria-live="polite">
+            {(!state.messages.length || !active) && (
+              <div className="empty">
+                <span>TEACH ME, AGENT</span>
+                <h1>{active ? '你操作，它来指路。' : '先连接你的 Agent'}</h1>
+                <p>
+                  {active
+                    ? '教学已连接，在下面问一句即可。'
+                    : '把连接说明粘贴给你正在使用的 Agent。连接后，就能在这里提问；也可以先打开画板。'}
+                </p>
+                {!active && (
+                  <button
+                    className="connect-help"
+                    onClick={async () => {
+                      try {
+                        await perform({ type: 'copy-connect' });
+                        setCopiedConnection(true);
+                      } catch {}
+                    }}
+                  >
+                    {copiedConnection ? '已复制连接说明' : '复制连接说明'}
+                  </button>
+                )}
+              </div>
             )}
+            {state.messages.map((m) => (
+              <div className={`message ${m.role}`} key={m.id}>
+                <p>{m.text}</p>
+                {m.shots.length > 0 && <small>已附 {m.shots.length} 张画面</small>}
+              </div>
+            ))}
           </div>
-        )}
+          {thread.pending > 0 && (
+            <button className="new-messages" onClick={thread.jump}>
+              有 {thread.pending} 条新回复 ↓
+            </button>
+          )}
+        </div>
       </div>
       {(failure || state.error || state.input.error || state.voice.error) && (
         <p className="error" role="alert">
@@ -414,7 +392,7 @@ export function Panel() {
           <button onClick={() => act({ type: 'voice-cancel' })}>撤回</button>
         </div>
       )}
-      {!state.collapsed && !showSettings && canContinue(state, draft) && (
+      {!state.collapsed && canContinue(state, draft) && (
         <button className="offer" onClick={() => act({ type: 'continue' })}>
           {state.settings.continueText} ↗
         </button>

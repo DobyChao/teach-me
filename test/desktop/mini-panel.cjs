@@ -33,10 +33,20 @@ async function run() {
     w.webContents.getURL().includes('mode=panel'),
   );
   const js = (code) => panel.webContents.executeJavaScript(code);
+  const settle = async () => {
+    await pause(40);
+    for (let i = 0; i < 100; i++) {
+      if (!(await js('window.companion.snapshot().then(s=>s.panelAnimating)'))) {
+        await pause(40);
+        if (!(await js('window.companion.snapshot().then(s=>s.panelAnimating)'))) return;
+      }
+      await pause(20);
+    }
+    throw new Error('mini panel animation did not settle');
+  };
   const perform = async (a) => {
     const result = await js(`window.companion.perform(${JSON.stringify(a)})`);
-    while (await js(`window.companion.snapshot().then(s=>s.panelAnimating)`)) await pause(20);
-    await pause(50);
+    await settle();
     return result;
   };
   await pause(250);
@@ -70,13 +80,13 @@ async function run() {
     checks.push('restarted process restores the saved window anchor');
   } else {
     await js(`document.querySelector('[aria-label="更多工具"]').click()`);
-    await pause(100);
+    await settle();
     assert.ok(panel.getBounds().height > first.height);
     assert.equal(await js(`document.querySelector('.aux-tools').hidden`), false);
     assert.equal(await clipped(), false);
     await fs.writeFile(path.join(home, 'mini-tools.png'), (await panel.capturePage()).toPNG());
     await js(`document.querySelector('[aria-label="更多工具"]').click()`);
-    await pause(100);
+    await settle();
     assert.equal(panel.getBounds().height, first.height);
     checks.push('overflow controls remain reachable and resize back without clipping');
     const status = await call('status');
@@ -84,7 +94,7 @@ async function run() {
     await perform({ type: 'prepare' });
     await pause(100);
     await panel.webContents.insertText('第一行小窗口\n第二行保留草稿\n第三行继续输入');
-    await pause(100);
+    await settle();
     assert.ok(panel.getBounds().height > first.height);
     await js(
       `window.__miniInput=document.querySelector('textarea');window.__miniInput.setSelectionRange(2,6);true`,

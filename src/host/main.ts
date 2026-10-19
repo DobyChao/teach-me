@@ -62,6 +62,7 @@ let launchSecret = process.env.TMA_LAUNCH_SECRET || '';
 let session: Session | null = null;
 let panel: BrowserWindow;
 let overlay: BrowserWindow;
+let settingsWindow: BrowserWindow;
 let settings: Settings = { ...defaults };
 let displayId: number | null = null;
 let hover = false,
@@ -144,6 +145,7 @@ function snapshot(): Snapshot {
     collapsed: panelState.mode !== 'conversation',
     panelMode: panelState.mode,
     panelAnimating,
+    settingsOpen,
     unreadReply: panelState.unread,
     settings,
     capture: captureState,
@@ -165,7 +167,7 @@ function broadcast() {
   const state = snapshot();
   if (!guides.some((g) => g.type === 'html')) htmlHost.clear();
   else htmlHost.visible(!guidesHidden);
-  for (const w of [panel, overlay])
+  for (const w of [panel, overlay, settingsWindow])
     if (w && !w.isDestroyed()) w.webContents.send('companion:state', state);
 }
 function fail(e: unknown) {
@@ -188,6 +190,7 @@ async function foreground() {
         overlay.moveTop();
       if (panel && !panel.isDestroyed() && panel.isVisible() && !panel.isMinimized())
         panel.moveTop();
+      if (settingsWindow?.isVisible()) settingsWindow.moveTop();
     }
   }
   lastForeground = current;
@@ -282,11 +285,11 @@ async function readSettings() {
     settings = { ...defaults };
   }
 }
-async function saveSettings() {
-  await fs.writeFile(path.join(home, 'settings.json'), JSON.stringify(settings, null, 2));
+async function saveSettings(next: Settings) {
+  await fs.writeFile(path.join(home, 'settings.json'), JSON.stringify(next, null, 2));
 }
 function applyCaptureVisibility() {
-  for (const window of [panel, overlay])
+  for (const window of [panel, overlay, settingsWindow])
     if (window && !window.isDestroyed())
       window.setContentProtection(captureProtected || !settings.showInScreenCapture);
   htmlHost.setCaptureVisible(!captureProtected && settings.showInScreenCapture);
@@ -361,7 +364,11 @@ const input = new InputController({
   focus: async () => {
     const turn = input.state.turnId;
     await setWindowInput(panel, true, true, windows);
-    if (input.state.turnId !== turn || !['preparing', 'editing'].includes(input.state.phase))
+    if (
+      settingsOpen ||
+      input.state.turnId !== turn ||
+      !['preparing', 'editing'].includes(input.state.phase)
+    )
       return;
     if (panel.isMinimized()) panel.restore();
     if (!panel.isVisible()) panel.show();
@@ -564,7 +571,6 @@ async function action(a: Action) {
     case 'panel-mode': {
       const next = transitionPanel(panelState, a.mode, panelActivity());
       if (next.mode === 'mini' && panelState.mode !== 'mini') {
-        settingsOpen = false;
         await input.cancel();
       }
       changePanel(a.mode);
@@ -583,12 +589,12 @@ async function action(a: Action) {
       autoCollapse();
       break;
     case 'resize':
-      if (a.mode !== panelState.mode || panelAnimating) break;
+      if (a.mode !== panelState.mode) break;
       panelHeights[a.mode] =
         a.mode === 'mini'
           ? 48
           : Math.max(a.mode === 'conversation' ? 240 : 64, Math.min(560, a.height));
-      setBounds();
+      setBounds(undefined, true);
       break;
     case 'panel-drag': {
       if (a.phase === 'start') {
@@ -645,23 +651,23 @@ async function action(a: Action) {
     case 'settings':
       error = null;
       if (voice.state.phase !== 'idle') await voice.cancel();
+      await saveSettings(a.settings);
       settings = a.settings;
-      await saveSettings();
       applyCaptureVisibility();
       autoCollapse();
       break;
     case 'settings-focus':
-      settingsOpen = a.on;
       if (a.on) {
-        changePanel('attention');
+        if (voice.state.phase !== 'idle') throw new Error('请先完成或撤回语音输入');
         await foreground();
-        await setWindowInput(panel, true, true, windows);
-        if (!panel.isVisible()) panel.show();
-        if (!panel.isFocused()) panel.focus();
-      } else if (input.state.phase === 'idle') {
-        await setWindowInput(panel, false, true, windows);
-        await windows.activate(lastExternal);
-      }
+        settingsOpen = true;
+        if (collapseTimer) clearTimeout(collapseTimer);
+        broadcast();
+        settingsWindow.show();
+        // A hidden Windows launcher can consume the first native show request.
+        if (!settingsWindow.isVisible()) settingsWindow.showInactive();
+        settingsWindow.focus();
+      } else await closeSettings();
       break;
     case 'capture-decision':
       if (a.decision === 'interrupt' && captureState?.phase === 'countdown') {
@@ -970,6 +976,17 @@ async function loadWindow(w: BrowserWindow, mode: string) {
   if (process.env.TMA_DEV_URL) await w.loadURL(`${process.env.TMA_DEV_URL}?mode=${mode}`);
   else await w.loadFile(path.join(__dirname, '../ui/index.html'), { query: { mode } });
 }
+async function closeSettings() {
+  const focused = settingsWindow.isFocused();
+  settingsOpen = false;
+  settingsWindow.hide();
+  broadcast();
+  if (focused && input.state.phase === 'editing') {
+    panel.focus();
+    panel.webContents.focus();
+  } else if (focused && input.state.phase === 'idle') await windows.activate(lastExternal);
+  autoCollapse();
+}
 app
   .whenReady()
   .then(async () => {
@@ -1025,7 +1042,32 @@ app
       alwaysOnTop: true,
       webPreferences: preferences,
     });
-    for (const w of [panel, overlay]) {
+    const area = screen.getDisplayMatching(panel.getBounds()).workArea;
+    const settingsWidth = Math.min(640, area.width);
+    const settingsHeight = Math.min(680, area.height);
+    settingsWindow = new BrowserWindow({
+      title: 'Teach me, Agent · 设置',
+      modal: false,
+      x: Math.round(area.x + (area.width - settingsWidth) / 2),
+      y: Math.round(area.y + (area.height - settingsHeight) / 2),
+      width: settingsWidth,
+      height: settingsHeight,
+      minWidth: Math.min(440, settingsWidth),
+      minHeight: Math.min(420, settingsHeight),
+      show: false,
+      backgroundColor: '#14161b',
+      minimizable: false,
+      maximizable: false,
+      alwaysOnTop: true,
+      webPreferences: preferences,
+    });
+    settingsWindow.setMenu(null);
+    settingsWindow.on('close', (event) => {
+      if (quitting) return;
+      event.preventDefault();
+      closeSettings().catch(fail);
+    });
+    for (const w of [panel, overlay, settingsWindow]) {
       w.setContentProtection(!settings.showInScreenCapture);
       w.setAlwaysOnTop(true, 'screen-saver');
       w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -1038,6 +1080,7 @@ app
     for (const [role, window] of [
       ['panel', panel],
       ['overlay', overlay],
+      ['settings', settingsWindow],
     ] as const) {
       const log = (event: string) => () =>
         runtimeEvent(`window-${event}`, {
@@ -1059,14 +1102,27 @@ app
     applyCaptureVisibility();
     place();
     ipcMain.handle('companion:snapshot', (e) => {
-      if (![panel.webContents.id, overlay.webContents.id].includes(e.sender.id))
+      if (
+        ![panel.webContents.id, overlay.webContents.id, settingsWindow.webContents.id].includes(
+          e.sender.id,
+        )
+      )
         throw new Error('unknown sender');
       return snapshot();
     });
     ipcMain.handle('companion:action', async (e, value) => {
-      if (![panel.webContents.id, overlay.webContents.id].includes(e.sender.id))
+      if (
+        ![panel.webContents.id, overlay.webContents.id, settingsWindow.webContents.id].includes(
+          e.sender.id,
+        )
+      )
         throw new Error('unknown sender');
       const parsed = actionSchema.parse(value);
+      if (
+        e.sender.id === settingsWindow.webContents.id &&
+        !['settings', 'settings-focus', 'select-display'].includes(parsed.type)
+      )
+        throw new Error('settings action rejected');
       if (e.sender.id === overlay.webContents.id && !['board-change', 'edit'].includes(parsed.type))
         throw new Error('overlay action rejected');
       if (parsed.type === 'board-change' && e.sender.id !== overlay.webContents.id)
@@ -1074,11 +1130,15 @@ app
       try {
         return await action(parsed);
       } catch (err) {
-        fail(err);
+        if (e.sender.id !== settingsWindow.webContents.id) fail(err);
         throw err;
       }
     });
-    await Promise.all([loadWindow(panel, 'panel'), loadWindow(overlay, 'overlay')]);
+    await Promise.all([
+      loadWindow(panel, 'panel'),
+      loadWindow(overlay, 'overlay'),
+      loadWindow(settingsWindow, 'settings'),
+    ]);
     overlay.showInactive();
     panel.showInactive();
     await startServer();

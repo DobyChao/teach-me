@@ -47,6 +47,8 @@ Electron contextIsolation + sandbox，关闭 nodeIntegration。远程/自定义 
 
 ## UI 与验证
 
+Renderer入口按mode分为教学面板、overlay和独立设置窗口。设置窗口是可复用的普通BrowserWindow，关闭时隐藏，不接管教学输入；其sender只有设置相关动作白名单。设置保存先持久化再更新运行配置，失败不关闭表单；捕获保护覆盖所有应用窗口。
+
 共享 token 管颜色、字体、间距、圆角；组件按职责拆分 Header/Thread/ContinueOffer/Composer。收起只隐藏消息区域，不卸载输入组件。CSS 不承担业务状态机。
 
 单测验证领域判定和取消/去重；组件测试验证交互；协议测试走桥接双方；浏览器验证布局与可访问性；Windows 真机验证焦点、截图、穿透、多屏。jsdom 不承担布局验收。Vite 构建外单跑 tsc。

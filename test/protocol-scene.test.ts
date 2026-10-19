@@ -34,6 +34,7 @@ const state: Snapshot = {
   collapsed: false,
   panelMode: 'conversation',
   panelAnimating: false,
+  settingsOpen: false,
   unreadReply: false,
   settings: defaults,
   capture: null,
