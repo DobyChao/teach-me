@@ -4,6 +4,8 @@
 
 ## 本轮变化
 
+2026-10-19用户追问其他Agent的调查范围。T28补查Gemini CLI、Cursor、GitHub Copilot，连同前轮三种形成[六宿主对照](HOST-INTEGRATION.md)；区分生命周期hook、客户端会话API和用户现有会话桥，Cursor云端能力不代表本地IDE支持。仅完成官方文档研究，未接通或启动新试用，验收仍待实施；见[T28研究证据](evidence/T28.md)。
+
 2026-10-19用户结束快速试用，指出Agent不主动capture及wait应为兜底。T27已修订skill并更新本机安装副本：视觉证据不足/指错时主动capture与zoom，接收优先已验证原生桥，否则一个wait。68项检查与技能结构/规则案例审阅通过，不冒称新版Agent实测。官方宿主差异见[HOST-INTEGRATION.md](HOST-INTEGRATION.md)；当前没有原生适配器，真实桥接和idle/ack/降级由T28继续，见[T27](evidence/T27.md)、ADR-023。
 
 2026-10-19用户指出三行安装/检查误导，要求一句话让Agent读取指南后安装。T26在双语README顶部给出可复制请求，新增[INSTALL.md](../../INSTALL.md)给Agent处理环境、目录、安装与验证；手动主命令仅install，path/status可选折叠。隔离目录单命令安装直接返回路径/状态，68项检查通过；未冒称独立Agent或新机器安装验收。见[T26](evidence/T26.md)、ADR-022。

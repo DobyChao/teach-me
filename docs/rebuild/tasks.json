@@ -719,15 +719,17 @@
         "原生idle健康状态与fallback回归",
         "真实宿主端到端验收"
       ],
-      "evidence": [],
-      "notes": "只有研究和接收契约，尚未实现。按HOST-INTEGRATION.md先验证可访问的现有宿主会话投递，再接队列与可靠ack；不能仅安装hook就宣称已唤醒。"
+      "evidence": [
+        "docs/rebuild/evidence/T28.md"
+      ],
+      "notes": "已完成六种宿主官方文档研究，区分hook、受控会话API和用户现有会话桥；仅有研究和接收契约，适配器尚未实现。按HOST-INTEGRATION.md先验证可访问的现有宿主会话投递，再接队列与可靠ack；不能仅安装hook或恢复历史就宣称已唤醒。"
     }
   ],
   "nextUp": [
     {
       "taskId": "T28",
       "reason": "要让wait实际降为兜底，必须完成宿主原生消息桥，不能靠skill文字开启唤醒。",
-      "action": "读HOST-INTEGRATION.md；先在隔离且可访问的现有Codex会话验证queue/turn-start空闲投递与实际回复，再设计TMA可靠接收/ack、单消费者交接和原生idle健康状态；失败保留wait。"
+      "action": "读HOST-INTEGRATION.md与T28研究证据；按用户当前宿主选择可访问的现有会话做外部投递/空闲回复实验，本机Codex queue/turn-start只是候选；再接TMA可靠ack、单消费者交接与idle健康状态，失败保留wait。"
     },
     {
       "taskId": "T14",

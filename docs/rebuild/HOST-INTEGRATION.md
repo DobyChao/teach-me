@@ -12,13 +12,22 @@
 
 以下是接入候选，均不是TMA已支持声明；实际宿主版本、会话可达性和权限需实测。
 
+首次核对覆盖Codex、Claude Code、OpenCode；用户追问其他Agent后，补查Gemini CLI、Cursor、GitHub Copilot CLI/SDK。以下六种均为官方文档研究，不代表已完成六套接入实验。
+
 | 宿主 | 官方能力 | 对本项目的含义 |
 | --- | --- | --- |
 | Codex | [Hooks](https://learn.chatgpt.com/docs/hooks)是生命周期扩展，普通async完成不会开始新的空闲turn；[app-server](https://learn.chatgpt.com/docs/app-server)可turn/start、turn/steer；[CLI queue](https://learn.chatgpt.com/docs/cli/reference#codex-queue)可向已有会话排入文本 | hook名称不等于消息入口；要验证正确现有会话实际接收/继续。不能推定新app-server能接管任意桌面对话。queue文档说明文本限制，本机help存在该命令也不证明唤醒已接通 |
 | Claude Code | [Channels](https://code.claude.com/docs/en/channels)把外部事件推入打开的会话，当前为research preview；[hooks](https://code.claude.com/docs/en/hooks)的普通async通常等下一轮，asyncRewake退出2可唤起 | 有真实事件通道候选，但受宿主版本/启用方式限制，需要TMA专用接收端；不能把任意PostToolUse当作外部事件监听 |
 | OpenCode | [Plugins](https://opencode.ai/v2/docs/build/plugins/)暴露session.prompt等会话调用；[API](https://dev.opencode.ai/v2/docs/api)描述prompt持久接收与调度 | 插件可以承载外部桥，但仍需订阅TMA消息、绑定已有session并处理失败，不是安装SKILL.md即可完成 |
+| Gemini CLI | [ACP模式](https://geminicli.com/docs/cli/acp-mode/)通过stdio JSON-RPC接收prompt并提供newSession/loadSession；[Notification hook](https://geminicli.com/docs/hooks/reference/#notification)是CLI向外发出的告警事件 | ACP是可编程消息入口候选，需要当前ACP客户端协作；不能据此推定能注入任意已打开的终端会话。[resume](https://geminicli.com/docs/cli/session-management/)恢复历史也不证明能唤醒原运行实例。官方ACP页示例为--acp，[CLI参考](https://geminicli.com/docs/cli/cli-reference/)仍列--experimental-acp，实际开关须按安装版本help核对 |
+| Cursor | [stop hook](https://cursor.com/docs/hooks#stop)可返回followup_message触发后续轮次，有循环上限；[Cloud Agents API](https://cursor.com/docs/cloud-agent/api/endpoints#create-a-run)的POST /v1/agents/{id}/runs向既有云端Agent发送后续提示，沿用对话与工作区；忙碌返回409 | stop发生时才能续跑，不能由此断言空闲后任意外部消息可进入本地IDE对话。云端API是真实接入候选，但范围是云端Agent；本地现有IDE对话的外部投递尚未确认，不能用新建云端Agent替代用户会话 |
+| GitHub Copilot CLI/SDK | [SDK兼容表](https://docs.github.com/en/copilot/how-tos/copilot-sdk/troubleshooting/compatibility)列出resumeSession、send/sendAndWait、默认enqueue、运行中immediate以及附件输入 | SDK控制的会话有明确投递接口，是原生适配候选；仍需验证对用户当前CLI会话的可达性/连接所有权，不能推定能接管任意独立终端或编辑器对话 |
 
-本轮只读核对本机`codex --version`和`codex queue --help`：0.163.0-alpha.10.2有queue。没有实际投递到用户会话；受限环境提示无法创建PATH别名，未据此改配置。官方文档是接口依据，不能替代端到端实验。
+T27轮次只读核对本机`codex --version`和`codex queue --help`：0.163.0-alpha.10.2有queue。没有实际投递到用户会话；受限环境提示无法创建PATH别名，未据此改配置。官方文档是接口依据，不能替代端到端实验。
+
+区分三件事：生命周期hook在某个事件发生时执行；会话API让持有连接的客户端投递消息；现有会话桥负责把TMA输入送到用户正在使用的那条对话。前两者不能自动证明第三者。尚未确认本地投递不等于该宿主永远不支持，后续应按实际版本补实验。
+
+接入选择按用户当前宿主和会话可达性进行；本机Codex入口仅是可先做实验的便利条件，不是产品依赖。Claude Channels、OpenCode会话API、Copilot SDK、Gemini ACP都应评估是否能复用用户会话；Cursor云端与本地必须分别记录支持范围。共同队列/ack/交接契约保持Agent无关，宿主差异由适配层承担，skill保留通用能力选择与wait兜底规则。
 
 ## 适配器应满足的契约
 
