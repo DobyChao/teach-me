@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { postJson } from './http.mjs';
+import { installSkill, skillDestination, skillStatus } from './skill.mjs';
 
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,15 +15,22 @@ const home =
   process.env.TEACH_ME_AGENT_HOME ||
   path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'teach-me-agent-v2');
 const args = process.argv.slice(2);
-const command = args.shift() || 'help';
+let command = args.shift() || 'help';
 const flags = {};
 const words = [];
+let argumentError;
 for (let i = 0; i < args.length; i++) {
   if (args[i].startsWith('--')) {
     const key = args[i].slice(2);
-    flags[key] = ['all', 'agent', 'json'].includes(key) ? true : args[++i];
+    if (['all', 'json', 'help', 'version'].includes(key)) flags[key] = true;
+    else if (!args[i + 1] || args[i + 1].startsWith('--')) {
+      argumentError = `--${key} 需要一个值`;
+      break;
+    } else flags[key] = args[++i];
   } else words.push(args[i]);
 }
+if (['--help', '-h'].includes(command) || flags.help) command = 'help';
+if (['--version', '-v'].includes(command) || flags.version) command = 'version';
 const endpointFile = path.join(home, 'endpoint.json');
 const client = String(
   flags.client || process.env.TEACH_ME_CLIENT || process.env.CODEX_THREAD_ID || 'default',
@@ -70,9 +78,35 @@ async function alive() {
 const out = (value) =>
   console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 2));
 try {
-  if (command === 'help') {
+  if (argumentError) throw new Error(argumentError);
+  if (command === 'version')
+    out(JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8')).version);
+  else if (command === 'protocol')
+    out(await fs.readFile(path.join(root, 'docs/AGENT-PROTOCOL.md'), 'utf8'));
+  else if (command === 'skill' || command === 'install-skill') {
+    const unknown = Object.keys(flags).find((key) => !['agent', 'skills-dir'].includes(key));
+    if (unknown) throw new Error(`不支持的 skill 参数：--${unknown}`);
+    if (words.length > (command === 'skill' ? 1 : 0)) throw new Error('skill 命令有多余参数');
+    const verb = command === 'install-skill' ? 'install' : words[0] || 'status';
+    if (flags.agent && flags.agent !== 'codex')
+      throw new Error('当前内置安装目标为 codex；其他兼容宿主请使用 --skills-dir 明确指定目录。');
+    const options = {
+      source: path.join(root, 'skills/teach-me/SKILL.md'),
+      destination: skillDestination({ skillsDir: flags['skills-dir'] }),
+    };
+    if (verb === 'path') out(options.destination);
+    else if (verb === 'status') out(await skillStatus(options));
+    else if (verb === 'install') {
+      const { version } = JSON.parse(await fs.readFile(path.join(root, 'package.json'), 'utf8'));
+      out({
+        ...(await installSkill({ ...options, version })),
+        next: '在新 Codex 对话中使用 $teach-me；现有对话可能需要重新加载技能。',
+      });
+    } else
+      throw new Error('用法：tma skill install|status|path [--agent codex] [--skills-dir 目录]');
+  } else if (command === 'help') {
     out(
-      `Teach me, Agent · 只指不代操作\n\nnode bin/teach-me.mjs <命令>\n  start [--topic 主题]  启动应用并开始教学\n  attach --session ID  请求连接已有教学\n  wait [--timeout 秒]  等待用户消息（默认 480 秒）\n  say 文字             在面板说一句\n  show JSON或文件      画指引，必须带 say\n  capture              经过用户审批取图\n  clear [--all]        清 Agent 指引；all 也清用户笔迹\n  board / status       查看状态\n  stop                 退出应用\n\nshow 示例：{\"say\":\"点这里\",\"pattern\":\"point\",\"to\":[100,100]}\n坐标使用最近截图的像素。截图以路径返回，请用 Agent 的图片工具打开。`,
+      `Teach me, Agent · 只指不代操作\n\ntma <命令>（兼容 teach-me-agent / node bin/teach-me.mjs）\n  start [--topic 主题]  启动应用并开始教学\n  attach --session ID  请求连接已有教学\n  wait [--timeout 秒]  等待用户消息（默认 480 秒）\n  say 文字             在面板说一句\n  show JSON或文件      画指引，必须带 say\n  capture              经过用户审批取图\n  zoom --shot ID --rect x,y,w,h  裁切同一帧\n  clear [--all]        清 Agent 指引；all 也清用户笔迹\n  board / status       查看状态\n  stop                 退出应用\n  skill install        安装/更新 Codex skill\n  skill status / path  查看 skill 状态/位置\n  protocol             输出完整 Agent 协议\n  --version            查看版本\n\n会话命令使用 --client 名称区分 Agent。\nskill 支持 --agent codex、--skills-dir 目录；默认使用 CODEX_HOME/skills 或 ~/.codex/skills。\nshow 示例：{\"say\":\"点这里\",\"pattern\":\"point\",\"to\":[100,100]}\n坐标使用最近截图的像素。截图以路径返回，请用 Agent 的图片工具打开。`,
     );
   } else if (command === 'start') {
     let secret = '';
@@ -140,6 +174,6 @@ try {
     out(await call(command, {}, command === 'capture' ? 100000 : 30000));
   else throw new Error(`未知命令：${command}`);
 } catch (e) {
-  console.error(`teach-me: ${e.message}`);
+  console.error(`tma: ${e.message}`);
   process.exitCode = 1;
 }

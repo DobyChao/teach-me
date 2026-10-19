@@ -126,6 +126,16 @@ tasks.json 仍是状态唯一来源，新增 nextUp 引用任务、记录优先�
 
 本条修正ADR-017的终点/拖动实现，保留同HWND、单输入面、主题与设置方案。公开最佳实践、具体采用与能力边界见[MOTION.md](MOTION.md)，证据见T22。
 
+## ADR-019 · 接受 · 2026-10-19 · App、全局CLI与可安装教学skill
+
+用户指出应用形态应同时有App、给Agent使用的全局命令和可安装skill。此前只提供仓库内node CLI，缺少skill源码/安装器；这不是要求另建一套Agent或把开发AGENTS.md充当教学skill。
+
+保留现有Electron App与本地会话协议，package新增`tma`入口并保留旧别名。源码使用`npm run setup`显式构建、全局link、安装Codex skill；不在npm ci/postinstall自动改Agent配置。CLI按自身模块位置找App/协议/技能，按调用者位置找scene文件，允许任意cwd。提供help/version/protocol与skill install/status/path；当前只内置Codex发现位置，兼容宿主可显式指定技能目录，未验宿主不宣称支持。
+
+技能源码放`skills/teach-me/SKILL.md`并计入项目记忆摘要，指导看图→短步骤→wait→回应。安装采用复制和来源/hash标记，只更新本工具拥有且未经修改的技能；同名外来/本地修改/目录链接均停止，默认不强制覆盖。技能不授予额外操作权限，保留只指不代操作与截图审批，凭据留在本机数据目录。版本更新需重新install，不依赖指向开发目录的skill软链接。
+
+本条完成源码安装闭环；独立App安装包、签名/更新和无源码机器安装仍由T08验收，不以npm link替代。技能被发现与模型真实遵循教学循环分别验证，新对话需重新发现技能。证据见T23。
+
 ## 开放问题
 
 | 问题 | 最晚决策任务 | 处理原则 |

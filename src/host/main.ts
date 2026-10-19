@@ -564,7 +564,7 @@ async function action(a: Action) {
       break;
     case 'copy-connect':
       clipboard.writeText(
-        `请连接本机 Teach me, Agent，开始一次教学。\n请运行：node "${path.join(app.getAppPath(), 'bin', 'teach-me.mjs')}" start\n连接后用 wait 等待我的提问，用 say 回复。`,
+        `请使用 $teach-me skill 连接本机 Teach me, Agent，开始一次教学。\n请运行：tma start\n未注册全局命令时可运行：node "${path.join(app.getAppPath(), 'bin', 'teach-me.mjs')}" start\n连接后用 wait 等待我的提问，用 say 回复。`,
       );
       break;
     case 'submit':

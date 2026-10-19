@@ -28,7 +28,29 @@ npm run check
 npm run app
 ```
 
-Agent 从命令行启动教学：`node bin/teach-me.mjs start --topic '学习使用软件'`。随后使用 `wait`、`say`、`capture`、`show`。详情：`node bin/teach-me.mjs help`。
+## 安装本机 Agent 入口
+
+App、全局 CLI 和 Agent skill 是三个配套入口。当前提供源码安装方式：在仓库完成 `npm ci` 后运行：
+
+```powershell
+npm run setup
+```
+
+这会构建 App、通过 `npm link --offline` 注册全局 `tma`（保留 `teach-me-agent` 别名），并安装 Codex 的 `$teach-me` skill。CLI 链接到此 checkout，移动或删除仓库后需重新注册；独立安装包/发布仍属 T08，尚未交付。
+
+在任意目录可运行：
+
+```powershell
+tma --version
+tma skill status
+tma start --topic '学习使用软件'
+```
+
+新 Codex 对话可使用 `$teach-me`，例如“用 $teach-me 连上本机应用，教我使用画图”。已有对话可能需要重新加载技能。教学期间 Agent 使用 `wait` 等回应，`say/show` 发指引；用户自己操作软件。完整命令：`tma help`；协议：`tma protocol`。
+
+也可分开安装：构建后 `npm link --offline`，再 `tma skill install --agent codex`。skill 默认复制到 `CODEX_HOME/skills/teach-me`，未设置时为 `~/.codex/skills/teach-me`；`tma skill path` 查看路径，`--skills-dir 目录` 指定其他兼容宿主的技能父目录。源文件在 [skills/teach-me/SKILL.md](skills/teach-me/SKILL.md)，随 Git 维护；修改后再次安装更新。安装器只更新自己安装且未经本地修改的文件，遇到同名外来 skill 或本地修改会停止，不静默覆盖。
+
+若终端找不到 `tma`，用 `npm prefix -g` 核对全局命令目录是否在 PATH 中，并重新打开终端；没有注册时仍可用 `node bin/teach-me.mjs`。安装过程不自动启动教学或修改 Agent 的其他配置。
 
 [Agent 协议与支持范围](docs/AGENT-PROTOCOL.md)。每个 Agent 使用不同的 `--client` 或 `TEACH_ME_CLIENT`。
 

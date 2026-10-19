@@ -87,6 +87,7 @@ test('source, task notes and evidence edits each invalidate a previously current
     ],
     ['docs/rebuild/evidence/T00.md', '# Evidence\nNew observed failure.\n'],
     ['scripts/new-check.cjs', 'module.exports = {};\n'],
+    ['skills/teach-me/SKILL.md', '---\nname: teach-me\n---\nChanged teaching rule.\n'],
   ]) {
     syncContext(f.root);
     const before = f.read('docs/rebuild/CONTEXT.md');

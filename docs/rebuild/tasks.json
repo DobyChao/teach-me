@@ -573,6 +573,31 @@
         "docs/rebuild/evidence/T22.md"
       ],
       "notes": "固定目标FLIP终点、布局版本和固定逻辑尺寸拖动已实现；62项检查、7组panel-modes及全部原桌面回归通过，Windows单屏三档原生拖动已观察。高刷新率/跨屏/远控逐帧仍在原任务；详见T22。"
+    },
+    {
+      "id": "T23",
+      "title": "建立App、全局tma与可安装Agent skill入口",
+      "milestone": "M3",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R28"
+      ],
+      "acceptance": [
+        "A28"
+      ],
+      "verify": [
+        "npm run check",
+        "skill-creator quick_validate",
+        "安装器隔离测试与全局tma任意目录验证",
+        "Windows全局CLI连接隔离App并完成消息收发"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T23.md"
+      ],
+      "notes": "源码App/setup、全局tma及Codex教学skill已实现；68项检查、6项安装器测试/技能校验及5组dogfood通过，本机注册/安装和仓库外真实App收发/自动ack/关闭通过。新对话模型行为、其他宿主、独立App包未据此宣称完成；T08等原任务保留。"
     }
   ],
   "nextUp": [

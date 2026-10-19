@@ -17,6 +17,8 @@ CLI / Agent（保留公开命令语义）
 
 当前工程：`src/core/`（领域控制器）、`src/shared/`（DTO + schema）、`src/host/`（Electron 与 Windows 适配）、`src/renderer/`（React）和 `bin/`（CLI）。不读取旧 UI 来渲染新界面。
 
+产品安装入口由App、全局`tma`与`skills/teach-me/SKILL.md`组成。`bin/skill.mjs`只负责显式复制/检查技能，使用来源/hash防止覆盖外来或本地修改；不依赖Electron，也不访问教学凭据。CLI用模块路径定位App/协议/技能，用调用者cwd定位scene文件。源码setup构建后全局link并安装Codex技能；独立安装包仍为T08。技能纳入项目记忆源摘要，协议通过`tma protocol`按需提供，避免技能复制一份长协议后漂移。
+
 本分支是孤立的空分支，根 `package.json` 与锁文件只服务新实现。`npm run app` 启动新宿主；旧应用保留在另一分支。引用旧纯函数前须明确输入输出并补行为测试，不能把旧全局状态带进来。
 
 ## 状态所有权

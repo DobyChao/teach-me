@@ -37,4 +37,4 @@
 
 交互变化：同一提交修改规格、ADR、相关验收和任务；工程变化：修改架构、任务及验证；仅进度变化：任务 + 证据 + PROGRESS。发现旧文档矛盾时保留原始讨论，由 ADR 写明取舍。
 
-记忆闭环：新意图/纠正写来源，决策写理由，失败写条件与观察，未验证项保留；收尾更新任务、证据与接续，运行 `npm run context` 和 `npm run check`。CONTEXT的源摘要覆盖规范入口、src/bin/scripts/test/docs与CI文件及依赖声明；源代码或规划改变而未刷新会失败。检查不读.runtime、Git元数据、用户配置或日志；不校验文档事实是否真实，不代替验收。使用方法见 [MEMORY.md](../../MEMORY.md)。
+记忆闭环：新意图/纠正写来源，决策写理由，失败写条件与观察，未验证项保留；收尾更新任务、证据与接续，运行 `npm run context` 和 `npm run check`。CONTEXT的源摘要覆盖规范入口、src/bin/skills/scripts/test/docs与CI文件及依赖声明；源代码或规划改变而未刷新会失败。检查不读.runtime、Git元数据、用户配置或日志；不校验文档事实是否真实，不代替验收。使用方法见 [MEMORY.md](../../MEMORY.md)。

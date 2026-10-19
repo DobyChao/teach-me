@@ -55,6 +55,7 @@ function sourceDigest(root) {
     'vite.config.ts',
     'src',
     'bin',
+    'skills',
     'scripts',
     'test',
     'docs',

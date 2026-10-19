@@ -64,6 +64,7 @@
 | T20 修复可见过渡并将设置拆为独立窗口 | done | T01 | [T20.md](evidence/T20.md) |
 | T21 合成层平滑过渡、统一设置标题及外观主题基础 | done | T01 | [T21.md](evidence/T21.md) |
 | T22 定位并修复动效收尾闪烁和拖动放大 | done | T01 | [T22.md](evidence/T22.md) |
+| T23 建立App、全局tma与可安装Agent skill入口 | done | T01 | [T23.md](evidence/T23.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -86,4 +87,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: b3d60bca6f17e2795f851587d704ed5ead2a2e4b7b586984993b2ae5456fa1d2 -->
+<!-- source-sha256: 70f7bccabed8865be395590c78d0fe16ed4c107ca5faa3d82117732c0e7bb979 -->

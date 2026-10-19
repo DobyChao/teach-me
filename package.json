@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/host/main.cjs",
   "bin": {
+    "tma": "bin/teach-me.mjs",
     "teach-me-agent": "bin/teach-me.mjs"
   },
   "engines": {
@@ -26,6 +27,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && node scripts/build-host.mjs",
     "app": "npm run build && node scripts/launch.mjs",
+    "setup": "npm run build && npm link --offline && node bin/teach-me.mjs skill install",
     "test": "node --test test/*.test.cjs test/*.test.ts",
     "plan": "node scripts/check-plan.cjs",
     "context": "node scripts/project-memory.cjs",

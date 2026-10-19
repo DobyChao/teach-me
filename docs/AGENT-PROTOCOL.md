@@ -1,6 +1,8 @@
 # Agent 使用协议（重建版本）
 
-本地 CLI：`node bin/teach-me.mjs`。每个 Agent 使用稳定、不同的 `--client 名称`，或设置 `TEACH_ME_CLIENT`。有 CODEX_THREAD_ID 时默认使用它；无法识别宿主时默认 default。同名 client 会复用连接凭据，不能代表两个独立 Agent。
+全局 CLI：`tma`（兼容 `teach-me-agent`）；未注册时用 `node bin/teach-me.mjs`。源码安装：`npm ci` 后 `npm run setup`，见[安装说明](../README.md#安装本机-agent-入口)。App 由 start 按需启动，skill 可用 `tma skill install` 单独安装。源技能见[SKILL.md](../skills/teach-me/SKILL.md)。
+
+每个 Agent 使用稳定、不同的 `--client 名称`，或设置 `TEACH_ME_CLIENT`。有 CODEX_THREAD_ID 时默认使用它；无法识别宿主时默认 default。同名 client 会复用连接凭据，不能代表两个独立 Agent。以下命令均以 `tma` 为前缀。
 
 ## 教学循环
 
@@ -25,6 +27,12 @@ wait 先把结果写到 stdout 并等待写入回调，再确认消息；未确�
 | clear | 仅清 Agent 指引；--all 也清用户笔迹，需要用户授权 |
 | board | 报告用户和 Agent 笔迹数量 |
 | stop | 结束并关闭应用 |
+| help / --help / --version | 查看命令与版本，不启动 App |
+| protocol | 输出本协议，不依赖当前工作目录 |
+| skill install [--agent codex] | 显式安装/更新 Codex skill；兼容 install-skill 别名 |
+| skill status / path | 查看安装状态/目标；--skills-dir 可指定技能父目录 |
+
+默认技能位置为 CODEX_HOME/skills/teach-me 或 ~/.codex/skills/teach-me。安装器不会修改其他 Agent 配置，不覆盖外来技能或已修改的安装内容；再次 install 可更新本工具管理且未经修改的版本。新对话发现技能，当前对话可能需要重新加载。CLI start/attach 输出属于本地连接结果，含凭据，不要把完整结果或客户端文件复制到聊天/仓库。
 
 ## 场景
 
@@ -44,6 +52,6 @@ Agent 需要持续调用 wait：超时后重新 wait，收到消息后 ack、回
 
 CLI 的 wait 默认等待 480 秒，使用 node:http 的明确请求期限。若命令失败，保留具体错误，先用 status 判断应用/会话是否仍在：同一会话仍活跃时可重试；应用已退出或会话变更须报告，不能声称仍在监听。本地 runtime.log 只记录进程/等待生命周期，不含消息内容。
 
-此协议是重建版本，不完整兼容旧 CLI 参数。尚未实现 install-skill、say --copy、capture --title/轻量窗口上下文、内置首次引导。热键当前固定为 Ctrl+Alt+W 和 Ctrl+Alt+H。不要把未支持的旧命令写进 Agent 工作流。
+此协议是重建版本，不完整兼容旧 CLI 参数。尚未实现 say --copy、capture --title/轻量窗口上下文、内置首次引导。热键当前固定为 Ctrl+Alt+W 和 Ctrl+Alt+H。不要把未支持的旧命令写进 Agent 工作流。当前全局命令依赖源码 checkout，独立安装包尚属T08。
 
 截图保留在用户数据目录的 sessions 下，默认启动时清理七天前的会话；本地 ASR 的临时录音在成功或失败后删除。不要把这些文件加入 Git。

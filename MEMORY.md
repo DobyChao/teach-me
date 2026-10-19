@@ -14,6 +14,7 @@
 | 记住什么 | 为什么／权威来源 |
 | --- | --- |
 | 伴随教学，只指不代操作，复用用户已有 Agent | [PRODUCT R01](docs/rebuild/PRODUCT.md)、[Agent 协议](docs/AGENT-PROTOCOL.md) |
+| 产品由桌面App、全局tma命令和可安装Agent skill组成 | 用户2026-10-19明确要求；[ADR-019](docs/rebuild/DECISIONS.md)、[安装入口](README.md#安装本机-agent-入口)、[技能源码](skills/teach-me/SKILL.md)；当前是源码安装，独立安装包仍待交付 |
 | 用户认可原设计方向，要求从空工程重建 | [ADR-001](docs/rebuild/DECISIONS.md#adr-001--接受--2026-10-17--独立重建)，旧快照只供追溯 |
 | React + TypeScript + Vite，现有 CSS token；保持唯一输入面 | [ADR-001 / ADR-012–014](docs/rebuild/DECISIONS.md)、[架构边界](docs/rebuild/ARCHITECTURE.md) |
 | 冷灰与粉色；小／中／大按情境切换，保护草稿、录音与审批 | [R22](docs/rebuild/PRODUCT.md)、[切换矩阵](docs/rebuild/PANEL-MODES.md) |
