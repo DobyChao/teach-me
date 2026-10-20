@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { InputController } from '../src/core/input.ts';
+import { Session } from '../src/core/session.ts';
 import type { Shot } from '../src/shared/protocol.ts';
 
 const shot: Shot = {
@@ -87,6 +88,66 @@ test('delivery failure keeps transaction retryable', async () => {
   assert.equal(input.state.turnId, id);
   await input.submit(id, '保留草稿', false);
   assert.equal(attempts, 2);
+});
+test('focus failure after delivery cannot reopen a sent turn or swallow the next message', async () => {
+  const { input, ports } = setup();
+  const session = new Session('delivery boundary');
+  ports.deliver = async (text, shots, id) => {
+    session.push(text, shots, id);
+  };
+  ports.restore = async () => {
+    throw new Error('native focus unavailable');
+  };
+  const first = await input.prepare();
+  await input.submit(first, 'first message', false);
+  assert.equal(input.state.phase, 'idle');
+  assert.equal(input.state.turnId, null);
+  assert.match(input.state.error!, /已发送.*焦点/);
+  await assert.rejects(input.submit(first, 'edited retry', false), /失效/);
+  const next = await input.prepare();
+  assert.notEqual(next, first);
+  assert.equal(input.state.error, null);
+  await input.submit(next, 'next message', false);
+  assert.deepEqual(
+    session.pending.map((m) => [m.text, m.shots[0]?.id]),
+    [
+      ['first message', 's1'],
+      ['next message', 's1'],
+    ],
+  );
+});
+test('late post-delivery focus failure does not overwrite a newer editing turn', async () => {
+  const { input, ports } = setup();
+  const restore = deferred<void>();
+  ports.restore = async () => {
+    await restore.promise;
+    throw new Error('late native failure');
+  };
+  const first = await input.prepare();
+  const sending = input.submit(first, 'sent', false);
+  await new Promise((r) => setImmediate(r));
+  const next = await input.prepare();
+  restore.resolve();
+  await sending;
+  assert.equal(input.state.turnId, next);
+  assert.equal(input.state.phase, 'editing');
+  assert.equal(input.state.error, null);
+});
+test('failed delivery retries the same turn with its original screenshot', async () => {
+  const { input, ports } = setup();
+  const attempts: { id: string; shots: Shot[] }[] = [];
+  ports.deliver = async (_text, shots, id) => {
+    attempts.push({ id, shots });
+    if (attempts.length === 1) throw new Error('attachment unavailable');
+  };
+  const id = await input.prepare();
+  await assert.rejects(input.submit(id, 'keep draft', false), /attachment/);
+  assert.equal(input.state.phase, 'editing');
+  await input.submit(id, 'keep draft', false);
+  assert.deepEqual(attempts, [
+    { id, shots: [shot] },
+    { id, shots: [shot] },
+  ]);
 });
 test('capture failure does not silently send text without screenshot', async () => {
   const { input, events } = setup(async () => {

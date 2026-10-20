@@ -771,6 +771,32 @@
         "docs/rebuild/evidence/T30.md"
       ],
       "notes": "Windows六组退出故障/正常回归、每组同profile重启、原生Alt+F4、120秒启动器静置与退出诊断、68项检查通过；T14原始退出根因仍未知。"
+    },
+    {
+      "id": "T31",
+      "title": "发送已成功时焦点恢复失败不再吞掉后续改稿",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R15"
+      ],
+      "acceptance": [
+        "A05"
+      ],
+      "verify": [
+        "node --test test/input.test.ts",
+        "node scripts/delivery-smoke.mjs",
+        "Windows 原生输入、发送与后续新消息",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T31.md"
+      ],
+      "notes": "投递后restore拒绝不回滚，晚回包按草稿版本保护；原生两轮消息、真实Renderer延迟回包/新稿/焦点/入队、5组dogfood和71项检查通过，IME/完整焦点仍另验。"
     }
   ],
   "nextUp": [

@@ -75,15 +75,26 @@ export class InputController {
     this.ports.changed();
     try {
       await this.ports.deliver(text, this.shot ? [this.shot] : [], id, attachBoard);
-      if (gen !== this.generation) return;
-      this.reset();
-      await this.ports.restore(original);
     } catch (e) {
       if (gen === this.generation) {
         this.state = { phase: 'editing', turnId: id, error: (e as Error).message };
         this.ports.changed();
       }
       throw e;
+    }
+    if (gen !== this.generation) return;
+    this.reset();
+    try {
+      await this.ports.restore(original);
+    } catch {
+      // Delivery is committed. Reopening this id would silently deduplicate an edited retry.
+      if (gen === this.generation && this.state.phase === 'idle') {
+        this.state = {
+          ...this.state,
+          error: '消息已发送，但未能恢复原窗口焦点。可以继续输入。',
+        };
+        this.ports.changed();
+      }
     }
   }
   async cancel() {

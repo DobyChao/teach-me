@@ -80,6 +80,7 @@
 | T28 补齐通用接收能力并验证Agent所选原生通路 | todo | T27 | [T28.md](evidence/T28.md) |
 | T29 由Agent自主选择接收机制的通用skill | done | T27 | [T29.md](evidence/T29.md) |
 | T30 清理失败时仍能退出并重新启动 | done | T01 | [T30.md](evidence/T30.md) |
+| T31 发送已成功时焦点恢复失败不再吞掉后续改稿 | done | T01 | [T31.md](evidence/T31.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -103,4 +104,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: a012c1da6c68a03f5b933858bd1ff743b59830008bf07fea9f723a314c735c09 -->
+<!-- source-sha256: 892a1e90aadfe0e1c7be90c21f04566ba6cb7d39637348febca36d06cf2732f3 -->
