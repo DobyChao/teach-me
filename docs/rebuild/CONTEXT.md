@@ -107,4 +107,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: a920a436c3814a40fefae47a9503e3157da5ed9194f3058be1519db357fa165c -->
+<!-- source-sha256: 00da0811acaa807ff03012587210fca605b63326bb206a7e36c09aa65e18fcf1 -->
