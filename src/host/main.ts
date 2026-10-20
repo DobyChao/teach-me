@@ -113,7 +113,7 @@ const htmlHost = new HtmlHost((reason) => {
   if (reason) error = reason;
   broadcast();
 });
-const windows = new WindowsAdapter();
+const windows = new WindowsAdapter(runtimeEvent);
 const systemSpeech = new SystemSpeech();
 let pendingAudio: {
   resolve: (value: { data: Uint8Array; mime: string }) => void;

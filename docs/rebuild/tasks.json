@@ -822,6 +822,31 @@
         "docs/rebuild/evidence/T32.md"
       ],
       "notes": "真实renderer崩溃同HWND恢复、原生输入/Enter/wait/ack、迟到IPC/语音隔离、审批拒绝、健康画板PNG保留、重复故障/重载失败/10秒超时退出及每组重启通过；独立审查问题已修复。主进程/GPU等故障和完整设备矩阵另验。"
+    },
+    {
+      "id": "T33",
+      "title": "Windows辅助进程代次隔离与故障诊断",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T30",
+        "T32"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A37"
+      ],
+      "verify": [
+        "node --test test/windows.test.ts",
+        "真实Windows helper退出后重建与窗口策略回归",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T33.md"
+      ],
+      "notes": "helper代次隔离、dispose及时结算、超时淘汰及脱敏诊断完成；12项行为测试、真实helper退出/重建/窗口样式、新构建原生输入与重启通过，独立审查无阻断。原始首次启动超时原因仍未知，后续用新诊断追踪。"
     }
   ],
   "nextUp": [

@@ -74,3 +74,5 @@ Renderer入口按mode分为教学面板、overlay和独立设置窗口。设置�
 ## 主面板异常恢复
 
 宿主按窗口角色记录renderer-exit。运行期panel renderer退出后，原BrowserWindow重载本地panel；恢复前取消输入/语音代次、待审批和拖动/动效，保留Session、待ack队列与健康overlay。广播跳过已崩溃webContents，恢复不恢复外部焦点、不自动聚焦。新文档的固定snapshot桥调用确认初始化，不新增任意IPC。10秒期限覆盖清理、原生样式调用、load及握手；60秒内第二次异常或失败则有界退出1。旧语音提交失败及旧IPC/快捷键错误以代次隔离，不能覆盖新输入。边界和未发送内容损失提示见ADR-027/T32。
+
+WindowsAdapter的helper生命周期遵循ADR-028：pending/缓冲/closed归属于单个子进程，退出/dispose/超时结算自己的请求；旧事件不能清理替换进程。前台/按键查询失败仍按null/false兜底，窗口策略/样式查询抛固定错误码；宿主以runtimeEvent接收安全诊断。超时不重放原生操作，下一请求按需重建。
