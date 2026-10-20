@@ -145,12 +145,31 @@ let displayRequest: {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const target = () =>
   screen.getAllDisplays().find((d) => d.id === displayId) || screen.getPrimaryDisplay();
+const panelDisplay = () =>
+  screen.getAllDisplays().find((d) => d.id === panelPosition?.displayId) || target();
 
 function snapshot(): Snapshot {
+  const zoom = panel && !panel.isDestroyed() ? panel.webContents.getZoomFactor() : 1;
+  const transition = panelMotion?.transition;
+  const cssBounds = (b: { x: number; y: number; width: number; height: number }) => ({
+    x: b.x / zoom,
+    y: b.y / zoom,
+    width: b.width / zoom,
+    height: b.height / zoom,
+  });
   return {
     panelLayoutVersion,
+    panelHeightLimit: panelBounds(560, panelState.mode, panelDisplay().workArea).height / zoom,
     colorScheme: resolveScheme(settings.appearance.mode, nativeTheme.shouldUseDarkColors),
-    panelTransition: panelMotion?.transition || null,
+    panelTransition: transition
+      ? {
+          ...transition,
+          width: transition.width / zoom,
+          height: transition.height / zoom,
+          from: cssBounds(transition.from),
+          to: cssBounds(transition.to),
+        }
+      : null,
     selectingDisplay: !!displayRequest,
     voice: voice.state,
     revision,
@@ -218,8 +237,7 @@ async function foreground() {
 }
 function setBounds(height = panelHeights[panelState.mode], animate = false) {
   if (movingPanel) return;
-  const display =
-    screen.getAllDisplays().find((d) => d.id === panelPosition?.displayId) || target();
+  const display = panelDisplay();
   const bounds = panelBounds(height, panelState.mode, display.workArea, panelPosition);
   panelMotion?.move(bounds, animate && !reducedMotion);
 }
@@ -635,7 +653,10 @@ async function action(a: Action) {
       panelHeights[a.mode] =
         a.mode === 'mini'
           ? 48
-          : Math.max(a.mode === 'conversation' ? 240 : 64, Math.min(560, a.height));
+          : Math.max(
+              a.mode === 'conversation' ? 240 : 64,
+              Math.min(560, a.height * panel.webContents.getZoomFactor()),
+            );
       setBounds(undefined, true);
       break;
     case 'settings-drag': {

@@ -220,7 +220,7 @@ export function Panel() {
       />
       <section
         ref={panelRef}
-        style={motion.panelStyle}
+        style={{ ...motion.panelStyle, maxHeight: state.panelHeightLimit }}
         className={`panel mode-${state.panelMode} ${state.collapsed ? 'collapsed' : 'expanded'} ${state.panelAnimating ? 'is-switching' : ''}`}
         onMouseEnter={() => act({ type: 'hover', on: true })}
         onMouseLeave={() => act({ type: 'hover', on: false })}
@@ -437,6 +437,8 @@ export function Panel() {
           <textarea
             hidden={mini}
             ref={inputRef}
+            // Keep space for the header, tools and a scrollable approval in short work areas.
+            style={{ maxHeight: Math.max(25, Math.min(120, state.panelHeightLimit - 200)) }}
             aria-label="给 Agent 的消息"
             rows={1}
             readOnly={!editable}

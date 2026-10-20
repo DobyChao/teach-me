@@ -182,6 +182,8 @@ export interface Message {
 }
 export interface Snapshot {
   panelLayoutVersion: number;
+  // Work-area capacity, in CSS pixels; independent of the current native window height.
+  panelHeightLimit: number;
   colorScheme: ColorScheme;
   panelTransition: PanelTransition | null;
   selectingDisplay: boolean;

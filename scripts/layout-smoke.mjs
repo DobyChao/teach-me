@@ -33,10 +33,13 @@ child.stdout.on('data', (value) => {
 });
 child.stderr.on('data', (value) => (output += value));
 const code = await new Promise((resolve, reject) => {
-  const timer = setTimeout(() => {
-    child.kill();
-    reject(new Error(`layout fixture timed out\n${output}`));
-  }, 45000);
+  const timer = setTimeout(
+    () => {
+      child.kill();
+      reject(new Error(`layout fixture timed out\n${output}`));
+    },
+    process.env.TMA_LAYOUT_REVIEW ? 660000 : 45000,
+  );
   child.once('error', (error) => {
     clearTimeout(timer);
     reject(error);
