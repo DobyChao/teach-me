@@ -130,6 +130,8 @@ let captureRequest: {
 let connection: Snapshot['connection'] = null;
 let connectionRequest: ((allow: boolean) => void) | null = null;
 let quitting = false;
+let readyToQuit = false;
+let shutdownTask: Promise<void> | null = null;
 let talkBusy = false;
 let startInProgress = false;
 let displayRequest: {
@@ -399,6 +401,8 @@ const input = new InputController({
     if (input.state.turnId === turn && panel.isFocused()) panel.webContents.focus();
   },
   restore: async (handle) => {
+    // Quitting must not depend on another native focus/style round trip.
+    if (quitting) return;
     await setWindowInput(panel, false, true, windows);
     if (input.state.phase !== 'idle') return;
     await windows.activate(handle);
@@ -549,6 +553,7 @@ async function consent(kind: 'start' | 'attach', topic: string) {
   });
 }
 async function action(a: Action) {
+  if (quitting && a.type !== 'quit') throw new Error('应用正在退出');
   switch (a.type) {
     case 'prepare':
       error = null;
@@ -827,6 +832,7 @@ async function startServer() {
     try {
       const route = new URL(req.url || '/', 'http://127.0.0.1').pathname;
       const data = req.method === 'POST' ? await body(req) : {};
+      if (quitting && route !== '/stop' && route !== '/status') throw new Error('应用正在退出');
       let result: unknown;
       if (route === '/status') {
         result = {
@@ -1015,24 +1021,48 @@ async function startServer() {
   return server;
 }
 
-async function shutdown(reason: string) {
-  if (quitting) return;
+function shutdown(reason: string): Promise<void> {
+  if (shutdownTask) return shutdownTask;
   quitting = true;
-  panelMotion?.dispose();
   runtimeEvent('shutdown', { reason });
-  htmlHost.clear();
-  await voice.cancel();
-  if (displayRequest) {
-    clearTimeout(displayRequest.timer);
-    displayRequest.resolve(false);
-    displayRequest = null;
-  }
-  session?.end();
-  await input.cancel();
-  settleCapture(false);
-  connectionRequest?.(false);
-  await fs.rm(endpointFile, { force: true });
-  setTimeout(() => app.quit(), 100);
+  // A stuck OS/file operation must not leave an uncloseable single-instance lock.
+  const deadline = setTimeout(() => {
+    runtimeEvent('shutdown-timeout');
+    windows.dispose();
+    app.exit(1);
+  }, 5000);
+  app.once('will-quit', () => clearTimeout(deadline));
+  const cleanup = async (step: string, run: () => unknown) => {
+    try {
+      await run();
+    } catch (e) {
+      runtimeEvent('shutdown-cleanup-failed', { step, ...failureMetadata(e) });
+    }
+  };
+  shutdownTask = (async () => {
+    await cleanup('motion', () => panelMotion?.dispose());
+    await cleanup('html', () => htmlHost.clear());
+    // Settle consumers before any asynchronous native or filesystem cleanup.
+    await cleanup('session', () => session?.end());
+    await cleanup('requests', () => {
+      if (displayRequest) {
+        clearTimeout(displayRequest.timer);
+        displayRequest.resolve(false);
+        displayRequest = null;
+      }
+      settleCapture(false);
+      connectionRequest?.(false);
+    });
+    await cleanup('voice', () => voice.cancel());
+    await cleanup('input', () => input.cancel());
+    await cleanup('endpoint', () => fs.rm(endpointFile, { force: true }));
+    // Let an API stop response flush before closing windows and the HTTP server.
+    setTimeout(() => {
+      readyToQuit = true;
+      app.quit();
+    }, 100);
+  })();
+  return shutdownTask;
 }
 
 async function loadWindow(w: BrowserWindow, mode: string) {
@@ -1215,7 +1245,7 @@ app
       try {
         return await action(parsed);
       } catch (err) {
-        if (e.sender.id !== settingsWindow.webContents.id) fail(err);
+        if (!quitting && e.sender.id !== settingsWindow.webContents.id) fail(err);
         throw err;
       }
     });
@@ -1289,7 +1319,7 @@ app
       broadcast();
     });
     panel.on('close', (e) => {
-      if (!quitting) {
+      if (!readyToQuit) {
         e.preventDefault();
         shutdown('native-window-close').catch(fail);
       }
@@ -1305,7 +1335,13 @@ app.on('window-all-closed', () => {
   runtimeEvent('window-all-closed');
   app.quit();
 });
-app.on('before-quit', () => runtimeEvent('before-quit', { requested: quitting }));
+app.on('before-quit', (event) => {
+  runtimeEvent('before-quit', { requested: quitting });
+  if (!readyToQuit) {
+    event.preventDefault();
+    if (!quitting) void shutdown('app-quit');
+  }
+});
 app.on('quit', (_event, exitCode) => runtimeEvent('quit', { exitCode }));
 app.on('will-quit', () => {
   runtimeEvent('will-quit');

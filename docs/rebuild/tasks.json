@@ -747,18 +747,42 @@
         "docs/rebuild/evidence/T29.md"
       ],
       "notes": "通用skill已改为Agent自主选择并按需接通，移除具体宿主提示和必须预装桥/另开任务限制；保留同会话验证、可靠接收、单消费者和wait兜底。安装副本及SHA256一致，技能校验/六类人工规则审阅/68项工程检查通过；未进行真实Agent hook唤醒实验。"
+    },
+    {
+      "id": "T30",
+      "title": "清理失败时仍能退出并重新启动",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A35"
+      ],
+      "verify": [
+        "node scripts/shutdown-smoke.mjs",
+        "Windows 原生关闭与重新启动观察",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T30.md"
+      ],
+      "notes": "Windows六组退出故障/正常回归、每组同profile重启、原生Alt+F4、120秒启动器静置与退出诊断、68项检查通过；T14原始退出根因仍未知。"
     }
   ],
   "nextUp": [
     {
-      "taskId": "T28",
-      "reason": "原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。",
-      "action": "按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。"
-    },
-    {
       "taskId": "T14",
       "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",
       "action": "先读 T14 证据和启动诊断实现，复核 npm run app 的静置/退出/重复启动；记录终端退出码与宿主事件，区分进程退出和捕获不可见，再决定修复。"
+    },
+    {
+      "taskId": "T28",
+      "reason": "原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。",
+      "action": "按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。"
     },
     {
       "taskId": "T17",

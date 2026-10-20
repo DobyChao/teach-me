@@ -45,6 +45,8 @@ CLI / Agent（保留公开命令语义）
 
 ## IPC 与权限
 
+退出由宿主单次清理事务管理：先结束Session/审批，再分别取消语音、输入并清除endpoint。退出中不再恢复外部焦点，新的业务HTTP/IPC被拒绝；重复关闭共享结果且不会绕过清理。独立清理失败只记录脱敏元数据，5秒总期限后非零退出；正常退出仍保留启动器日志。该边界不是自动重启或会话恢复方案，见ADR-025/T30。
+
 共享协议定义请求、响应与事件；主进程做运行时校验、sender/window 校验和错误归一。preload 仅暴露明确方法（例如 prepareInput、submitInput、cancelInput、subscribeSnapshot），不能暴露通用 send/invoke。每个请求必须有接收器、响应与超时行为测试。订阅返回 unsubscribe，React effect 负责清理。
 
 Electron contextIsolation + sandbox，关闭 nodeIntegration。远程/自定义 HTML 不加载应用 preload；禁止导航、新窗口和网络，固定宿主水印。来源：[Electron IPC](https://www.electronjs.org/docs/latest/tutorial/ipc)、[Context Isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation)。
