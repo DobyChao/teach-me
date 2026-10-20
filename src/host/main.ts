@@ -911,9 +911,13 @@ async function startServer() {
           }
         }
       } else if (route === '/attach') {
-        if (!session || data.session !== session.id) throw new Error('会话不存在');
-        if (!(await consent('attach', session.topic))) throw new Error('用户拒绝连接');
-        result = { id: session.id, token: session.token };
+        const requested = session;
+        if (!requested || data.session !== requested.id || requested.phase === 'ended')
+          throw new Error('会话不存在或已结束');
+        if (!(await consent('attach', requested.topic))) throw new Error('用户拒绝连接');
+        if (session !== requested || requireSession() !== requested)
+          throw new Error('会话已变更，请重新连接');
+        result = { id: requested.id, token: requested.token };
       } else if (route === '/stop') {
         await shutdown('api-stop');
         result = { ok: true };

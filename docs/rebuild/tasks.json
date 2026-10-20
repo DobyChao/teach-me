@@ -847,6 +847,30 @@
         "docs/rebuild/evidence/T33.md"
       ],
       "notes": "helper代次隔离、dispose及时结算、超时淘汰及脱敏诊断完成；12项行为测试、真实helper退出/重建/窗口样式、新构建原生输入与重启通过，独立审查无阻断。原始首次启动超时原因仍未知，后续用新诊断追踪。"
+    },
+    {
+      "id": "T34",
+      "title": "加入审批绑定申请会话并拒绝失效目标",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R05"
+      ],
+      "acceptance": [
+        "A38"
+      ],
+      "verify": [
+        "真实Electron正常/拒绝/已结束/审批期间结束和会话替换",
+        "真实HTTP旧实现复现与独立审查",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T34.md"
+      ],
+      "notes": "真实Electron旧构建复现旧id attach拿到新会话凭据；绑定目标并批准后重验，正常/拒绝/结束/替换和收发回归通过，原生点击批准、独立六场景审查通过。"
     }
   ],
   "nextUp": [

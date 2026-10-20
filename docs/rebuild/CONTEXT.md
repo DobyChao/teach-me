@@ -83,6 +83,7 @@
 | T31 发送已成功时焦点恢复失败不再吞掉后续改稿 | done | T01 | [T31.md](evidence/T31.md) |
 | T32 主面板渲染进程崩溃后有界恢复 | done | T30、T31 | [T32.md](evidence/T32.md) |
 | T33 Windows辅助进程代次隔离与故障诊断 | done | T30、T32 | [T33.md](evidence/T33.md) |
+| T34 加入审批绑定申请会话并拒绝失效目标 | done | T01 | [T34.md](evidence/T34.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -106,4 +107,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: d4292507931ea2bd0be93b909f9fa90141d9bf365ec649d749a2d48c813ed378 -->
+<!-- source-sha256: 69669187e667f299c7096619a7ac1f9c44917781ff59ac309bb95da8db87eb11 -->
