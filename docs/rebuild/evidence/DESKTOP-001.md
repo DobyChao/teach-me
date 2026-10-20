@@ -46,3 +46,15 @@ npm run context、生成差异审阅和npm run check通过（84项测试、类�
 边界：本机单屏，短workArea为宿主测试输入、窗口和鼠标为实际Windows；不称作真实多屏或修改系统DPI验收。审批由scrollIntoView定位后做原生点击，尚未单独验证原生滚轮/触控滚动。320×224仅是本场景已验尺寸，不是所有状态的最低支持规格。更短容量、错误/语音/工具满载组合及page zoom mini仍pending。原始日志和合成截图只在.runtime。
 
 本提交简短进展：修复已复现的短工作区标题裁切及长稿挤空审批区，完成六场景与原生拒绝/发送闭环；生成context、审阅差异并运行check后本地提交。T02保留in_progress，继续剩余矩阵。
+
+## 2026-10-20 · 原生滚动条到达审批按钮
+
+补齐上一轮scrollIntoView掩盖的验证缺口，没有修改产品代码或30秒审批期限。夹具新增可选`TMA_LAYOUT_SCROLL`模式：审批从details.scrollTop=0开始，不调用scrollIntoView；等待真实可见位置变化后再断言按钮完整，仍要求可信的审批/发送点击、原草稿/选区保留及wait/ack。
+
+最终Windows单屏实测：`TMA_LAYOUT_CASE=tiny`、`TMA_LAYOUT_REVIEW=tiny`、`TMA_LAYOUT_SCROLL=scrollbar`运行`node scripts/layout-smoke.mjs`。320×224窗口内用Computer Use拖动实际滚动条，再原生点击拒绝和发送；按钮top=64.5、bottom=97.5，完整位于49–107的正文视口内；header.top=1，composer为111–213，长稿与2–6选区保持。真实HTTP wait收到完整长稿、ack并清稿，CHECKS_COMPLETE、退出0、endpoint删除。合成页面图保存在忽略目录`.runtime/layout/1792508869913/approval-tiny.png`，Windows截图也现场确认了按钮可见和发送后清稿。
+
+失败与边界保留：纯wheel模式三次未完成闭环，第一次未绑定截图坐标时指针落在标题，后两次虽然推动正文但未在审批期限内到达并点击按钮（日志`.runtime/layout-native-wheel*.log`）。转用滚动条后，首次拖过头而到期；第二次按钮已完整显示，但最终点击未捕获trusted事件，仍失败；最后按已观察位置一次拖动后完整通过。不能将前几次失败算通过，也不能由滚动条通过宣称纯滚轮/触控已验收。后续若补wheel，先核对实际wheel delta、滚动位置与每步耗时，不再盲目重复。
+
+独立只读审查未发现默认六场景回归或既有断言放宽；确认scrollbar分支本身只证明滚动结果，原生来源必须由本轮Sky拖动记录支持，不能单靠PASS日志推断。wheel分支额外要求可信wheel，但本轮未完成，保持pending。
+
+本提交简短进展：增加真实滚动验证入口并补齐滚动条审批/发送证据；不扩大320×224为所有状态最低支持规格，T02完整矩阵与纯滚轮仍pending。最终工程检查结果见本轮接续记录。

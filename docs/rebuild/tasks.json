@@ -68,7 +68,7 @@
       "evidence": [
         "docs/rebuild/evidence/DESKTOP-001.md"
       ],
-      "notes": "已修复短工作区标题裁切与长稿挤空审批区；六场景及短容量三档/恢复尺寸通过，320x224原生拒绝/发送/wait/ack已验。独立容量避免100vh反馈；多屏、错误/语音/工具满载、极小容量及page zoom mini仍pending。"
+      "notes": "已修复短工作区标题裁切与长稿挤空审批区；六场景及短容量三档/恢复尺寸通过，320x224原生滚动条→拒绝→发送/wait/ack已补验。纯wheel未完成，失败记录保留；独立容量避免100vh反馈，多屏、错误/语音/工具满载、极小容量及page zoom mini仍pending。"
     },
     {
       "id": "T03",
@@ -894,7 +894,7 @@
       "evidence": [
         "docs/rebuild/evidence/T35.md"
       ],
-      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。远端39434847122等待主仓维护者批准且无jobs；批准最新提交后核对npm ci/check/smoke，远端验收仍pending。"
+      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。23:12核对head仍为aba25bd，最新运行39435483355仍action_required；批准最新提交后核对npm ci/check/smoke，远端验收pending。本晚布局/断连修复仅本地。"
     },
     {
       "id": "T36",
@@ -933,7 +933,7 @@
     {
       "taskId": "T02",
       "reason": "局部布局已修复，但密集工具、审批、长消息等完整视觉状态仍未验收。",
-      "action": "短工作区容量与长草稿修复已验至320x224原生窗口；继续错误/语音/工具满载及审批组合。页面zoom mini是独立未验条件，不与Windows DPI混同；需要相应设备才能完成多屏矩阵。"
+      "action": "320x224已补原生滚动条拒绝/发送闭环；纯wheel仍pending，先核对delta/滚动位置/耗时，不盲目重试。继续错误/语音/工具满载及审批组合；page zoom mini与Windows DPI分开，多屏需相应设备。"
     }
   ]
 }

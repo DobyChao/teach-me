@@ -55,6 +55,9 @@ async function run() {
         if (!e.isTrusted) return;
         if (e.target.closest('.request button')) window.__layoutNative.decision = true;
         if (e.target.closest('.send')) window.__layoutNative.send = true;
+      }, true);
+      document.addEventListener('wheel', e => {
+        if (e.isTrusted && e.target.closest('.panel-details')) window.__layoutNative.wheel = true;
       }, true); true`);
   const settle = async () => {
     await pause(100);
@@ -150,7 +153,35 @@ async function run() {
     assert.ok((await state()).connection);
     await settle();
     // In a very short area the approval may need its own scrolling, while the composer stays put.
-    await js('document.querySelector(".request .primary").scrollIntoView({block:"nearest"});true');
+    if (process.env.TMA_LAYOUT_SCROLL && process.env.TMA_LAYOUT_REVIEW === name) {
+      await js('document.querySelector(".panel-details").scrollTop=0;true');
+      const wheelRequired = process.env.TMA_LAYOUT_SCROLL !== 'scrollbar';
+      console.log(
+        `SCROLL_READY: use the native ${wheelRequired ? 'wheel' : 'scrollbar'} in the approval area`,
+      );
+      let reachable = false;
+      for (let i = 0; i < 1200; i++) {
+        reachable = await js(`(()=>{
+          const button=document.querySelector('.request .primary');
+          if (!button) return false;
+          const b=button.getBoundingClientRect();
+          const d=document.querySelector('.panel-details').getBoundingClientRect();
+          const scrolled=document.querySelector('.panel-details').scrollTop>0;
+          return scrolled && ${wheelRequired ? 'window.__layoutNative.wheel' : 'true'} && b.top>=d.top && b.bottom<=d.bottom;
+        })()`);
+        if (reachable) break;
+        if (!(await state()).connection) throw new Error('approval expired before native scroll');
+        await pause(20);
+      }
+      assert.equal(reachable, true, 'native scrolling must reveal the complete approval button');
+      console.log(
+        `PASS: native ${wheelRequired ? 'wheel' : 'scrollbar'} revealed the approval button`,
+      );
+    } else {
+      await js(
+        'document.querySelector(".request .primary").scrollIntoView({block:"nearest"});true',
+      );
+    }
     await fs.writeFile(
       path.join(home, `approval-${name}.png`),
       (await panel.capturePage()).toPNG(),
