@@ -132,6 +132,10 @@ let connectionRequest: ((allow: boolean) => void) | null = null;
 let quitting = false;
 let readyToQuit = false;
 let shutdownTask: Promise<void> | null = null;
+let runtimeReady = false;
+let panelRecovering = false;
+let panelRecoveryAt = 0;
+let panelRecoveryReady: (() => void) | null = null;
 let talkBusy = false;
 let startInProgress = false;
 let displayRequest: {
@@ -183,7 +187,8 @@ function broadcast() {
   if (!guides.some((g) => g.type === 'html')) htmlHost.clear();
   else htmlHost.visible(!guidesHidden);
   for (const w of [panel, overlay, settingsWindow])
-    if (w && !w.isDestroyed()) w.webContents.send('companion:state', state);
+    if (w && !w.isDestroyed() && !w.webContents.isCrashed())
+      w.webContents.send('companion:state', state);
 }
 function fail(e: unknown) {
   error = e instanceof Error ? e.message : String(e);
@@ -278,6 +283,7 @@ function expand(event: 'reply' | 'attention' = 'attention') {
 }
 function autoCollapse() {
   if (collapseTimer) clearTimeout(collapseTimer);
+  if (quitting || panelRecovering) return;
   if (panelState.mode !== 'mini' && canCompact(panelActivity()) && settings.autoCollapseSec > 0) {
     const last = session?.messages.findLast((m) => m.role === 'agent')?.text || '';
     const readingSeconds =
@@ -381,9 +387,12 @@ const input = new InputController({
   remember: foreground,
   capture: () => (settings.attachScreenshot ? captureScreen() : Promise.resolve(null)),
   focus: async () => {
+    if (quitting || panelRecovering) return;
     const turn = input.state.turnId;
     await setWindowInput(panel, true, true, windows);
     if (
+      quitting ||
+      panelRecovering ||
       settingsOpen ||
       input.state.turnId !== turn ||
       !['preparing', 'editing'].includes(input.state.phase)
@@ -402,7 +411,7 @@ const input = new InputController({
   },
   restore: async (handle) => {
     // Quitting must not depend on another native focus/style round trip.
-    if (quitting) return;
+    if (quitting || panelRecovering) return;
     await setWindowInput(panel, false, true, windows);
     if (input.state.phase !== 'idle') return;
     await windows.activate(handle);
@@ -554,6 +563,13 @@ async function consent(kind: 'start' | 'attach', topic: string) {
 }
 async function action(a: Action) {
   if (quitting && a.type !== 'quit') throw new Error('应用正在退出');
+  if (panelRecovering) {
+    // Initial layout reports from the new document are harmless before its handshake.
+    if (['panel-context', 'panel-motion-end', 'hover', 'resize'].includes(a.type))
+      return snapshot();
+    if (!['quit', 'board-change', 'edit'].includes(a.type))
+      throw new Error('面板正在恢复，请稍后重试');
+  }
   switch (a.type) {
     case 'prepare':
       error = null;
@@ -833,6 +849,8 @@ async function startServer() {
       const route = new URL(req.url || '/', 'http://127.0.0.1').pathname;
       const data = req.method === 'POST' ? await body(req) : {};
       if (quitting && route !== '/stop' && route !== '/status') throw new Error('应用正在退出');
+      if (panelRecovering && ['/start', '/attach', '/capture'].includes(route))
+        throw new Error('面板正在恢复，请稍后重试');
       let result: unknown;
       if (route === '/status') {
         result = {
@@ -1021,7 +1039,7 @@ async function startServer() {
   return server;
 }
 
-function shutdown(reason: string): Promise<void> {
+function shutdown(reason: string, exitCode = 0): Promise<void> {
   if (shutdownTask) return shutdownTask;
   quitting = true;
   runtimeEvent('shutdown', { reason });
@@ -1059,7 +1077,10 @@ function shutdown(reason: string): Promise<void> {
     // Let an API stop response flush before closing windows and the HTTP server.
     setTimeout(() => {
       readyToQuit = true;
-      app.quit();
+      if (exitCode) {
+        windows.dispose();
+        app.exit(exitCode);
+      } else app.quit();
     }, 100);
   })();
   return shutdownTask;
@@ -1068,6 +1089,69 @@ function shutdown(reason: string): Promise<void> {
 async function loadWindow(w: BrowserWindow, mode: string) {
   if (process.env.TMA_DEV_URL) await w.loadURL(`${process.env.TMA_DEV_URL}?mode=${mode}`);
   else await w.loadFile(path.join(__dirname, '../ui/index.html'), { query: { mode } });
+}
+async function recoverPanel() {
+  if (quitting) return;
+  const now = Date.now();
+  if (panelRecovering || now - panelRecoveryAt < 60000) {
+    runtimeEvent('panel-recovery-exhausted');
+    await shutdown('panel-recovery-exhausted', 1);
+    return;
+  }
+  panelRecoveryAt = now;
+  panelRecovering = true;
+  runtimeEvent('panel-recovery-start');
+  const deadline = setTimeout(() => {
+    runtimeEvent('panel-recovery-timeout');
+    void shutdown('panel-recovery-timeout', 1);
+  }, 10000);
+  try {
+    // A crashed UI cannot consent or complete an input. Keep committed Session data.
+    if (displayRequest) {
+      clearTimeout(displayRequest.timer);
+      displayRequest.resolve(false);
+      displayRequest = null;
+    }
+    settleCapture(false);
+    connectionRequest?.(false);
+    await voice.cancel();
+    await input.cancel();
+    if (quitting) return;
+    panelMotion?.finish();
+    movingPanel = false;
+    pointerDrag = null;
+    hasDraft = false;
+    toolsOpen = false;
+    hover = false;
+    panelState = { mode: 'compose', unread: panelState.unread };
+    panelLayoutVersion++;
+    panelHeights.compose = 76;
+    error = '面板已恢复。未发送的草稿或录音可能丢失，请重新输入。';
+    setBounds();
+    await setWindowInput(panel, false, true, windows);
+    if (quitting) return;
+    const ready = new Promise<void>((resolve) => {
+      panelRecoveryReady = () => {
+        panelRecovering = false;
+        resolve();
+      };
+    });
+    await loadWindow(panel, 'panel');
+    await ready;
+    if (quitting) return;
+    error = '面板已恢复。未发送的草稿或录音可能丢失，请重新输入。';
+    panel.showInactive();
+    broadcast();
+    runtimeEvent('panel-recovery-complete');
+  } catch (e) {
+    runtimeEvent('panel-recovery-failed', failureMetadata(e));
+    await shutdown('panel-recovery-failed', 1);
+  } finally {
+    clearTimeout(deadline);
+    panelRecoveryReady = null;
+    // During terminal failure, keep actions blocked until shutdown completes.
+    if (!quitting) panelRecovering = false;
+  }
 }
 async function closeSettings() {
   settingsDrag = null;
@@ -1221,6 +1305,7 @@ app
         )
       )
         throw new Error('unknown sender');
+      if (e.sender.id === panel.webContents.id) panelRecoveryReady?.();
       return snapshot();
     });
     ipcMain.handle('companion:action', async (e, value) => {
@@ -1242,10 +1327,17 @@ app
         throw new Error('overlay action rejected');
       if (parsed.type === 'board-change' && e.sender.id !== overlay.webContents.id)
         throw new Error('board sender rejected');
+      const recoveryAt = panelRecoveryAt;
       try {
         return await action(parsed);
       } catch (err) {
-        if (!quitting && e.sender.id !== settingsWindow.webContents.id) fail(err);
+        if (
+          !quitting &&
+          !panelRecovering &&
+          recoveryAt === panelRecoveryAt &&
+          e.sender.id !== settingsWindow.webContents.id
+        )
+          fail(err);
         throw err;
       }
     });
@@ -1275,14 +1367,22 @@ app
         async () => {
           if (talkBusy) return;
           talkBusy = true;
+          const recoveryAt = panelRecoveryAt;
           try {
             await wait(280);
-            if (!(await windows.talkDown())) {
+            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+            const held = await windows.talkDown();
+            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+            if (!held) {
               await action({ type: 'prepare' });
               return;
             }
             const starting = action({ type: 'voice-start' });
-            while (await windows.talkDown()) await wait(40);
+            while (await windows.talkDown()) {
+              if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+              await wait(40);
+            }
+            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
             await voice.stop();
             await starting;
           } finally {
@@ -1294,7 +1394,11 @@ app
     ] as const) {
       if (
         !globalShortcut.register(key, () => {
-          Promise.resolve(handler()).catch(fail);
+          if (quitting || panelRecovering) return;
+          const recoveryAt = panelRecoveryAt;
+          Promise.resolve(handler()).catch((e) => {
+            if (!quitting && !panelRecovering && recoveryAt === panelRecoveryAt) fail(e);
+          });
         })
       )
         fail(new Error(`快捷键 ${key} 被占用`));
@@ -1325,6 +1429,7 @@ app
       }
     });
     broadcast();
+    runtimeReady = true;
   })
   .catch((e) => {
     runtimeEvent('startup-failed', failureMetadata(e));
@@ -1350,8 +1455,17 @@ app.on('will-quit', () => {
   if (fgTimer) clearInterval(fgTimer);
   if (collapseTimer) clearTimeout(collapseTimer);
 });
-app.on('render-process-gone', (_event, _contents, details) => {
-  runtimeEvent('renderer-exit', { reason: details.reason, exitCode: details.exitCode });
+app.on('render-process-gone', (_event, contents, details) => {
+  const role =
+    panel?.webContents === contents
+      ? 'panel'
+      : overlay?.webContents === contents
+        ? 'overlay'
+        : settingsWindow?.webContents === contents
+          ? 'settings'
+          : 'html';
+  runtimeEvent('renderer-exit', { role, reason: details.reason, exitCode: details.exitCode });
+  if (role === 'panel' && runtimeReady && !quitting) void recoverPanel();
 });
 app.on('child-process-gone', (_event, details) => {
   runtimeEvent('child-exit', {

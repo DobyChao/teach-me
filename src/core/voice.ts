@@ -68,7 +68,9 @@ export class VoiceController {
       this.ports.changed();
       this.timer = setTimeout(
         () => {
-          this.commit(generation).catch((e) => this.fail(e.message));
+          this.commit(generation).catch((e) => {
+            if (generation === this.generation) return this.fail(e.message);
+          });
         },
         Math.max(1000, Math.min(2000, this.ports.confirmMs())),
       );

@@ -352,7 +352,7 @@
       "evidence": [
         "docs/rebuild/evidence/T14.md"
       ],
-      "notes": "退出根因尚未复现；增加父启动器退出诊断。现场不可见的隔离实例确认为默认捕获保护所致，开启可见配置后出现；该结果不等同于修复最初自行退出。"
+      "notes": "本轮45分钟隔离未连接实例持续在线，强制终止/正常stop启动器记录通过；同桌面并行验收有焦点变化、快捷键被占用，未覆盖睡眠/锁屏。历史静置退出根因仍未知。"
     },
     {
       "id": "T15",
@@ -797,6 +797,31 @@
         "docs/rebuild/evidence/T31.md"
       ],
       "notes": "投递后restore拒绝不回滚，晚回包按草稿版本保护；原生两轮消息、真实Renderer延迟回包/新稿/焦点/入队、5组dogfood和71项检查通过，IME/完整焦点仍另验。"
+    },
+    {
+      "id": "T32",
+      "title": "主面板渲染进程崩溃后有界恢复",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T30",
+        "T31"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A36"
+      ],
+      "verify": [
+        "node scripts/renderer-recovery.mjs",
+        "Windows恢复后原生输入与发送",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T32.md"
+      ],
+      "notes": "真实renderer崩溃同HWND恢复、原生输入/Enter/wait/ack、迟到IPC/语音隔离、审批拒绝、健康画板PNG保留、重复故障/重载失败/10秒超时退出及每组重启通过；独立审查问题已修复。主进程/GPU等故障和完整设备矩阵另验。"
     }
   ],
   "nextUp": [

@@ -70,3 +70,7 @@ Renderer入口按mode分为教学面板、overlay和独立设置窗口。设置�
 根 MEMORY.md 负责恢复入口、长期意图和信息归属，不另存任务状态。tasks.json负责状态/依赖/nextUp，PRODUCT/DECISIONS/ACCEPTANCE/evidence负责规格、理由、完成条件和实际观察；PROGRESS只保留当前接续，旧正文归档。`scripts/project-memory.cjs`从任务生成CONTEXT.md，并对显式白名单内的工程源文件计算摘要；不包含自身输出、Git元数据或运行数据，不依赖HEAD或时间戳，避免提交后自失效。文本行尾统一，Windows/CI检出方式不影响结果。
 
 `context:check`检查规范入口链接、复用plan引用校验并只读比较生成内容；源文件变化后必须显式生成并审阅。`npm run check`和CI调用同一命令。该机制只保证结构与同步，无法证明人工接续完整或验证结论真实；功能、平台证据仍按原验收要求管理。实现工具仅用于工程开发，不进入Electron/renderer运行边界。
+
+## 主面板异常恢复
+
+宿主按窗口角色记录renderer-exit。运行期panel renderer退出后，原BrowserWindow重载本地panel；恢复前取消输入/语音代次、待审批和拖动/动效，保留Session、待ack队列与健康overlay。广播跳过已崩溃webContents，恢复不恢复外部焦点、不自动聚焦。新文档的固定snapshot桥调用确认初始化，不新增任意IPC。10秒期限覆盖清理、原生样式调用、load及握手；60秒内第二次异常或失败则有界退出1。旧语音提交失败及旧IPC/快捷键错误以代次隔离，不能覆盖新输入。边界和未发送内容损失提示见ADR-027/T32。

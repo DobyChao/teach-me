@@ -96,3 +96,32 @@ test('review deadline submits once and returns idle', async () => {
   assert.equal(voice.state.phase, 'idle');
   await voice.cancel();
 });
+
+test('a canceled review submission cannot cancel a newer recording when it fails late', async () => {
+  const { voice, ports, events } = setup();
+  const submitting = deferred<void>();
+  const release = deferred<void>();
+  ports.submit = async () => {
+    submitting.resolve();
+    await release.promise;
+    throw new Error('old attachment invalidated');
+  };
+  try {
+    await voice.start();
+    await voice.stop();
+    await submitting.promise;
+    await voice.cancel();
+    await voice.start();
+    const newId = voice.state.id;
+    const cancelCount = events.filter((event) => event === 'cancel').length;
+    release.resolve();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(voice.state.id, newId);
+    assert.equal(voice.state.phase, 'recording');
+    assert.equal(voice.state.error, null);
+    assert.equal(events.filter((event) => event === 'cancel').length, cancelCount);
+  } finally {
+    release.resolve();
+    await voice.cancel();
+  }
+});
