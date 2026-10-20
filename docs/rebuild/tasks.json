@@ -435,7 +435,7 @@
       "evidence": [
         "docs/rebuild/evidence/T17.md"
       ],
-      "notes": "本轮Microsoft拼音候选、composition、回复不重排、Shift+Enter及Enter确认/发送已实际观察；夹具键名假设修正后仅重验保存结果，完整重跑及wait/ack待补。麦克风和多屏pending。"
+      "notes": "T33后最新构建完整重跑原生Microsoft拼音、回复不重排、中文多行、候选Enter不误发和再次Enter发送；wait收到两条消息、ack及正常stop通过。其他IME、麦克风、多屏及完整切换矩阵pending。"
     },
     {
       "id": "T18",
@@ -863,7 +863,7 @@
     {
       "taskId": "T17",
       "reason": "三档交互已实现，完整输入与切换体验仍需补齐；先保护草稿与连续使用。",
-      "action": "读 PANEL-MODES.md 与 T17/T18 证据，跑 panel-modes 和 dogfood 回归；补原生IME组合输入、连续切换与编辑保护，真实麦克风和多屏分别验收。"
+      "action": "读 PANEL-MODES.md 与 T17/T18 证据，补连续切换与编辑保护的剩余矩阵；Microsoft拼音完整收发已验，其他IME、真实麦克风和多屏分别验收。"
     },
     {
       "taskId": "T02",
