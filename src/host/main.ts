@@ -563,20 +563,27 @@ async function approveCapture() {
     broadcast();
   });
 }
-async function consent(kind: 'start' | 'attach', topic: string) {
+async function consent(kind: 'start' | 'attach', topic: string, signal: AbortSignal) {
+  if (signal.aborted) return false;
   if (connectionRequest) throw new Error('已有连接请求待处理');
   connection = { kind, topic };
   expand();
   return new Promise<boolean>((resolve) => {
-    const timer = setTimeout(() => connectionRequest?.(false), 30000);
-    connectionRequest = (allow) => {
+    const abort = () => finish(false);
+    const timer = setTimeout(() => finish(false), 30000);
+    const finish = (allow: boolean) => {
+      if (connectionRequest !== finish) return;
       clearTimeout(timer);
+      signal.removeEventListener('abort', abort);
       connectionRequest = null;
       connection = null;
       broadcast();
       resolve(allow);
     };
-    broadcast();
+    connectionRequest = finish;
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+    else broadcast();
   });
 }
 async function action(a: Action) {
@@ -784,10 +791,13 @@ async function action(a: Action) {
     case 'connection-decision':
       connectionRequest?.(a.allow);
       break;
-    case 'select-display':
+    case 'select-display': {
       if (!screen.getAllDisplays().some((d) => d.id === a.id)) throw new Error('屏幕已断开');
+      const requested = displayRequest;
       await voice.cancel();
+      if (quitting || panelRecovering || displayRequest !== requested) return snapshot();
       await input.cancel();
+      if (quitting || panelRecovering || displayRequest !== requested) return snapshot();
       displayId = a.id;
       guides = [];
       clearUserBoard();
@@ -799,6 +809,7 @@ async function action(a: Action) {
         displayRequest = null;
       }
       break;
+    }
     case 'end':
       await voice.cancel();
       session?.end();
@@ -866,6 +877,14 @@ async function startServer() {
       respond(401, { error: 'authentication required' });
       return;
     }
+    const requestAbort = new AbortController();
+    const disconnected = () => {
+      if (!res.writableEnded) requestAbort.abort();
+    };
+    res.once('close', disconnected);
+    const requireConnected = () => {
+      if (res.destroyed || requestAbort.signal.aborted) throw new Error('连接请求已取消');
+    };
     try {
       const route = new URL(req.url || '/', 'http://127.0.0.1').pathname;
       const data = req.method === 'POST' ? await body(req) : {};
@@ -882,6 +901,7 @@ async function startServer() {
           version: '0.2.0',
         };
       } else if (route === '/start') {
+        requireConnected();
         const topic = z.string().max(500).default('').parse(data.topic);
         if (session && session.phase !== 'ended') {
           if (req.headers['x-session-token'] === session.token)
@@ -892,7 +912,9 @@ async function startServer() {
           startInProgress = true;
           try {
             const free = !!launchSecret && data.launchSecret === launchSecret;
-            if (!free && !(await consent('start', topic))) throw new Error('用户拒绝连接');
+            if (!free && !(await consent('start', topic, requestAbort.signal)))
+              throw new Error('用户拒绝连接');
+            requireConnected();
             if (data.displayId !== undefined) {
               const selected = z.number().int().parse(data.displayId);
               if (!screen.getAllDisplays().some((d) => d.id === selected))
@@ -902,22 +924,33 @@ async function startServer() {
               place();
             } else if (screen.getAllDisplays().length > 1) {
               const selected = await new Promise<boolean>((resolve) => {
-                displayRequest = {
-                  resolve,
-                  timer: setTimeout(() => {
-                    displayRequest = null;
-                    broadcast();
-                    resolve(false);
-                  }, 30000),
+                const abort = () => finish(false);
+                const finish = (allow: boolean) => {
+                  if (displayRequest !== request) return;
+                  clearTimeout(request.timer);
+                  requestAbort.signal.removeEventListener('abort', abort);
+                  displayRequest = null;
+                  broadcast();
+                  resolve(allow);
                 };
+                const request = {
+                  resolve: finish,
+                  timer: setTimeout(() => finish(false), 30000),
+                };
+                displayRequest = request;
+                requestAbort.signal.addEventListener('abort', abort, { once: true });
                 expand();
-                broadcast();
+                if (requestAbort.signal.aborted) abort();
+                else broadcast();
               });
               if (!selected) throw new Error('尚未选择教学屏幕');
             }
             if (quitting) throw new Error('应用正在退出');
-            launchSecret = '';
+            requireConnected();
             await input.cancel();
+            requireConnected();
+            if (quitting) throw new Error('应用正在退出');
+            launchSecret = '';
             const hadSession = session !== null;
             session = new Session(topic, broadcast);
             guides = [];
@@ -932,10 +965,13 @@ async function startServer() {
           }
         }
       } else if (route === '/attach') {
+        requireConnected();
         const requested = session;
         if (!requested || data.session !== requested.id || requested.phase === 'ended')
           throw new Error('会话不存在或已结束');
-        if (!(await consent('attach', requested.topic))) throw new Error('用户拒绝连接');
+        if (!(await consent('attach', requested.topic, requestAbort.signal)))
+          throw new Error('用户拒绝连接');
+        requireConnected();
         if (session !== requested || requireSession() !== requested)
           throw new Error('会话已变更，请重新连接');
         result = { id: requested.id, token: requested.token };
@@ -1050,6 +1086,8 @@ async function startServer() {
       respond(200, result);
     } catch (e) {
       respond(400, { error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      res.removeListener('close', disconnected);
     }
   });
   server.requestTimeout = 0;

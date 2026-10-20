@@ -12,3 +12,5 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run smoke
+      - run: node scripts/connection-cancel.mjs
+      - run: node scripts/connection-cancel.mjs --display-race

@@ -85,6 +85,7 @@
 | T33 Windows辅助进程代次隔离与故障诊断 | done | T30、T32 | [T33.md](evidence/T33.md) |
 | T34 加入审批绑定申请会话并拒绝失效目标 | done | T01 | [T34.md](evidence/T34.md) |
 | T35 固定Windows检出换行符并恢复PR门禁 | in_progress | T01 | [T35.md](evidence/T35.md) |
+| T36 撤销断开的连接请求并避免孤儿会话 | done | T34 | [T36.md](evidence/T36.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -109,4 +110,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 5d23fa085ec60d4c7a0cc8fd336a8136cb2731592ad2338f3b538bc06b05e2d7 -->
+<!-- source-sha256: e76e7afe32f4df336f9d03b8e9749ee667c527ec075aab533487da88ee88556a -->

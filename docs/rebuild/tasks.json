@@ -895,6 +895,23 @@
         "docs/rebuild/evidence/T35.md"
       ],
       "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。远端39434847122等待主仓维护者批准且无jobs；批准最新提交后核对npm ci/check/smoke，远端验收仍pending。"
+    },
+    {
+      "id": "T36",
+      "title": "撤销断开的连接请求并避免孤儿会话",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": ["T34"],
+      "requirements": ["R05", "R15"],
+      "acceptance": ["A06"],
+      "verify": [
+        "真实CLI在start/attach审批时退出与重新连接",
+        "批准后原生取消阻塞期间断连不创建会话",
+        "正常批准/拒绝与wait/ack回归",
+        "npm run check"
+      ],
+      "evidence": ["docs/rebuild/evidence/T36.md"],
+      "notes": "真实Electron/CLI复现并修复提交前断连留下孤儿会话；自动审批撤销、重试、正常批准拒绝和wait/ack通过，模拟选屏竞态通过。锁屏首次原生尝试失败保留；用户解锁后原生允许连接、可信click和后续CLI收发通过。84项check及T34回归通过，新增CI回归尚未推送；提交后响应丢失和真实多屏几何不在本项通过范围。"
     }
   ],
   "nextUp": [
