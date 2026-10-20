@@ -435,7 +435,7 @@
       "evidence": [
         "docs/rebuild/evidence/T17.md"
       ],
-      "notes": "三档布局、草稿/审批保护和同窗口动画已实现；麦克风、多屏与完整原生输入另验。"
+      "notes": "本轮Microsoft拼音候选、composition、回复不重排、Shift+Enter及Enter确认/发送已实际观察；夹具键名假设修正后仅重验保存结果，完整重跑及wait/ack待补。麦克风和多屏pending。"
     },
     {
       "id": "T18",
