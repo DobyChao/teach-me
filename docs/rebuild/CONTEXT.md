@@ -102,11 +102,11 @@
 - **T16**：360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。
 - **T17**：T33后最新构建完整重跑原生Microsoft拼音、回复不重排、中文多行、候选Enter不误发和再次Enter发送；wait收到两条消息、ack及正常stop通过。其他IME、麦克风、多屏及完整切换矩阵pending。
 - **T28**：已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。
-- **T35**：PR #2门禁在95文件Prettier检查失败，已以真实Git CRLF检出复现；增加仓库LF约束，保留所有检查。
+- **T35**：PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。远端39434847122等待主仓维护者批准且无jobs；批准最新提交后核对npm ci/check/smoke，远端验收仍pending。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 1b84019664fa35bff6f3b97fbebac7b84a50202c1be7c85a705f347f041cc890 -->
+<!-- source-sha256: 7aa2d8f644d0419b53c42693bb2db6c09c50cf796cf0f55ebbe01dd22099a9e2 -->

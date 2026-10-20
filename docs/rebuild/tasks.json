@@ -894,7 +894,7 @@
       "evidence": [
         "docs/rebuild/evidence/T35.md"
       ],
-      "notes": "PR #2门禁在95文件Prettier检查失败，已以真实Git CRLF检出复现；增加仓库LF约束，保留所有检查。"
+      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。远端39434847122等待主仓维护者批准且无jobs；批准最新提交后核对npm ci/check/smoke，远端验收仍pending。"
     }
   ],
   "nextUp": [
