@@ -871,6 +871,30 @@
         "docs/rebuild/evidence/T34.md"
       ],
       "notes": "真实Electron旧构建复现旧id attach拿到新会话凭据；绑定目标并批准后重验，正常/拒绝/结束/替换和收发回归通过，原生点击批准、独立六场景审查通过。"
+    },
+    {
+      "id": "T35",
+      "title": "固定Windows检出换行符并恢复PR门禁",
+      "milestone": "M1",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R10"
+      ],
+      "acceptance": [
+        "A02"
+      ],
+      "verify": [
+        "core.autocrlf=true独立检出前后Prettier对照",
+        "npm run check与npm run smoke",
+        "现有PR #2远端Engineering checks"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T35.md"
+      ],
+      "notes": "PR #2门禁在95文件Prettier检查失败，已以真实Git CRLF检出复现；增加仓库LF约束，保留所有检查。"
     }
   ],
   "nextUp": [

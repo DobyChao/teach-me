@@ -84,6 +84,7 @@
 | T32 主面板渲染进程崩溃后有界恢复 | done | T30、T31 | [T32.md](evidence/T32.md) |
 | T33 Windows辅助进程代次隔离与故障诊断 | done | T30、T32 | [T33.md](evidence/T33.md) |
 | T34 加入审批绑定申请会话并拒绝失效目标 | done | T01 | [T34.md](evidence/T34.md) |
+| T35 固定Windows检出换行符并恢复PR门禁 | in_progress | T01 | [T35.md](evidence/T35.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -101,10 +102,11 @@
 - **T16**：360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。
 - **T17**：T33后最新构建完整重跑原生Microsoft拼音、回复不重排、中文多行、候选Enter不误发和再次Enter发送；wait收到两条消息、ack及正常stop通过。其他IME、麦克风、多屏及完整切换矩阵pending。
 - **T28**：已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。
+- **T35**：PR #2门禁在95文件Prettier检查失败，已以真实Git CRLF检出复现；增加仓库LF约束，保留所有检查。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 00da0811acaa807ff03012587210fca605b63326bb206a7e36c09aa65e18fcf1 -->
+<!-- source-sha256: 1b84019664fa35bff6f3b97fbebac7b84a50202c1be7c85a705f347f041cc890 -->
