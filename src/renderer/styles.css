@@ -490,6 +490,9 @@ input[type='checkbox'] {
 .request p {
   margin: 5px 0 10px;
   color: var(--muted);
+  overflow-wrap: anywhere;
+  max-height: 120px;
+  overflow: auto;
 }
 .row {
   display: flex;
