@@ -919,7 +919,7 @@
       "milestone": "M1",
       "status": "done",
       "dependsOn": ["T01"],
-      "requirements": ["R10"],
+      "requirements": ["R24"],
       "acceptance": ["A01"],
       "verify": ["上游差异与merge双亲审阅", "npm run context:check", "npm run check（不启动桌面应用）"],
       "evidence": ["docs/rebuild/evidence/T37.md"],
@@ -949,6 +949,52 @@
         "docs/rebuild/evidence/T38.md"
       ],
       "notes": "实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。"
+    },
+    {
+      "id": "T39",
+      "title": "本地转写部分写入失败后清理临时音频",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R13"
+      ],
+      "acceptance": [
+        "A12"
+      ],
+      "verify": [
+        "纯Node部分写入失败文件清理回归",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T39.md"
+      ],
+      "notes": "writeFile已纳入finally；纯Node测试先真实写入1字节再模拟失败，旧版遗留文件、新版清空，保留原错误且不启动识别器。96项check通过；真实磁盘故障/权限拒绝并未模拟为通过。"
+    },
+    {
+      "id": "T40",
+      "title": "取消语音时中止在途本地与自定义转写",
+      "milestone": "M2",
+      "status": "todo",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R12",
+        "R13"
+      ],
+      "acceptance": [
+        "A09",
+        "A12"
+      ],
+      "verify": [
+        "纯Node取消/迟到回包/新旧转写隔离与临时文件清理",
+        "允许实机后验证本地识别进程及自定义API取消"
+      ],
+      "evidence": [],
+      "notes": "2026-10-21纯Node观察：取消后local child与custom fetch继续至既有20秒期限，迟到结果被代次丢弃，非永久挂起或串稿。下一步按每次转写传递取消信号，需保留timeout及新旧资源归属。"
     }
   ],
   "nextUp": [

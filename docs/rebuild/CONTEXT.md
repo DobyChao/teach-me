@@ -96,6 +96,8 @@
 | T36 撤销断开的连接请求并避免孤儿会话 | done | T34 | [T36.md](evidence/T36.md) |
 | T37 审阅合并主仓调研并恢复当前维护约束 | done | T01 | [T37.md](evidence/T37.md) |
 | T38 语音取消重试的进程与迟到回调隔离 | in_progress | T01 | [T38.md](evidence/T38.md) |
+| T39 本地转写部分写入失败后清理临时音频 | done | T01 | [T39.md](evidence/T39.md) |
+| T40 取消语音时中止在途本地与自定义转写 | todo | T01 | — |
 
 ## 尚未完成任务的接续说明
 
@@ -115,10 +117,11 @@
 - **T28**：已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。
 - **T35**：PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；历史独立检出check 84项和smoke 24项通过。2026-10-21恢复确认晚间三笔提交已推送至cf13b51，原PR最新已知运行39447166248仍action_required；批准后核对npm ci/check/smoke，远端验收pending。本轮禁止实机测试。
 - **T38**：实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。
+- **T40**：2026-10-21纯Node观察：取消后local child与custom fetch继续至既有20秒期限，迟到结果被代次丢弃，非永久挂起或串稿。下一步按每次转写传递取消信号，需保留timeout及新旧资源归属。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: c4afe9557011c889116c827875baa68ad7a99d7105de5d7abce50d1fa13abb98 -->
+<!-- source-sha256: 363cc841114f9bfea409f611511e2133bd3303eff11f56d69362e1efbd78e1ee -->

@@ -134,8 +134,8 @@ export async function transcribe(
     directory,
     `audio-${randomUUID()}.${mime.includes('wav') ? 'wav' : 'webm'}`,
   );
-  await fs.writeFile(file, data);
   try {
+    await fs.writeFile(file, data);
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(config.localCommand, [file], {
         windowsHide: true,
