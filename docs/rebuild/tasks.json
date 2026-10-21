@@ -924,9 +924,39 @@
       "verify": ["上游差异与merge双亲审阅", "npm run context:check", "npm run check（不启动桌面应用）"],
       "evidence": ["docs/rebuild/evidence/T37.md"],
       "notes": "source/master的02187b4与dcba9c6只新增研究文档；无冲突普通合并，研究候选不改变已接受产品方向。本轮只做单元与静态构建检查，最晚17:30暂停。"
+    },
+    {
+      "id": "T38",
+      "title": "语音取消重试的进程与迟到回调隔离",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R12"
+      ],
+      "acceptance": [
+        "A09"
+      ],
+      "verify": [
+        "纯Node FakeChild与受控Promise复现和回归",
+        "独立代码审查与npm run check",
+        "后续允许实机时验证Windows连续录音与取消重试"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T38.md"
+      ],
+      "notes": "实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。"
     }
   ],
   "nextUp": [
+    {
+      "taskId": "T38",
+      "reason": "本轮禁止实机测试；纯Node已复现旧语音回调终止新录音及旧错误污染新状态，优先收敛可确定验证的连续输入问题。",
+      "action": "实现与纯Node回归已完成；本轮不要启动实机。后续获准实机时验证系统识别启动/转写中取消并立即重试、错误恢复和焦点，不重复已通过的单元测试代替设备证据。"
+    },
     {
       "taskId": "T14",
       "reason": "用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。",

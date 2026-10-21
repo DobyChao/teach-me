@@ -125,3 +125,50 @@ test('a canceled review submission cannot cancel a newer recording when it fails
     await voice.cancel();
   }
 });
+
+test('an old startup completion cannot abort a newer recording', async () => {
+  const { voice, ports, events } = setup();
+  const starting = deferred<void>();
+  const release = deferred<void>();
+  ports.start = async () => {
+    starting.resolve();
+    await release.promise;
+  };
+  const old = voice.start();
+  await starting.promise;
+  await voice.cancel();
+  ports.start = async () => {};
+  try {
+    await voice.start();
+    const id = voice.state.id;
+    const aborts = events.filter((event) => event === 'abort').length;
+    release.resolve();
+    await old;
+    assert.equal(voice.state.id, id);
+    assert.equal(voice.state.phase, 'recording');
+    assert.equal(events.filter((event) => event === 'abort').length, aborts);
+  } finally {
+    release.resolve();
+    await voice.cancel();
+  }
+});
+
+test('an old failure cleanup cannot add its error to a newer recording', async () => {
+  const { voice, ports } = setup();
+  const cleanup = deferred<void>();
+  ports.cancel = () => cleanup.promise;
+  await voice.start();
+  const failing = voice.fail('旧录音失败');
+  try {
+    await voice.start();
+    const id = voice.state.id;
+    cleanup.resolve();
+    await failing;
+    assert.equal(voice.state.id, id);
+    assert.equal(voice.state.phase, 'recording');
+    assert.equal(voice.state.error, null);
+  } finally {
+    cleanup.resolve();
+    await voice.cancel();
+  }
+});

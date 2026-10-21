@@ -7,6 +7,7 @@ export interface VoiceState {
 }
 interface Ports {
   prepare(): Promise<void>;
+  // abort must invalidate an in-flight start, including its pending resource acquisition.
   start(): Promise<void>;
   stop(): Promise<string>;
   abort(): void;
@@ -32,10 +33,7 @@ export class VoiceController {
       await this.ports.prepare();
       if (generation !== this.generation) return;
       await this.ports.start();
-      if (generation !== this.generation) {
-        this.ports.abort();
-        return;
-      }
+      if (generation !== this.generation) return;
       this.state = { ...this.state, phase: 'recording' };
       this.ports.changed();
       this.timer = setTimeout(() => this.stop(), 60000);
@@ -99,7 +97,9 @@ export class VoiceController {
     this.ports.changed();
   }
   async fail(message: string) {
+    const generation = this.generation + 1;
     await this.cancel();
+    if (generation !== this.generation) return;
     this.state = { ...this.state, error: message };
     this.ports.changed();
   }
