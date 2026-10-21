@@ -17,7 +17,7 @@ function setup() {
     start: async () => {
       events.push('start');
     },
-    stop: async () => {
+    stop: async (_signal: AbortSignal) => {
       events.push('stop');
       return '识别结果';
     },
@@ -169,6 +169,37 @@ test('an old failure cleanup cannot add its error to a newer recording', async (
     assert.equal(voice.state.error, null);
   } finally {
     cleanup.resolve();
+    await voice.cancel();
+  }
+});
+
+test('cancel aborts only its pending transcription and a retry gets a fresh signal', async () => {
+  const { voice, ports } = setup();
+  const requests: { signal: AbortSignal; result: ReturnType<typeof deferred<string>> }[] = [];
+  ports.stop = (signal) => {
+    const result = deferred<string>();
+    requests.push({ signal, result });
+    return result.promise;
+  };
+  await voice.start();
+  const old = voice.stop();
+  await voice.cancel();
+  await voice.start();
+  const current = voice.stop();
+  try {
+    assert.equal(requests[0].signal.aborted, true);
+    assert.equal(requests[1].signal.aborted, false);
+    requests[0].result.resolve('obsolete');
+    await old;
+    assert.equal(requests[1].signal.aborted, false);
+    assert.equal(voice.state.phase, 'transcribing');
+    requests[1].result.resolve('current');
+    await current;
+    assert.equal(voice.state.text, 'current');
+  } finally {
+    requests[0].result.resolve('obsolete');
+    requests[1].result.resolve('current');
+    await Promise.all([old, current]);
     await voice.cancel();
   }
 });

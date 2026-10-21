@@ -502,7 +502,7 @@ const voice = new VoiceController({
       });
     }
   },
-  stop: async () => {
+  stop: async (signal) => {
     if (settings.voice.engine === 'system') return systemSpeech.stop();
     const payload = await new Promise<{ data: Uint8Array; mime: string }>((resolve, reject) => {
       pendingAudio = {
@@ -514,7 +514,7 @@ const voice = new VoiceController({
         }, 8000),
       };
     });
-    return transcribe(payload.data, payload.mime, settings.voice, path.join(home, 'audio'));
+    return transcribe(payload.data, payload.mime, settings.voice, path.join(home, 'audio'), signal);
   },
   abort: () => {
     systemSpeech.abort();

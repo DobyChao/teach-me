@@ -114,7 +114,9 @@ export async function transcribe(
   mime: string,
   config: { engine: string; customUrl: string; localCommand: string },
   directory: string,
+  signal?: AbortSignal,
 ) {
+  signal?.throwIfAborted();
   if (config.engine === 'custom') {
     const url = new URL(config.customUrl);
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error('语音 API 仅支持 HTTP(S)');
@@ -122,7 +124,9 @@ export async function transcribe(
       method: 'POST',
       headers: { 'content-type': mime },
       body: new Uint8Array(data).buffer,
-      signal: AbortSignal.timeout(20000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(20000)])
+        : AbortSignal.timeout(20000),
     });
     if (!response.ok) throw new Error(`语音 API 返回 ${response.status}`);
     const result = (await response.json()) as { text?: string; transcript?: string };
@@ -130,12 +134,14 @@ export async function transcribe(
   }
   if (!config.localCommand.trim()) throw new Error('请先设置本地识别程序路径');
   await fs.mkdir(directory, { recursive: true });
+  signal?.throwIfAborted();
   const file = path.join(
     directory,
     `audio-${randomUUID()}.${mime.includes('wav') ? 'wav' : 'webm'}`,
   );
   try {
     await fs.writeFile(file, data);
+    signal?.throwIfAborted();
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(config.localCommand, [file], {
         windowsHide: true,
@@ -145,29 +151,52 @@ export async function transcribe(
       const chunks: Buffer[] = [];
       const errors: Buffer[] = [];
       let size = 0;
-      const timer = setTimeout(() => {
-        child.kill();
-        reject(new Error('本地识别超时'));
-      }, 20000);
+      let settled = false;
+      let failure: Error | null = null;
+      const finish = (error: Error | null, value = '') => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', cancel);
+        if (error) reject(error);
+        else resolve(value);
+      };
+      const terminate = (error: Error) => {
+        if (settled || failure) return;
+        failure = error;
+        clearTimeout(timer);
+        // Let the process release its audio file before finally removes it on Windows.
+        timer = setTimeout(() => finish(failure), 5000);
+        try {
+          child.kill();
+        } catch {
+          // A failed kill is not a close. Preserve the first cause and bounded wait.
+        }
+      };
+      const cancel = () =>
+        terminate(signal?.reason instanceof Error ? signal.reason : new Error('录音已取消'));
+      let timer = setTimeout(() => terminate(new Error('本地识别超时')), 20000);
       child.stdout.on('data', (data) => {
+        if (settled || failure) return;
         size += data.length;
         if (size > 128 * 1024) {
-          child.kill();
-          reject(new Error('识别输出过大'));
+          terminate(new Error('识别输出过大'));
         } else chunks.push(data);
       });
       child.stderr.on('data', (data) => {
+        if (settled || failure) return;
         if (Buffer.concat(errors).length < 8192) errors.push(data);
       });
       child.on('error', (e) => {
-        clearTimeout(timer);
-        reject(e);
+        terminate(e);
       });
       child.on('close', (code) => {
-        clearTimeout(timer);
-        if (code === 0) resolve(Buffer.concat(chunks).toString('utf8').trim());
-        else reject(new Error(Buffer.concat(errors).toString('utf8') || '本地识别失败'));
+        if (failure) finish(failure);
+        else if (code === 0) finish(null, Buffer.concat(chunks).toString('utf8').trim());
+        else finish(new Error(Buffer.concat(errors).toString('utf8') || '本地识别失败'));
       });
+      signal?.addEventListener('abort', cancel, { once: true });
+      if (signal?.aborted) cancel();
     });
   } finally {
     await fs.rm(file, { force: true });
