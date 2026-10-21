@@ -894,7 +894,7 @@
       "evidence": [
         "docs/rebuild/evidence/T35.md"
       ],
-      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。23:12核对head仍为aba25bd，最新运行39435483355仍action_required；批准最新提交后核对npm ci/check/smoke，远端验收pending。本晚布局/断连修复仅本地。"
+      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；历史独立检出check 84项和smoke 24项通过。2026-10-21恢复确认晚间三笔提交已推送至cf13b51，原PR最新已知运行39447166248仍action_required；批准后核对npm ci/check/smoke，远端验收pending。本轮禁止实机测试。"
     },
     {
       "id": "T36",
@@ -911,7 +911,19 @@
         "npm run check"
       ],
       "evidence": ["docs/rebuild/evidence/T36.md"],
-      "notes": "真实Electron/CLI复现并修复提交前断连留下孤儿会话；自动审批撤销、重试、正常批准拒绝和wait/ack通过，模拟选屏竞态通过。锁屏首次原生尝试失败保留；用户解锁后原生允许连接、可信click和后续CLI收发通过。84项check及T34回归通过，新增CI回归尚未推送；提交后响应丢失和真实多屏几何不在本项通过范围。"
+      "notes": "真实Electron/CLI复现并修复提交前断连留下孤儿会话；自动审批撤销、重试、正常批准拒绝和wait/ack通过，模拟选屏竞态通过。锁屏首次原生尝试失败保留；用户解锁后原生允许连接、可信click和后续CLI收发通过。历史84项check及T34回归通过，已推送至cf13b51，CI待批准；提交后响应丢失和真实多屏几何不在本项通过范围。"
+    },
+    {
+      "id": "T37",
+      "title": "审阅合并主仓调研并恢复当前维护约束",
+      "milestone": "M1",
+      "status": "done",
+      "dependsOn": ["T01"],
+      "requirements": ["R10"],
+      "acceptance": ["A01"],
+      "verify": ["上游差异与merge双亲审阅", "npm run context:check", "npm run check（不启动桌面应用）"],
+      "evidence": ["docs/rebuild/evidence/T37.md"],
+      "notes": "source/master的02187b4与dcba9c6只新增研究文档；无冲突普通合并，研究候选不改变已接受产品方向。本轮只做单元与静态构建检查，最晚17:30暂停。"
     }
   ],
   "nextUp": [

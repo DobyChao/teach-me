@@ -86,6 +86,7 @@
 | T34 加入审批绑定申请会话并拒绝失效目标 | done | T01 | [T34.md](evidence/T34.md) |
 | T35 固定Windows检出换行符并恢复PR门禁 | in_progress | T01 | [T35.md](evidence/T35.md) |
 | T36 撤销断开的连接请求并避免孤儿会话 | done | T34 | [T36.md](evidence/T36.md) |
+| T37 审阅合并主仓调研并恢复当前维护约束 | done | T01 | [T37.md](evidence/T37.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -103,11 +104,11 @@
 - **T16**：360 DIP mini 与真实 Windows 标题拖动已观察；多屏不同缩放实际拖动仍 pending。
 - **T17**：T33后最新构建完整重跑原生Microsoft拼音、回复不重排、中文多行、候选Enter不误发和再次Enter发送；wait收到两条消息、ack及正常stop通过。其他IME、麦克风、多屏及完整切换矩阵pending。
 - **T28**：已有六种宿主历史文档研究，未实现原生通路。ADR-024后由Agent自主选择/按需接通，不预设逐家内置适配器；本任务按实际需要补通用消息接收、可靠ack、单消费者交接和健康状态，再验收所选通路。安装hook或恢复历史不等于已唤醒。
-- **T35**：PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；独立检出check 84项和smoke 24项通过，47d1f8d已推送。23:12核对head仍为aba25bd，最新运行39435483355仍action_required；批准最新提交后核对npm ci/check/smoke，远端验收pending。本晚布局/断连修复仅本地。
+- **T35**：PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；历史独立检出check 84项和smoke 24项通过。2026-10-21恢复确认晚间三笔提交已推送至cf13b51，原PR最新已知运行39447166248仍action_required；批准后核对npm ci/check/smoke，远端验收pending。本轮禁止实机测试。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 53ca96bdd8db6369cc92f68561dcea3581fec2b139d460ba8c0001e84b634baf -->
+<!-- source-sha256: 7aa85b8aa0743ef14bb5dc76148fa9d81f411ee2c7bc7e1f1ae0530e7ff00e14 -->
