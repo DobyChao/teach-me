@@ -1,0 +1,3 @@
+# Keep text checkouts consistent with Prettier on Windows and other platforms.
+# Auto detection leaves binary assets untouched.
+* text=auto eol=lf

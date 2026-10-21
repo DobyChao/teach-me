@@ -22,6 +22,7 @@ const shot: Shot = {
 };
 const state: Snapshot = {
   panelLayoutVersion: 0,
+  panelHeightLimit: 560,
   colorScheme: 'dark',
   panelTransition: null,
   selectingDisplay: false,

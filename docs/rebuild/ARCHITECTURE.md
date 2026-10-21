@@ -43,7 +43,15 @@ CLI / Agent（保留公开命令语义）
 
 聚焦前截图要求的鼠标实现方案在 ADR-003；M2 未真机验证不能算交付。
 
+投递成功即提交输入事务，随后焦点恢复拒绝只产生“已发送”的独立提示，不重新开放已去重的turn。晚提示不覆盖新turn；Renderer按提交时草稿版本清稿，旧发送回包不得清掉新编辑或移走新turn焦点。真实投递失败仍保留原turn/截图供重试，见ADR-026/T31。
+
 ## IPC 与权限
+
+加入审批绑定请求时的Session对象。审批前拒绝已结束目标，批准后再次确认对象仍为当前活跃会话；等待期间结束/替换不能把另一会话凭据返回给旧请求，见T34。
+
+start/attach以HTTP响应连接关闭作为取消信号；未完成审批与选屏绑定自身请求并撤销。start在异步原生取消之后、创建Session之前再检查连接与退出状态，初次启动免审批凭据也在此提交点才消费。迟到选屏动作每次等待后核对请求身份，不能批准后来的选屏请求。会话提交后的响应丢失不回滚已提交会话，见ADR-030/T36。
+
+退出由宿主单次清理事务管理：先结束Session/审批，再分别取消语音、输入并清除endpoint。退出中不再恢复外部焦点，新的业务HTTP/IPC被拒绝；重复关闭共享结果且不会绕过清理。独立清理失败只记录脱敏元数据，5秒总期限后非零退出；正常退出仍保留启动器日志。该边界不是自动重启或会话恢复方案，见ADR-025/T30。
 
 共享协议定义请求、响应与事件；主进程做运行时校验、sender/window 校验和错误归一。preload 仅暴露明确方法（例如 prepareInput、submitInput、cancelInput、subscribeSnapshot），不能暴露通用 send/invoke。每个请求必须有接收器、响应与超时行为测试。订阅返回 unsubscribe，React effect 负责清理。
 
@@ -52,6 +60,8 @@ Electron contextIsolation + sandbox，关闭 nodeIntegration。远程/自定义 
 ## UI 与验证
 
 动效边界按ADR-018/[MOTION.md](MOTION.md)：背景终点使用固定目标盒和identity，原生收紧不再改变旧效果的缩放基准。主进程拥有逻辑尺寸与拖动状态；ResizeObserver只报告带panelLayoutVersion的自然高度，拖动中与过期报告均不写缓存。拖动以固定宽高setBounds平移，不从分数DPI回读值递增尺寸。
+
+ADR-029补充工作区容量：宿主按与setBounds相同的显示器下发panelHeightLimit（CSS px），Renderer约束自然高度并在极短容量下限制草稿可见行数。容量不依赖当前窗口高度；原生/内部动效用DIP，Snapshot动效几何及测高使用CSS px，在宿主边界换算页面zoom。
 
 外观DTO和内建语义token在shared/appearance.ts；宿主解析系统模式并广播，Renderer统一应用配色，设置表单提供局部预览。PanelMotion只管理原生包围范围/transition id/收尾，use-panel-motion驱动合成层，不逐帧跨进程resize。设置拖动仅接收该sender的限定指针增量与拖动id，保留客户区尺寸。主题和后续桌宠表现层边界见[APPEARANCE.md](APPEARANCE.md)。
 
@@ -66,3 +76,9 @@ Renderer入口按mode分为教学面板、overlay和独立设置窗口。设置�
 根 MEMORY.md 负责恢复入口、长期意图和信息归属，不另存任务状态。tasks.json负责状态/依赖/nextUp，PRODUCT/DECISIONS/ACCEPTANCE/evidence负责规格、理由、完成条件和实际观察；PROGRESS只保留当前接续，旧正文归档。`scripts/project-memory.cjs`从任务生成CONTEXT.md，并对显式白名单内的工程源文件计算摘要；不包含自身输出、Git元数据或运行数据，不依赖HEAD或时间戳，避免提交后自失效。文本行尾统一，Windows/CI检出方式不影响结果。
 
 `context:check`检查规范入口链接、复用plan引用校验并只读比较生成内容；源文件变化后必须显式生成并审阅。`npm run check`和CI调用同一命令。该机制只保证结构与同步，无法证明人工接续完整或验证结论真实；功能、平台证据仍按原验收要求管理。实现工具仅用于工程开发，不进入Electron/renderer运行边界。
+
+## 主面板异常恢复
+
+宿主按窗口角色记录renderer-exit。运行期panel renderer退出后，原BrowserWindow重载本地panel；恢复前取消输入/语音代次、待审批和拖动/动效，保留Session、待ack队列与健康overlay。广播跳过已崩溃webContents，恢复不恢复外部焦点、不自动聚焦。新文档的固定snapshot桥调用确认初始化，不新增任意IPC。10秒期限覆盖清理、原生样式调用、load及握手；60秒内第二次异常或失败则有界退出1。旧语音提交失败及旧IPC/快捷键错误以代次隔离，不能覆盖新输入。边界和未发送内容损失提示见ADR-027/T32。
+
+WindowsAdapter的helper生命周期遵循ADR-028：pending/缓冲/closed归属于单个子进程，退出/dispose/超时结算自己的请求；旧事件不能清理替换进程。前台/按键查询失败仍按null/false兜底，窗口策略/样式查询抛固定错误码；宿主以runtimeEvent接收安全诊断。超时不重放原生操作，下一请求按需重建。

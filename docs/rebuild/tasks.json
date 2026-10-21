@@ -68,7 +68,7 @@
       "evidence": [
         "docs/rebuild/evidence/DESKTOP-001.md"
       ],
-      "notes": "真实 DOM、输入/选择区、520/460 基础布局通过；密集工具、长消息与全部状态视觉仍待验收。"
+      "notes": "已修复短工作区标题裁切与长稿挤空审批区；六场景及短容量三档/恢复尺寸通过，320x224原生滚动条→拒绝→发送/wait/ack已补验。纯wheel未完成，失败记录保留；独立容量避免100vh反馈，多屏、错误/语音/工具满载、极小容量及page zoom mini仍pending。"
     },
     {
       "id": "T03",
@@ -352,7 +352,7 @@
       "evidence": [
         "docs/rebuild/evidence/T14.md"
       ],
-      "notes": "退出根因尚未复现；增加父启动器退出诊断。现场不可见的隔离实例确认为默认捕获保护所致，开启可见配置后出现；该结果不等同于修复最初自行退出。"
+      "notes": "本轮45分钟隔离未连接实例持续在线，强制终止/正常stop启动器记录通过；同桌面并行验收有焦点变化、快捷键被占用，未覆盖睡眠/锁屏。历史静置退出根因仍未知。"
     },
     {
       "id": "T15",
@@ -435,7 +435,7 @@
       "evidence": [
         "docs/rebuild/evidence/T17.md"
       ],
-      "notes": "三档布局、草稿/审批保护和同窗口动画已实现；麦克风、多屏与完整原生输入另验。"
+      "notes": "T33后最新构建完整重跑原生Microsoft拼音、回复不重排、中文多行、候选Enter不误发和再次Enter发送；wait收到两条消息、ack及正常stop通过。其他IME、麦克风、多屏及完整切换矩阵pending。"
     },
     {
       "id": "T18",
@@ -747,13 +747,262 @@
         "docs/rebuild/evidence/T29.md"
       ],
       "notes": "通用skill已改为Agent自主选择并按需接通，移除具体宿主提示和必须预装桥/另开任务限制；保留同会话验证、可靠接收、单消费者和wait兜底。安装副本及SHA256一致，技能校验/六类人工规则审阅/68项工程检查通过；未进行真实Agent hook唤醒实验。"
+    },
+    {
+      "id": "T30",
+      "title": "清理失败时仍能退出并重新启动",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A35"
+      ],
+      "verify": [
+        "node scripts/shutdown-smoke.mjs",
+        "Windows 原生关闭与重新启动观察",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T30.md"
+      ],
+      "notes": "Windows六组退出故障/正常回归、每组同profile重启、原生Alt+F4、120秒启动器静置与退出诊断、68项检查通过；T14原始退出根因仍未知。"
+    },
+    {
+      "id": "T31",
+      "title": "发送已成功时焦点恢复失败不再吞掉后续改稿",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R15"
+      ],
+      "acceptance": [
+        "A05"
+      ],
+      "verify": [
+        "node --test test/input.test.ts",
+        "node scripts/delivery-smoke.mjs",
+        "Windows 原生输入、发送与后续新消息",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T31.md"
+      ],
+      "notes": "投递后restore拒绝不回滚，晚回包按草稿版本保护；原生两轮消息、真实Renderer延迟回包/新稿/焦点/入队、5组dogfood和71项检查通过，IME/完整焦点仍另验。"
+    },
+    {
+      "id": "T32",
+      "title": "主面板渲染进程崩溃后有界恢复",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T30",
+        "T31"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A36"
+      ],
+      "verify": [
+        "node scripts/renderer-recovery.mjs",
+        "Windows恢复后原生输入与发送",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T32.md"
+      ],
+      "notes": "真实renderer崩溃同HWND恢复、原生输入/Enter/wait/ack、迟到IPC/语音隔离、审批拒绝、健康画板PNG保留、重复故障/重载失败/10秒超时退出及每组重启通过；独立审查问题已修复。主进程/GPU等故障和完整设备矩阵另验。"
+    },
+    {
+      "id": "T33",
+      "title": "Windows辅助进程代次隔离与故障诊断",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T30",
+        "T32"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A37"
+      ],
+      "verify": [
+        "node --test test/windows.test.ts",
+        "真实Windows helper退出后重建与窗口策略回归",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T33.md"
+      ],
+      "notes": "helper代次隔离、dispose及时结算、超时淘汰及脱敏诊断完成；12项行为测试、真实helper退出/重建/窗口样式、新构建原生输入与重启通过，独立审查无阻断。原始首次启动超时原因仍未知，后续用新诊断追踪。"
+    },
+    {
+      "id": "T34",
+      "title": "加入审批绑定申请会话并拒绝失效目标",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R05"
+      ],
+      "acceptance": [
+        "A38"
+      ],
+      "verify": [
+        "真实Electron正常/拒绝/已结束/审批期间结束和会话替换",
+        "真实HTTP旧实现复现与独立审查",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T34.md"
+      ],
+      "notes": "真实Electron旧构建复现旧id attach拿到新会话凭据；绑定目标并批准后重验，正常/拒绝/结束/替换和收发回归通过，原生点击批准、独立六场景审查通过。"
+    },
+    {
+      "id": "T35",
+      "title": "固定Windows检出换行符并恢复PR门禁",
+      "milestone": "M1",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R10"
+      ],
+      "acceptance": [
+        "A02"
+      ],
+      "verify": [
+        "core.autocrlf=true独立检出前后Prettier对照",
+        "npm run check与npm run smoke",
+        "现有PR #2远端Engineering checks"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T35.md"
+      ],
+      "notes": "PR #2的95文件Prettier失败已以真实Git CRLF检出复现并修复；历史独立检出check 84项和smoke 24项通过。2026-10-21恢复确认晚间三笔提交已推送至cf13b51，原PR在7de0b56的新运行39564552860仍action_required；后续推送须核对最新run并待主仓批准，远端验收pending。本轮禁止实机测试。"
+    },
+    {
+      "id": "T36",
+      "title": "撤销断开的连接请求并避免孤儿会话",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": ["T34"],
+      "requirements": ["R05", "R15"],
+      "acceptance": ["A06"],
+      "verify": [
+        "真实CLI在start/attach审批时退出与重新连接",
+        "批准后原生取消阻塞期间断连不创建会话",
+        "正常批准/拒绝与wait/ack回归",
+        "npm run check"
+      ],
+      "evidence": ["docs/rebuild/evidence/T36.md"],
+      "notes": "真实Electron/CLI复现并修复提交前断连留下孤儿会话；自动审批撤销、重试、正常批准拒绝和wait/ack通过，模拟选屏竞态通过。锁屏首次原生尝试失败保留；用户解锁后原生允许连接、可信click和后续CLI收发通过。历史84项check及T34回归通过，已推送至cf13b51，CI待批准；提交后响应丢失和真实多屏几何不在本项通过范围。"
+    },
+    {
+      "id": "T37",
+      "title": "审阅合并主仓调研并恢复当前维护约束",
+      "milestone": "M1",
+      "status": "done",
+      "dependsOn": ["T01"],
+      "requirements": ["R24"],
+      "acceptance": ["A01"],
+      "verify": ["上游差异与merge双亲审阅", "npm run context:check", "npm run check（不启动桌面应用）"],
+      "evidence": ["docs/rebuild/evidence/T37.md"],
+      "notes": "source/master的02187b4与dcba9c6只新增研究文档；无冲突普通合并，研究候选不改变已接受产品方向。本轮只做单元与静态构建检查，最晚17:30暂停。"
+    },
+    {
+      "id": "T38",
+      "title": "语音取消重试的进程与迟到回调隔离",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R03",
+        "R12"
+      ],
+      "acceptance": [
+        "A09"
+      ],
+      "verify": [
+        "纯Node FakeChild与受控Promise复现和回归",
+        "独立代码审查与npm run check",
+        "后续允许实机时验证Windows连续录音与取消重试"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T38.md"
+      ],
+      "notes": "实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。"
+    },
+    {
+      "id": "T39",
+      "title": "本地转写部分写入失败后清理临时音频",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R13"
+      ],
+      "acceptance": [
+        "A12"
+      ],
+      "verify": [
+        "纯Node部分写入失败文件清理回归",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T39.md"
+      ],
+      "notes": "writeFile已纳入finally；纯Node测试先真实写入1字节再模拟失败，旧版遗留文件、新版清空，保留原错误且不启动识别器。96项check通过；真实磁盘故障/权限拒绝并未模拟为通过。"
+    },
+    {
+      "id": "T40",
+      "title": "取消语音时中止在途本地与自定义转写",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R12",
+        "R13"
+      ],
+      "acceptance": [
+        "A09",
+        "A12"
+      ],
+      "verify": [
+        "纯Node取消/迟到回包/新旧转写隔离与临时文件清理",
+        "允许实机后验证本地识别进程及自定义API取消"
+      ],
+      "evidence": ["docs/rebuild/evidence/T40.md"],
+      "notes": "每次转写已传递AbortSignal，取消中止本轮child/fetch/body；预取消和写入中取消不启动识别，close/5秒有界清理且首次失败保留。113项check和独立审查通过；Windows实际命令、文件占用与真实API取消仍pending。"
     }
   ],
   "nextUp": [
+    {"taskId":"T40","reason":"取消传播实现与单元检查已完成，实际本地进程和自定义API取消尚未验收。","action":"本轮禁止实机，不再重复单元替代验收；获准后验证取消立即重试、进程关闭后清文件及kill失败/锁文件的恢复，确认custom客户端取消边界。"},
     {
-      "taskId": "T28",
-      "reason": "原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。",
-      "action": "按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。"
+      "taskId": "T38",
+      "reason": "本轮禁止实机测试；纯Node已复现旧语音回调终止新录音及旧错误污染新状态，优先收敛可确定验证的连续输入问题。",
+      "action": "实现与纯Node回归已完成；本轮不要启动实机。后续获准实机时验证系统识别启动/转写中取消并立即重试、错误恢复和焦点，不重复已通过的单元测试代替设备证据。"
     },
     {
       "taskId": "T14",
@@ -761,14 +1010,19 @@
       "action": "先读 T14 证据和启动诊断实现，复核 npm run app 的静置/退出/重复启动；记录终端退出码与宿主事件，区分进程退出和捕获不可见，再决定修复。"
     },
     {
+      "taskId": "T28",
+      "reason": "原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。",
+      "action": "按ADR-024由Agent选当前环境通路，在隔离且可访问的现有会话验证外部输入/空闲回复；按实际需要补通用接收、可靠ack、单消费者交接与健康状态，失败用wait。"
+    },
+    {
       "taskId": "T17",
       "reason": "三档交互已实现，完整输入与切换体验仍需补齐；先保护草稿与连续使用。",
-      "action": "读 PANEL-MODES.md 与 T17/T18 证据，跑 panel-modes 和 dogfood 回归；补原生IME组合输入、连续切换与编辑保护，真实麦克风和多屏分别验收。"
+      "action": "读 PANEL-MODES.md 与 T17/T18 证据，补连续切换与编辑保护的剩余矩阵；Microsoft拼音完整收发已验，其他IME、真实麦克风和多屏分别验收。"
     },
     {
       "taskId": "T02",
       "reason": "局部布局已修复，但密集工具、审批、长消息等完整视觉状态仍未验收。",
-      "action": "按 A03 覆盖520/460宽与多行草稿、长历史、审批/工具满载的实际布局，记录边界；不以构建或DOM断言替代桌面观察。"
+      "action": "320x224已补原生滚动条拒绝/发送闭环；纯wheel仍pending，先核对delta/滚动位置/耗时，不盲目重试。继续错误/语音/工具满载及审批组合；page zoom mini与Windows DPI分开，多屏需相应设备。"
     }
   ]
 }

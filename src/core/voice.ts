@@ -7,8 +7,9 @@ export interface VoiceState {
 }
 interface Ports {
   prepare(): Promise<void>;
+  // abort must invalidate an in-flight start, including its pending resource acquisition.
   start(): Promise<void>;
-  stop(): Promise<string>;
+  stop(signal: AbortSignal): Promise<string>;
   abort(): void;
   submit(text: string): Promise<void>;
   cancel(): Promise<void>;
@@ -19,6 +20,7 @@ export class VoiceController {
   state: VoiceState = { id: null, phase: 'idle', text: '', error: null };
   private generation = 0;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private transcription: AbortController | null = null;
   private ports: Ports;
   constructor(ports: Ports) {
     this.ports = ports;
@@ -32,10 +34,7 @@ export class VoiceController {
       await this.ports.prepare();
       if (generation !== this.generation) return;
       await this.ports.start();
-      if (generation !== this.generation) {
-        this.ports.abort();
-        return;
-      }
+      if (generation !== this.generation) return;
       this.state = { ...this.state, phase: 'recording' };
       this.ports.changed();
       this.timer = setTimeout(() => this.stop(), 60000);
@@ -58,22 +57,28 @@ export class VoiceController {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     const generation = this.generation;
+    const transcription = new AbortController();
+    this.transcription = transcription;
     this.state = { ...this.state, phase: 'transcribing' };
     this.ports.changed();
     try {
-      const text = (await this.ports.stop()).trim();
+      const text = (await this.ports.stop(transcription.signal)).trim();
       if (generation !== this.generation) return;
       if (!text) throw new Error('没有听清，请再试一次');
       this.state = { ...this.state, phase: 'review', text };
       this.ports.changed();
       this.timer = setTimeout(
         () => {
-          this.commit(generation).catch((e) => this.fail(e.message));
+          this.commit(generation).catch((e) => {
+            if (generation === this.generation) return this.fail(e.message);
+          });
         },
         Math.max(1000, Math.min(2000, this.ports.confirmMs())),
       );
     } catch (e) {
       if (generation === this.generation) await this.fail((e as Error).message);
+    } finally {
+      if (this.transcription === transcription) this.transcription = null;
     }
   }
   private async commit(generation: number) {
@@ -89,6 +94,8 @@ export class VoiceController {
   }
   async cancel() {
     ++this.generation;
+    this.transcription?.abort(new Error('录音已取消'));
+    this.transcription = null;
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     this.ports.abort();
@@ -97,7 +104,9 @@ export class VoiceController {
     this.ports.changed();
   }
   async fail(message: string) {
+    const generation = this.generation + 1;
     await this.cancel();
+    if (generation !== this.generation) return;
     this.state = { ...this.state, error: message };
     this.ports.changed();
   }

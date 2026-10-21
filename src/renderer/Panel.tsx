@@ -18,6 +18,7 @@ export function Panel() {
   const { state, failure, perform, act } = useHost();
   useMicrophone(state, act);
   const [draft, setDraft] = useState('');
+  const draftVersion = useRef(0);
   const [attach, setAttach] = useState(true);
   const [showTools, setShowTools] = useState(false);
   const [sending, setSending] = useState(false);
@@ -25,6 +26,10 @@ export function Panel() {
     () => matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const activeTurn = useRef(state?.input.turnId);
+  useLayoutEffect(() => {
+    activeTurn.current = state?.input.turnId;
+  }, [state?.input.turnId]);
   const panelRef = useRef<HTMLElement>(null);
   const motion = usePanelMotion(state, panelRef, act);
   const thread = useThreadScroll(
@@ -152,6 +157,8 @@ export function Panel() {
   };
   const submit = async () => {
     if (!state?.input.turnId || !draft.trim() || sending) return;
+    const submittedVersion = draftVersion.current;
+    const submittedTurn = state.input.turnId;
     setSending(true);
     try {
       await perform({
@@ -160,8 +167,11 @@ export function Panel() {
         text: draft.trim(),
         attachBoard: attach && hasBoard(state),
       });
-      setDraft('');
-      inputRef.current?.blur();
+      // A late completion owns only the draft it submitted, never a newer edit.
+      if (draftVersion.current === submittedVersion) {
+        setDraft('');
+        if (!activeTurn.current || activeTurn.current === submittedTurn) inputRef.current?.blur();
+      }
     } catch {
     } finally {
       setSending(false);
@@ -210,7 +220,7 @@ export function Panel() {
       />
       <section
         ref={panelRef}
-        style={motion.panelStyle}
+        style={{ ...motion.panelStyle, maxHeight: state.panelHeightLimit }}
         className={`panel mode-${state.panelMode} ${state.collapsed ? 'collapsed' : 'expanded'} ${state.panelAnimating ? 'is-switching' : ''}`}
         onMouseEnter={() => act({ type: 'hover', on: true })}
         onMouseLeave={() => act({ type: 'hover', on: false })}
@@ -427,6 +437,8 @@ export function Panel() {
           <textarea
             hidden={mini}
             ref={inputRef}
+            // Keep space for the header, tools and a scrollable approval in short work areas.
+            style={{ maxHeight: Math.max(25, Math.min(120, state.panelHeightLimit - 200)) }}
             aria-label="给 Agent 的消息"
             rows={1}
             readOnly={!editable}
@@ -451,7 +463,10 @@ export function Panel() {
               if (['idle', 'failed'].includes(state.input.phase) && state.voice.phase === 'idle')
                 prepare();
             }}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              draftVersion.current++;
+              setDraft(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();

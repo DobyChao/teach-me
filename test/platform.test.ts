@@ -5,6 +5,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
 import { pruneSessions } from '../src/host/storage.ts';
 import { transcribe } from '../src/host/speech.ts';
 
@@ -50,6 +52,39 @@ test('failed local recognition still deletes the temporary audio file', async ()
     );
     assert.deepEqual(await fs.readdir(root), []);
   } finally {
+    await cleanup();
+  }
+});
+
+test('a partial audio write failure removes the file without starting a recognizer', async (t) => {
+  const { root, cleanup } = await temporary();
+  const writeFile = fs.writeFile;
+  const failure = new Error('fixture disk write failed after partial data');
+  let launches = 0;
+  t.mock.method(fs, 'writeFile', async (file: string) => {
+    await writeFile(file, new Uint8Array([1]));
+    throw failure;
+  });
+  t.mock.method(childProcess, 'spawn', () => {
+    launches++;
+    throw new Error('recognizer must not start after a failed write');
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(
+      transcribe(
+        new Uint8Array([1, 2, 3]),
+        'audio/webm',
+        { engine: 'local', customUrl: '', localCommand: 'fixture-recognizer' },
+        root,
+      ),
+      (error) => error === failure,
+    );
+    assert.equal(launches, 0);
+    assert.deepEqual(await fs.readdir(root), []);
+  } finally {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
     await cleanup();
   }
 });

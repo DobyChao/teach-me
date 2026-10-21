@@ -2,6 +2,8 @@
 
 更新：2026-10-18。空分支基线：`f5e1e56`（设计参考快照 `54623c6`）。本目录是随 Git 演进的工程规划，外部聊天和 agent 私有记忆不是进度来源。
 
+同类工具研究见[RELATED-PROJECTS.md](RELATED-PROJECTS.md)（2026-10-21主仓调研）。文中建议为候选，未改变产品决议与tasks.json排序；实际采用前按具体问题核对版本与证据。
+
 当前主线为 `master`，从重建分支提升；原 master 位于 `codex/master-backup-20261017`（本地与 origin 均已保存）。详情见 `evidence/T13.md`；功能验收仍以 tasks.json 为准。
 
 ## 工作流
