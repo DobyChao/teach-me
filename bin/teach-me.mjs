@@ -22,7 +22,7 @@ let argumentError;
 for (let i = 0; i < args.length; i++) {
   if (args[i].startsWith('--')) {
     const key = args[i].slice(2);
-    if (['all', 'json', 'help', 'version'].includes(key)) flags[key] = true;
+    if (['all', 'json', 'help', 'version', 'wait'].includes(key)) flags[key] = true;
     else if (!args[i + 1] || args[i + 1].startsWith('--')) {
       argumentError = `--${key} 需要一个值`;
       break;
@@ -77,6 +77,26 @@ async function alive() {
 }
 const out = (value) =>
   console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 2));
+const waitSeconds = (value) => {
+  const seconds = Number(value ?? 480);
+  if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 480)
+    throw new Error('timeout 必须在 1–480 秒之间');
+  return seconds;
+};
+async function printThenAck(result) {
+  // Print before ack: a process killed before this output will redeliver.
+  await new Promise((resolve, reject) =>
+    process.stdout.write(JSON.stringify(result, null, 2) + '\n', (err) =>
+      err ? reject(err) : resolve(),
+    ),
+  );
+  if (result.messages?.length)
+    await call('ack', { id: Math.max(...result.messages.map((m) => m.id)) });
+}
+async function deliverThenWait(delivered, seconds) {
+  const result = await call('wait', { timeoutMs: seconds * 1000 }, seconds * 1000 + 10000);
+  await printThenAck({ delivered, ...result });
+}
 try {
   if (argumentError) throw new Error(argumentError);
   if (command === 'version')
@@ -115,8 +135,8 @@ Commands:
   start [--topic TOPIC] [--display ID]  Start the App and a teaching session
   attach --session ID                 Request access to an existing session
   wait [--timeout SECONDS]             Wait for user messages (default: 480)
-  say TEXT                            Send a short message to the panel
-  show JSON_OR_FILE                   Show annotations; requires a nonempty say
+  say TEXT [--wait]                    Send a short message to the panel
+  show JSON_OR_FILE [--wait]           Show annotations; requires a nonempty say
   capture                             Take a screenshot with user approval
   zoom --shot ID --rect x,y,w,h        Crop the same screenshot frame
   clear [--all]                       Clear Agent annotations; all also clears user drawings
@@ -129,6 +149,10 @@ Commands:
   --version, -v                       Print the version
 
 Use --client NAME on session commands to identify each Agent.
+Append --wait [--timeout SECONDS] to say or show to deliver and resume
+waiting in a single command; the combined output is
+{delivered, messages, ended, timeout} and the CLI still acknowledges
+after printing. Never run it alongside a separate wait.
 Use --skills-dir DIR to install into your Agent's skills directory.
 The optional --agent codex flag selects the built-in location preset.
 Default skill directory: CODEX_HOME/skills or ~/.codex/skills.
@@ -178,23 +202,20 @@ path with your Agent's image tool.`,
     await saveDriver();
     out(driver);
   } else if (command === 'wait') {
-    const seconds = Number(flags.timeout ?? 480);
-    if (!Number.isFinite(seconds) || seconds <= 0 || seconds > 480)
-      throw new Error('timeout 必须在 1–480 秒之间');
-    const result = await call('wait', { timeoutMs: seconds * 1000 }, seconds * 1000 + 10000);
-    // Print before ack: a process killed before this output will redeliver.
-    await new Promise((resolve, reject) =>
-      process.stdout.write(JSON.stringify(result, null, 2) + '\n', (err) =>
-        err ? reject(err) : resolve(),
-      ),
-    );
-    if (result.messages?.length)
-      await call('ack', { id: Math.max(...result.messages.map((m) => m.id)) });
-  } else if (command === 'say') out(await call('say', { text: words.join(' ') }));
-  else if (command === 'show') {
+    const seconds = waitSeconds(flags.timeout);
+    await printThenAck(await call('wait', { timeoutMs: seconds * 1000 }, seconds * 1000 + 10000));
+  } else if (command === 'say') {
+    const seconds = flags.wait ? waitSeconds(flags.timeout) : 0;
+    const delivered = await call('say', { text: words.join(' ') });
+    if (seconds) await deliverThenWait(delivered, seconds);
+    else out(delivered);
+  } else if (command === 'show') {
+    const seconds = flags.wait ? waitSeconds(flags.timeout) : 0;
     let text = words.join(' ');
     if (!text.trim().startsWith('{')) text = await fs.readFile(text, 'utf8');
-    out(await call('show', JSON.parse(text)));
+    const delivered = await call('show', JSON.parse(text));
+    if (seconds) await deliverThenWait(delivered, seconds);
+    else out(delivered);
   } else if (command === 'zoom') {
     if (typeof flags.rect !== 'string') throw new Error('zoom 需要 --rect x,y,w,h');
     out(await call('zoom', { shot: flags.shot, rect: flags.rect.split(',').map(Number) }));

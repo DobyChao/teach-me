@@ -1047,7 +1047,7 @@
       "id": "T43",
       "title": "say/show组合wait削减CLI进程往返",
       "milestone": "M2",
-      "status": "todo",
+      "status": "done",
       "dependsOn": [
         "T23"
       ],
@@ -1064,7 +1064,7 @@
       "evidence": [
         "docs/rebuild/evidence/T43.md"
       ],
-      "notes": "同一进程内交付、打印、自动ack；输出delivered+messages/ended/timeout；非法timeout交付前拒绝；不新增第二wait消费者。"
+      "notes": "同一进程内交付、打印、自动ack；输出delivered+messages/ended/timeout；非法timeout交付前拒绝；不新增第二wait消费者。fixture端点集成测试4项与npm test通过。"
     },
     {
       "id": "T44",
@@ -1092,7 +1092,7 @@
     }
   ],
   "nextUp": [
-    {"taskId":"T43","reason":"用户2026-10-23反馈响应太慢，选定组合命令削减每步教学的CLI进程启动往返。","action":"为say/show实现--wait/--timeout组合交付与接收，补fixture端点集成测试、帮助与协议说明后提交。"},
+    {"taskId":"T44","reason":"用户2026-10-23选定增量say，让Agent文字可分步到达而不堆叠气泡。","action":"Session/宿主路由/CLI实现--append与长度上限，补单测与集成测试；获准实机后验证面板渲染与组合收发。"},
     {"taskId":"T41","reason":"用户提供已复现P2；短轮询会截断正常窗口操作，应优先处理。","action":"修复已提交并完成单元/静态验证；获准实机后检查慢helper下窗口策略、前台/按键轮询与恢复提示，不用单测结果替代焦点观察。"},
     {"taskId":"T40","reason":"取消传播实现与单元检查已完成，实际本地进程和自定义API取消尚未验收。","action":"本轮禁止实机，不再重复单元替代验收；获准后验证取消立即重试、进程关闭后清文件及kill失败/锁文件的恢复，确认custom客户端取消边界。"},
     {

@@ -11,13 +11,13 @@
 
 以下排序来自 tasks.json.nextUp；用户新请求可改变排序，动手前先核对工作区。
 
-### 1. T43 · say/show组合wait削减CLI进程往返
+### 1. T44 · say --append增量消息
 
-状态：`todo`。优先理由：用户2026-10-23反馈响应太慢，选定组合命令削减每步教学的CLI进程启动往返。
+状态：`todo`。优先理由：用户2026-10-23选定增量say，让Agent文字可分步到达而不堆叠气泡。
 
-下一步：为say/show实现--wait/--timeout组合交付与接收，补fixture端点集成测试、帮助与协议说明后提交。
+下一步：Session/宿主路由/CLI实现--append与长度上限，补单测与集成测试；获准实机后验证面板渲染与组合收发。
 
-验收入口：A40；证据：[T43.md](evidence/T43.md)
+验收入口：A41；证据：[T44.md](evidence/T44.md)
 
 ### 2. T41 · 隔离helper短查询超时与窗口操作期限
 
@@ -124,7 +124,7 @@
 | T40 取消语音时中止在途本地与自定义转写 | in_progress | T01 | [T40.md](evidence/T40.md) |
 | T41 隔离helper短查询超时与窗口操作期限 | in_progress | T33 | [T41.md](evidence/T41.md) |
 | T42 skill与协议明确先行反馈规则 | done | T27 | [T42.md](evidence/T42.md) |
-| T43 say/show组合wait削减CLI进程往返 | todo | T23 | [T43.md](evidence/T43.md) |
+| T43 say/show组合wait削减CLI进程往返 | done | T23 | [T43.md](evidence/T43.md) |
 | T44 say --append增量消息 | todo | T43 | [T44.md](evidence/T44.md) |
 
 ## 尚未完成任务的接续说明
@@ -146,7 +146,6 @@
 - **T38**：实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。
 - **T40**：每次转写已传递AbortSignal，取消中止本轮child/fetch/body；预取消和写入中取消不启动识别，close/5秒有界清理且首次失败保留。113项check和独立审查通过；Windows实际命令、文件占用与真实API取消仍pending。
 - **T41**：已复现并修复只读查询超时截断窗口操作；draining拒绝新请求并保留已登记期限，窗口写自身超时仍立即淘汰。18项helper和119项check、独立审查通过；Windows慢helper下窗口与焦点实机pending。
-- **T43**：同一进程内交付、打印、自动ack；输出delivered+messages/ended/timeout；非法timeout交付前拒绝；不新增第二wait消费者。
 - **T44**：仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。宿主路由实机验证pending。
 
 ## 收尾
@@ -154,4 +153,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 555784eeaeae24e26646dba4d52d188e658df0ce71539ec74a9bf1ff22c84d42 -->
+<!-- source-sha256: ab98acdaa7e3e926e33fffb37b3cf83afcf2e8db2d3632c51a79fb3998b6380d -->
