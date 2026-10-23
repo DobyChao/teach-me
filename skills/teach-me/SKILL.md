@@ -43,6 +43,8 @@ With a working native route, retrieve any signaled input and attachments, acknow
 
 Read the reply, obtain or inspect the visual evidence it needs, then send one useful step with `tma say --client <id> "先打开文件菜单。"`, or write a scene file and run `tma show --client <id> <scene-file>`. Stay available through the active receive strategy; returning to a long wait is a fallback, not the teaching policy itself.
 
+When gathering that evidence will take noticeable time (capture, zoom, or deeper inspection), first send a very short acknowledgment such as `tma say --client <id> "我看一下屏幕…"` so the user sees immediate feedback instead of silence, then inspect and deliver the real step. Skip the extra message for quick conceptual answers; do not stack chatter.
+
 For example, after inspecting screenshot `s1`, use coordinates from that image:
 
 ```json
