@@ -1070,7 +1070,7 @@
       "id": "T44",
       "title": "say --append增量消息",
       "milestone": "M2",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "T43"
       ],
@@ -1088,11 +1088,11 @@
       "evidence": [
         "docs/rebuild/evidence/T44.md"
       ],
-      "notes": "仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。宿主路由实机验证pending。"
+      "notes": "仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。Session单测、CLI集成与完整check通过；宿主路由面板渲染与组合收发实机pending。"
     }
   ],
   "nextUp": [
-    {"taskId":"T44","reason":"用户2026-10-23选定增量say，让Agent文字可分步到达而不堆叠气泡。","action":"Session/宿主路由/CLI实现--append与长度上限，补单测与集成测试；获准实机后验证面板渲染与组合收发。"},
+    {"taskId":"T44","reason":"用户2026-10-23选定增量say；实现与单元/fixture集成验证已完成，宿主侧实机验收未做。","action":"获准实机后启动App验证say --append面板原位更新、错误边界与--wait组合收发；不重复已通过的单元与fixture测试。"},
     {"taskId":"T41","reason":"用户提供已复现P2；短轮询会截断正常窗口操作，应优先处理。","action":"修复已提交并完成单元/静态验证；获准实机后检查慢helper下窗口策略、前台/按键轮询与恢复提示，不用单测结果替代焦点观察。"},
     {"taskId":"T40","reason":"取消传播实现与单元检查已完成，实际本地进程和自定义API取消尚未验收。","action":"本轮禁止实机，不再重复单元替代验收；获准后验证取消立即重试、进程关闭后清文件及kill失败/锁文件的恢复，确认custom客户端取消边界。"},
     {

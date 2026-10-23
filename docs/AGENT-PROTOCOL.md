@@ -25,7 +25,7 @@ wait 先把结果写到 stdout 并等待写入回调，再确认消息；未确�
 | start / attach --session ID | 建立教学 / 审批连接 |
 | status | 会话、选屏、近期截图路径 |
 | wait [--timeout 秒] | 兼容兜底接收，默认480秒；输出后CLI自动ack |
-| say 文本 [--wait] | 面板显示 Agent 的短句；--wait 交付后立即长轮询接收（同wait，可配 --timeout），输出 {delivered, messages, ended, timeout}，打印后自动ack |
+| say 文本 [--append] [--wait] | 面板显示 Agent 的短句；--append 追加到本会话最后一条Agent消息（无上一条/上一条非Agent或已结束报错；单次≤8000、累计≤16000）；--wait 交付后立即长轮询接收（同wait，可配 --timeout），输出 {delivered, messages, ended, timeout}，打印后自动ack |
 | show JSON或文件 [--wait] | 必须含非空 say；一次替换整个 Agent 场景；--wait 同say |
 | capture | Agent主动请求当前画面，遵守审批；返回shot.path须打开，内部最多三次尝试 |
 | zoom --shot s1 --rect x,y,w,h | 从同一帧的原始像素裁切，不重新截图 |

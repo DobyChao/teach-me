@@ -224,3 +224,9 @@ WindowsAdapter使每个helper拥有自己的pending、stdout缓冲与closed标�
 补充ADR-028：用户检视及FakeChild对照确认，3秒fg/down超时会通过close整代helper提前结束10秒input/style。fg/down/style只读查询超时现在只结算自身并进入draining；已登记请求保留原期限，draining不向旧代写入新命令，也不启动替代helper并发修改窗口。新请求返回NATIVE_HELPER_RECOVERING（查询返回null/false，窗口方法提示稍后重试），剩余pending结束即淘汰；持续轮询不能延长期限。
 
 activate/input自身超时仍立即淘汰整代，避免已向调用方报告失败的写操作继续排队并迟到抢焦点/改样式；不重放可能已执行的操作。不能仅把所有期限加长、无限保留卡死helper或为未退出的旧写操作立即启动并行helper。kill调用不是已确认原生进程退出，实际Windows慢启动与窗口操作仍待验收，见[T41](evidence/T41.md)。
+
+## ADR-032 · 接受 · 2026-10-23 · 响应链路的先行反馈、组合接收与增量say
+
+用户反馈教学响应太慢，选定三项app侧改进（R35）：skill/协议规定预计取证或分析耗时明显时先发一句极短say再继续，快速问答不加（T42）；CLI为say/show提供--wait（--timeout，1–480秒），同一进程内交付、打印后自动ack，输出{delivered,messages,ended,timeout}，交付失败立即失败不进入等待（T43）；say新增--append，仅追加到本会话最后一条Agent消息，消息id稳定、面板原位更新，无Agent消息/上一条非Agent/会话已结束时报错，单次≤8000、累计≤16000字（T44）。
+
+保持既有边界：组合命令不新增第二消费者（不得与并发wait并用）；打印先于ack的重投递语义不变；say/show交付与接收不是事务，组合命令中途被杀后整条重跑会重复交付。--append只改消息文本，不触碰pending/ack与用户消息重投递。本条不改变wait兜底地位、原生唤醒优先（ADR-024）与截图审批策略；响应体验其余候选（截图审批默认档、指引渲染强化）另行决策。

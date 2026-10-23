@@ -44,6 +44,17 @@ export class Session {
     this.changed();
     return m;
   }
+  append(text: string) {
+    if (this.phase === 'ended') throw new Error('教学已结束');
+    const last = this.messages[this.messages.length - 1];
+    if (!last || last.role !== 'agent') throw new Error('没有可追加的 Agent 消息');
+    if (last.text.length + text.length > 16000) throw new Error('追加后超过单条消息 16000 字上限');
+    last.text += text;
+    this.activity = this.now();
+    this.phase = 'ready';
+    this.changed();
+    return last;
+  }
   push(text: string, shots: Shot[], clientId: string) {
     if (this.phase === 'ended') throw new Error('教学已结束');
     const prior = this.clients.get(clientId);

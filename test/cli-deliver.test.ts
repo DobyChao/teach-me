@@ -130,6 +130,22 @@ test('say without --wait neither polls nor acknowledges', async () => {
   }
 });
 
+test('say --append forwards the flag and does not wait', async () => {
+  const fixture = await startFixture();
+  try {
+    await withHome(fixture.port, async (home) => {
+      const run = await runCli(['say', '，第二段', '--append'], home);
+      assert.equal(run.code, 0);
+      assert.deepEqual(JSON.parse(run.stdout), { ok: true });
+      assert.deepEqual(fixture.calls, [
+        { route: '/say', body: { text: '，第二段', append: true } },
+      ]);
+    });
+  } finally {
+    await fixture.close();
+  }
+});
+
 test('invalid combined timeout fails before any delivery', async () => {
   const fixture = await startFixture();
   try {

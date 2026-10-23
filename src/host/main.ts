@@ -1003,11 +1003,14 @@ async function startServer() {
             active.ack(z.number().int().parse(data.id));
             result = { ok: true };
             break;
-          case '/say':
-            active.say(z.string().trim().min(1).max(8000).parse(data.text));
+          case '/say': {
+            const text = z.string().trim().min(1).max(8000).parse(data.text);
+            if (data.append === true) active.append(text);
+            else active.say(text);
             expand('reply');
             result = { ok: true };
             break;
+          }
           case '/show': {
             const scene = parseScene(data);
             const shot = shots.get(scene.shot || lastShot?.id || '');

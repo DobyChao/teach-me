@@ -43,6 +43,32 @@ test('ending wakes waiter and prevents more delivery', async () => {
   assert.throws(() => s.push('late', [], 'u1'));
 });
 
+test('append extends the last agent message in place; wrong target errors', () => {
+  const s = new Session('教学');
+  assert.throws(() => s.append('x'), /没有可追加/);
+  s.push('问题', [], 'u1');
+  assert.throws(() => s.append('x'), /没有可追加/);
+  const said = s.say('第一段');
+  const appended = s.append('，第二段');
+  assert.equal(appended.id, said.id);
+  assert.equal(s.messages.length, 2);
+  assert.equal(s.messages[s.messages.length - 1].text, '第一段，第二段');
+  assert.equal(s.phase, 'ready');
+  s.push('追问', [], 'u2');
+  assert.throws(() => s.append('x'), /没有可追加/);
+  s.end();
+  assert.throws(() => s.append('x'), /已结束/);
+});
+
+test('append enforces the cumulative length cap', () => {
+  const full = new Session('教学');
+  full.say('a'.repeat(16000));
+  assert.throws(() => full.append('b'), /16000/);
+  const shorter = new Session('教学');
+  shorter.say('a'.repeat(15999));
+  assert.equal(shorter.append('b').text.length, 16000);
+});
+
 test('idle agent expires after grace; reconnect preserves queued messages', async () => {
   let now = 0;
   const s = new Session(

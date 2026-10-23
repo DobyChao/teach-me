@@ -22,7 +22,7 @@ let argumentError;
 for (let i = 0; i < args.length; i++) {
   if (args[i].startsWith('--')) {
     const key = args[i].slice(2);
-    if (['all', 'json', 'help', 'version', 'wait'].includes(key)) flags[key] = true;
+    if (['all', 'json', 'help', 'version', 'wait', 'append'].includes(key)) flags[key] = true;
     else if (!args[i + 1] || args[i + 1].startsWith('--')) {
       argumentError = `--${key} 需要一个值`;
       break;
@@ -135,7 +135,8 @@ Commands:
   start [--topic TOPIC] [--display ID]  Start the App and a teaching session
   attach --session ID                 Request access to an existing session
   wait [--timeout SECONDS]             Wait for user messages (default: 480)
-  say TEXT [--wait]                    Send a short message to the panel
+  say TEXT [--append] [--wait]         Send a short message; --append extends
+                                       the last one
   show JSON_OR_FILE [--wait]           Show annotations; requires a nonempty say
   capture                             Take a screenshot with user approval
   zoom --shot ID --rect x,y,w,h        Crop the same screenshot frame
@@ -206,7 +207,9 @@ path with your Agent's image tool.`,
     await printThenAck(await call('wait', { timeoutMs: seconds * 1000 }, seconds * 1000 + 10000));
   } else if (command === 'say') {
     const seconds = flags.wait ? waitSeconds(flags.timeout) : 0;
-    const delivered = await call('say', { text: words.join(' ') });
+    const payload = { text: words.join(' ') };
+    if (flags.append) payload.append = true;
+    const delivered = await call('say', payload);
     if (seconds) await deliverThenWait(delivered, seconds);
     else out(delivered);
   } else if (command === 'show') {

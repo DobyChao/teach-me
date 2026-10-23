@@ -13,9 +13,9 @@
 
 ### 1. T44 · say --append增量消息
 
-状态：`todo`。优先理由：用户2026-10-23选定增量say，让Agent文字可分步到达而不堆叠气泡。
+状态：`in_progress`。优先理由：用户2026-10-23选定增量say；实现与单元/fixture集成验证已完成，宿主侧实机验收未做。
 
-下一步：Session/宿主路由/CLI实现--append与长度上限，补单测与集成测试；获准实机后验证面板渲染与组合收发。
+下一步：获准实机后启动App验证say --append面板原位更新、错误边界与--wait组合收发；不重复已通过的单元与fixture测试。
 
 验收入口：A41；证据：[T44.md](evidence/T44.md)
 
@@ -125,7 +125,7 @@
 | T41 隔离helper短查询超时与窗口操作期限 | in_progress | T33 | [T41.md](evidence/T41.md) |
 | T42 skill与协议明确先行反馈规则 | done | T27 | [T42.md](evidence/T42.md) |
 | T43 say/show组合wait削减CLI进程往返 | done | T23 | [T43.md](evidence/T43.md) |
-| T44 say --append增量消息 | todo | T43 | [T44.md](evidence/T44.md) |
+| T44 say --append增量消息 | in_progress | T43 | [T44.md](evidence/T44.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -146,11 +146,11 @@
 - **T38**：实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。
 - **T40**：每次转写已传递AbortSignal，取消中止本轮child/fetch/body；预取消和写入中取消不启动识别，close/5秒有界清理且首次失败保留。113项check和独立审查通过；Windows实际命令、文件占用与真实API取消仍pending。
 - **T41**：已复现并修复只读查询超时截断窗口操作；draining拒绝新请求并保留已登记期限，窗口写自身超时仍立即淘汰。18项helper和119项check、独立审查通过；Windows慢helper下窗口与焦点实机pending。
-- **T44**：仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。宿主路由实机验证pending。
+- **T44**：仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。Session单测、CLI集成与完整check通过；宿主路由面板渲染与组合收发实机pending。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: ab98acdaa7e3e926e33fffb37b3cf83afcf2e8db2d3632c51a79fb3998b6380d -->
+<!-- source-sha256: 8ffbdb0c9d743d8e9c85e63f10e9d1774cf158ee83f768d4f16204e5e9cb29ee -->
