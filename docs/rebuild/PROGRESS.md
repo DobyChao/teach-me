@@ -1,6 +1,10 @@
 # 当前接续
 
-维护日期：2026-10-23。只保留继续工作需要的结论；任务状态和具体下一步唯一维护在 [tasks.json](tasks.json)，可读视图见 [CONTEXT.md](CONTEXT.md)。完整旧记录见 [历史归档](history/2026-10-18-progress.md)。
+维护日期：2026-10-24。只保留继续工作需要的结论；任务状态和具体下一步唯一维护在 [tasks.json](tasks.json)，可读视图见 [CONTEXT.md](CONTEXT.md)。完整旧记录见 [历史归档](history/2026-10-18-progress.md)。
+
+## 2026-10-24画板快捷键
+
+用户要求打开/关闭画板也有快捷键。T45新增 Ctrl+Alt+B，经与面板画板按钮相同的edit路径切换编辑态；tooltip/设置提示/协议热键清单同步（R36/A42）。check通过；Windows真实按键、焦点与穿透观察pending，任务in_progress。
 
 ## 2026-10-23响应体验改进
 

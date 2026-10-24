@@ -152,7 +152,7 @@ export function SettingsView({
               ))}
             </select>
           </label>
-          <p className="muted">输入 Ctrl+Alt+W · 指引显隐 Ctrl+Alt+H</p>
+          <p className="muted">输入 Ctrl+Alt+W · 指引显隐 Ctrl+Alt+H · 画板开关 Ctrl+Alt+B</p>
           <label className="setting-row">
             <span>语音识别</span>
             <select

@@ -531,7 +531,7 @@ export function Panel() {
               className="tool-icon"
               aria-label="画板"
               aria-pressed={state.editing}
-              title="打开你的画板：图形、文字、自由画、橡皮与撤销"
+              title="打开你的画板：图形、文字、自由画、橡皮与撤销（Ctrl+Alt+B 开关画板）"
               onClick={() => act({ type: 'edit', on: !state.editing })}
             >
               <PanelIcon name="board" />

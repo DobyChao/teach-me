@@ -144,7 +144,11 @@ export default function UserBoard({
           },
         }}
         renderTopRightUI={() => (
-          <button className="board-done primary" onClick={() => act({ type: 'edit', on: false })}>
+          <button
+            className="board-done primary"
+            title="完成并退出画板（Ctrl+Alt+B）"
+            onClick={() => act({ type: 'edit', on: false })}
+          >
             完成画板
           </button>
         )}

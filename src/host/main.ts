@@ -1457,6 +1457,7 @@ app
         },
       ],
       ['Control+Alt+H', () => action({ type: 'toggle-guides' })],
+      ['Control+Alt+B', () => action({ type: 'edit', on: !editing })],
     ] as const) {
       if (
         !globalShortcut.register(key, () => {
