@@ -272,8 +272,8 @@ export function Panel() {
               state.unreadReply
                 ? '开始输入 · 有新回复'
                 : draft
-                  ? '继续草稿（Ctrl+Alt+W）'
-                  : '开始输入（Ctrl+Alt+W）'
+                  ? `继续草稿（${state.settings.hotkeys.input}）`
+                  : `开始输入（${state.settings.hotkeys.input}）`
             }
             onClick={prepare}
           >
@@ -483,7 +483,7 @@ export function Panel() {
             <button
               type="button"
               className="tool-icon"
-              title="按住说话，点一下打字（Ctrl+Alt+W）"
+              title={`按住说话，点一下打字（${state.settings.hotkeys.input}）`}
               aria-label="按住说话，点一下打字"
               disabled={
                 !active || !!draft.trim() || !['idle', 'editing'].includes(state.input.phase)
@@ -531,7 +531,7 @@ export function Panel() {
               className="tool-icon"
               aria-label="画板"
               aria-pressed={state.editing}
-              title="打开你的画板：图形、文字、自由画、橡皮与撤销（Ctrl+Alt+B 开关画板）"
+              title={`打开你的画板：图形、文字、自由画、橡皮与撤销（${state.settings.hotkeys.board} 开关画板）`}
               onClick={() => act({ type: 'edit', on: !state.editing })}
             >
               <PanelIcon name="board" />
@@ -582,7 +582,7 @@ export function Panel() {
             {(hasGuides(state) || state.guidesHidden) && (
               <button
                 type="button"
-                title="指引显隐（Ctrl+Alt+H）"
+                title={`指引显隐（${state.settings.hotkeys.guides}）`}
                 onClick={() => act({ type: 'toggle-guides' })}
               >
                 {state.guidesHidden ? '显示指引' : '隐藏指引'}

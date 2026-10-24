@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Action, Settings, Snapshot } from '../shared/protocol.ts';
+import { defaultHotkeys, hotkeyActions, hotkeyLabels } from '../shared/hotkeys.ts';
 import { PanelIcon } from './PanelIcon.tsx';
 import { useAppearancePreview } from './use-appearance.ts';
 import type { ColorMode } from '../shared/appearance.ts';
@@ -152,7 +153,25 @@ export function SettingsView({
               ))}
             </select>
           </label>
-          <p className="muted">输入 Ctrl+Alt+W · 指引显隐 Ctrl+Alt+H · 画板开关 Ctrl+Alt+B</p>
+          <h3>快捷键</h3>
+          {hotkeyActions.map((act) => (
+            <label className="setting-row" key={act}>
+              <span>{hotkeyLabels[act]}</span>
+              <input
+                maxLength={60}
+                spellCheck={false}
+                value={draft.hotkeys[act]}
+                placeholder={defaultHotkeys[act]}
+                onChange={(e) =>
+                  setDraft({ ...draft, hotkeys: { ...draft.hotkeys, [act]: e.target.value } })
+                }
+              />
+            </label>
+          ))}
+          <p className="muted">
+            格式如
+            Ctrl+Alt+W；需至少一个修饰键和一个主键。保存时应用，被占用或冲突会提示并保留原设置。
+          </p>
           <label className="setting-row">
             <span>语音识别</span>
             <select

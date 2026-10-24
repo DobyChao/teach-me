@@ -16,6 +16,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import { actionSchema, defaults, settingsSchema } from '../shared/protocol.ts';
+import { hotkeyActions, hotkeyLabels } from '../shared/hotkeys.ts';
+import type { HotkeyAction } from '../shared/hotkeys.ts';
 import { resolveScheme, themes } from '../shared/appearance.ts';
 import type { Action, Guide, Settings, Shot, Snapshot } from '../shared/protocol.ts';
 import { Session } from '../core/session.ts';
@@ -330,6 +332,55 @@ async function readSettings() {
 }
 async function saveSettings(next: Settings) {
   await fs.writeFile(path.join(home, 'settings.json'), JSON.stringify(next, null, 2));
+}
+const hotkeyHandlers: Record<HotkeyAction, () => unknown> = {
+  input: async () => {
+    if (talkBusy) return;
+    talkBusy = true;
+    const recoveryAt = panelRecoveryAt;
+    try {
+      await wait(280);
+      if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+      const held = await windows.talkDown();
+      if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+      if (!held) {
+        await action({ type: 'prepare' });
+        return;
+      }
+      const starting = action({ type: 'voice-start' });
+      while (await windows.talkDown()) {
+        if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+        await wait(40);
+      }
+      if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
+      await voice.stop();
+      await starting;
+    } finally {
+      talkBusy = false;
+    }
+  },
+  guides: () => action({ type: 'toggle-guides' }),
+  board: () => action({ type: 'edit', on: !editing }),
+  continue: () => {
+    // Same availability as the panel chip: no quick continue while voice is active.
+    if (voice.state.phase !== 'idle') return;
+    return action({ type: 'continue' });
+  },
+};
+function registerHotkeys(map: Settings['hotkeys']) {
+  for (const act of hotkeyActions) {
+    const key = map[act];
+    if (
+      !globalShortcut.register(key, () => {
+        if (quitting || panelRecovering) return;
+        const recoveryAt = panelRecoveryAt;
+        Promise.resolve(hotkeyHandlers[act]()).catch((e) => {
+          if (!quitting && !panelRecovering && recoveryAt === panelRecoveryAt) fail(e);
+        });
+      })
+    )
+      throw new Error(`快捷键 ${key}（${hotkeyLabels[act]}）被占用`);
+  }
 }
 function applyCaptureVisibility() {
   for (const window of [panel, overlay, settingsWindow])
@@ -757,10 +808,31 @@ async function action(a: Action) {
       if (a.epoch !== userBoard.epoch) return snapshot();
       userBoard = { ...userBoard, count: a.count };
       break;
-    case 'settings':
+    case 'settings': {
       error = null;
       if (voice.state.phase !== 'idle') await voice.cancel();
-      await saveSettings(a.settings);
+      const previousHotkeys = settings.hotkeys;
+      const hotkeysChanged = JSON.stringify(a.settings.hotkeys) !== JSON.stringify(previousHotkeys);
+      try {
+        if (hotkeysChanged) {
+          // Register before persisting so occupied keys fail before any write.
+          globalShortcut.unregisterAll();
+          registerHotkeys(a.settings.hotkeys);
+        }
+        await saveSettings(a.settings);
+      } catch (e) {
+        if (hotkeysChanged) {
+          globalShortcut.unregisterAll();
+          try {
+            registerHotkeys(previousHotkeys);
+          } catch (restore) {
+            throw new Error(
+              `${(e as Error).message}；恢复原快捷键也失败：${(restore as Error).message}`,
+            );
+          }
+        }
+        throw e;
+      }
       settings = a.settings;
       settingsWindow.setBackgroundColor(
         themes[settings.appearance.theme][snapshot().colorScheme].bg,
@@ -768,6 +840,7 @@ async function action(a: Action) {
       applyCaptureVisibility();
       autoCollapse();
       break;
+    }
     case 'settings-focus':
       if (a.on) {
         if (voice.state.phase !== 'idle') throw new Error('请先完成或撤回语音输入');
@@ -1427,49 +1500,7 @@ app
           });
       }
     }, 150);
-    for (const [key, handler] of [
-      [
-        'Control+Alt+W',
-        async () => {
-          if (talkBusy) return;
-          talkBusy = true;
-          const recoveryAt = panelRecoveryAt;
-          try {
-            await wait(280);
-            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
-            const held = await windows.talkDown();
-            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
-            if (!held) {
-              await action({ type: 'prepare' });
-              return;
-            }
-            const starting = action({ type: 'voice-start' });
-            while (await windows.talkDown()) {
-              if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
-              await wait(40);
-            }
-            if (quitting || panelRecovering || recoveryAt !== panelRecoveryAt) return;
-            await voice.stop();
-            await starting;
-          } finally {
-            talkBusy = false;
-          }
-        },
-      ],
-      ['Control+Alt+H', () => action({ type: 'toggle-guides' })],
-      ['Control+Alt+B', () => action({ type: 'edit', on: !editing })],
-    ] as const) {
-      if (
-        !globalShortcut.register(key, () => {
-          if (quitting || panelRecovering) return;
-          const recoveryAt = panelRecoveryAt;
-          Promise.resolve(handler()).catch((e) => {
-            if (!quitting && !panelRecovering && recoveryAt === panelRecoveryAt) fail(e);
-          });
-        })
-      )
-        fail(new Error(`快捷键 ${key} 被占用`));
-    }
+    registerHotkeys(settings.hotkeys);
     screen.on('display-removed', () => {
       if (displayId && !screen.getAllDisplays().some((d) => d.id === displayId)) {
         displayId = null;

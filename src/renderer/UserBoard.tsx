@@ -146,7 +146,7 @@ export default function UserBoard({
         renderTopRightUI={() => (
           <button
             className="board-done primary"
-            title="完成并退出画板（Ctrl+Alt+B）"
+            title={`完成并退出画板（${state.settings.hotkeys.board}）`}
             onClick={() => act({ type: 'edit', on: false })}
           >
             完成画板

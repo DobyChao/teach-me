@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { defaultAppearance, themeIds } from './appearance.ts';
 import type { ColorScheme } from './appearance.ts';
+import { defaultHotkeys, hotkeysSchema } from './hotkeys.ts';
 
 const point = z.tuple([z.number().finite(), z.number().finite()]);
 const rect = z.tuple([
@@ -77,6 +78,7 @@ export const settingsSchema = z.object({
       tts: z.boolean(),
     })
     .default({ engine: 'system', localCommand: '', customUrl: '', confirmMs: 1500, tts: false }),
+  hotkeys: hotkeysSchema,
 });
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaults: Settings = {
@@ -87,6 +89,7 @@ export const defaults: Settings = {
   autoCollapseSec: 8,
   continueText: '下一步呢？',
   voice: { engine: 'system', localCommand: '', customUrl: '', confirmMs: 1500, tts: false },
+  hotkeys: { ...defaultHotkeys },
 };
 export const panelModeSchema = z.enum(['mini', 'compose', 'conversation']);
 export type PanelMode = z.infer<typeof panelModeSchema>;
