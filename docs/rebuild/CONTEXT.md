@@ -15,7 +15,7 @@
 
 状态：`in_progress`。优先理由：用户2026-10-24要求继续教学快捷键与热键可配置；实现与schema单测已完成，宿主侧实机验收未做。
 
-下一步：获准实机后验证设置窗口改键、占用回滚、旧settings迁移与W/H/B/N四键真实行为；不重复已通过的单元测试。
+下一步：N/B/H真实按键已验；剩余设置改键流程、占用回滚与旧settings迁移实机验证。
 
 验收入口：A43；证据：[T46.md](evidence/T46.md)
 
@@ -23,17 +23,17 @@
 
 状态：`in_progress`。优先理由：用户2026-10-24要求打开/关闭画板也有快捷键。
 
-下一步：B键默认行为已随T46重构覆盖同一注册路径；获准实机时与T46一并验证Windows真实按键开关画板、焦点与穿透，不以代码审阅替代按键观察。
+下一步：开关与分层渲染已实机验证；剩余外部焦点恢复直接观察与占用报错，可结合T47复现轮一并做。
 
 验收入口：A42；证据：[T45.md](evidence/T45.md)
 
-### 3. T44 · say --append增量消息
+### 3. T47 · 首启overlay指引偶发空白的复现与定位
 
-状态：`in_progress`。优先理由：用户2026-10-23选定增量say；实现与单元/fixture集成验证已完成，宿主侧实机验收未做。
+状态：`todo`。优先理由：自测发现首启overlay指引完全空白，重启后正常；可能是用户看不到指引的真实根因之一。
 
-下一步：获准实机后启动App验证say --append面板原位更新、错误边界与--wait组合收发；不重复已通过的单元与fixture测试。
+下一步：先按证据复现路径冷启动复现并抓renderer日志，确认根因后修复；不以重启规避代替定位。
 
-验收入口：A41；证据：[T44.md](evidence/T44.md)
+验收入口：A44；证据：[T47.md](evidence/T47.md)
 
 ### 4. T41 · 隔离helper短查询超时与窗口操作期限
 
@@ -141,9 +141,10 @@
 | T41 隔离helper短查询超时与窗口操作期限 | in_progress | T33 | [T41.md](evidence/T41.md) |
 | T42 skill与协议明确先行反馈规则 | done | T27 | [T42.md](evidence/T42.md) |
 | T43 say/show组合wait削减CLI进程往返 | done | T23 | [T43.md](evidence/T43.md) |
-| T44 say --append增量消息 | in_progress | T43 | [T44.md](evidence/T44.md) |
+| T44 say --append增量消息 | done | T43 | [T44.md](evidence/T44.md) |
 | T45 画板开关全局快捷键 | in_progress | T11 | [T45.md](evidence/T45.md) |
 | T46 继续教学快捷键与热键可配置 | in_progress | T11 | [T46.md](evidence/T46.md) |
+| T47 首启overlay指引偶发空白的复现与定位 | todo | T01 | [T47.md](evidence/T47.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -164,13 +165,13 @@
 - **T38**：实现按轮次清理识别进程与Promise、取消立即结算、旧错误代次隔离；17项语音测试通过，独立审查发现的READY后故障丢失已修复。本轮只做代码和单元验证，Windows麦克风/焦点实机pending。
 - **T40**：每次转写已传递AbortSignal，取消中止本轮child/fetch/body；预取消和写入中取消不启动识别，close/5秒有界清理且首次失败保留。113项check和独立审查通过；Windows实际命令、文件占用与真实API取消仍pending。
 - **T41**：已复现并修复只读查询超时截断窗口操作；draining拒绝新请求并保留已登记期限，窗口写自身超时仍立即淘汰。18项helper和119项check、独立审查通过；Windows慢helper下窗口与焦点实机pending。
-- **T44**：仅追加本会话最后一条Agent消息，id稳定；单次≤8000、累计≤16000；无Agent消息或已结束报错。Session单测、CLI集成与完整check通过；宿主路由面板渲染与组合收发实机pending。
 - **T45**：Ctrl+Alt+B经同一edit路径切换画板编辑态；tooltip/设置提示/协议热键清单同步；真实按键与焦点观察pending。
 - **T46**：默认W/H/B/N入设置并持久化；别名归一与冲突在schema层拒绝；保存先注册失败回滚；继续热键走continue动作；四键实机验证pending。
+- **T47**：2026-10-27自测首实例overlay空白、重启正常；最小透明实验正常，疑应用侧首帧/加载问题，根因未确认。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 621a2a3c12b195b162d8e8c9033b260ed20996178cbfd40b6c6d423b67923158 -->
+<!-- source-sha256: 20708a3c96dd1ed8d1b8546245a9ec674f4e02aa459ed7a4a39b0b6caa3acd42 -->
