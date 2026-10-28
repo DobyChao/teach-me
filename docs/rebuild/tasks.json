@@ -1229,9 +1229,38 @@
         "docs/rebuild/evidence/T49.md"
       ],
       "notes": "隔离dogfood实例完成消息/追加、带审批截图和截图绑定point指引，记录单次CLI耗时及局限；完整用户输入到Agent回答与启动耗时未测。"
+    },
+    {
+      "id": "T50",
+      "title": "连续试用并观察用户等待回复时间",
+      "milestone": "M2",
+      "status": "in_progress",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R35"
+      ],
+      "acceptance": [
+        "A41"
+      ],
+      "verify": [
+        "进行多轮隔离教学，测量用户发送到反馈及指引的时间",
+        "记录计时起止、审批与测量限制",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T50.md"
+      ],
+      "notes": "两轮有效：首次反馈34.9秒、指引87.1秒（截图审批含约20.5秒），第二轮直接回复12.8秒；第三轮输入未提交却误答，不能算有效样本。需继续自然多轮并完善呈现时刻测量。"
     }
   ],
   "nextUp": [
+    {
+      "taskId": "T50",
+      "reason": "用户要求继续实际试用并关注等待时间。",
+      "action": "继续自然多轮，确保发送和wait收到后再回复；增加有效样本并测可见呈现时间，区分审批与Agent处理。"
+    },
     {
       "taskId": "T46",
       "reason": "用户2026-10-24要求继续教学快捷键与热键可配置；实现与schema单测已完成，宿主侧实机验收未做。",
