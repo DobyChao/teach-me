@@ -1205,6 +1205,30 @@
         "docs/rebuild/evidence/T48.md"
       ],
       "notes": "用户2026-10-28授权检查、提交并推送；起点干净且已有6笔提交。正常权限完整check通过130项测试、类型与构建；本轮证据随交付提交保存。T45/T46余项和T47保持未完成，后续按既有nextUp接续。"
+    },
+    {
+      "id": "T49",
+      "title": "自行试用并测量操作时延",
+      "milestone": "M2",
+      "status": "done",
+      "dependsOn": [
+        "T01"
+      ],
+      "requirements": [
+        "R35"
+      ],
+      "acceptance": [
+        "A41"
+      ],
+      "verify": [
+        "隔离实例实际试用并测量命令往返及可观察的界面行为",
+        "记录环境、测量边界和未完成项",
+        "npm run check"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T49.md"
+      ],
+      "notes": "隔离dogfood实例完成消息/追加、带审批截图和截图绑定point指引，记录单次CLI耗时及局限；完整用户输入到Agent回答与启动耗时未测。"
     }
   ],
   "nextUp": [
