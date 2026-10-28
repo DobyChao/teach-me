@@ -1181,6 +1181,30 @@
         "docs/rebuild/evidence/T47.md"
       ],
       "notes": "2026-10-27自测首实例overlay空白、重启正常；最小透明实验正常，疑应用侧首帧/加载问题，根因未确认。"
+    },
+    {
+      "id": "T48",
+      "title": "检查当前状态并提交推送现有修改",
+      "milestone": "M0",
+      "status": "done",
+      "dependsOn": [
+        "T00"
+      ],
+      "requirements": [
+        "R24"
+      ],
+      "acceptance": [
+        "A01"
+      ],
+      "verify": [
+        "npm run context 与 npm run check",
+        "git diff --check 与远端快进关系核对",
+        "提交后推送 origin/master 并核对远端 SHA 和工作区"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T48.md"
+      ],
+      "notes": "用户2026-10-28授权检查、提交并推送；起点干净且已有6笔提交。正常权限完整check通过130项测试、类型与构建；本轮证据随交付提交保存。T45/T46余项和T47保持未完成，后续按既有nextUp接续。"
     }
   ],
   "nextUp": [

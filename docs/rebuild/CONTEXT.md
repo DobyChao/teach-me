@@ -145,6 +145,7 @@
 | T45 画板开关全局快捷键 | in_progress | T11 | [T45.md](evidence/T45.md) |
 | T46 继续教学快捷键与热键可配置 | in_progress | T11 | [T46.md](evidence/T46.md) |
 | T47 首启overlay指引偶发空白的复现与定位 | todo | T01 | [T47.md](evidence/T47.md) |
+| T48 检查当前状态并提交推送现有修改 | done | T00 | [T48.md](evidence/T48.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -174,4 +175,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 20708a3c96dd1ed8d1b8546245a9ec674f4e02aa459ed7a4a39b0b6caa3acd42 -->
+<!-- source-sha256: 5b6bb84b9e758d6bd7068ccf74323ca937bc54e1b53b95ea0b1f15d3432d5a6d -->
