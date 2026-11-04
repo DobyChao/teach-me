@@ -183,6 +183,12 @@ export interface Message {
   at: number;
   shots: Shot[];
 }
+export interface PanelRecoveryState {
+  active: boolean;
+  status: string | null;
+  hotkeyTip: string | null;
+  voiceTip: string | null;
+}
 export interface Snapshot {
   panelLayoutVersion: number;
   // Work-area capacity, in CSS pixels; independent of the current native window height.
@@ -219,6 +225,7 @@ export interface Snapshot {
   displays: { id: number; label: string; width: number; height: number; scaleFactor: number }[];
   displayId: number | null;
   error: string | null;
+  recovery: PanelRecoveryState;
 }
 export interface Bridge {
   snapshot(): Promise<Snapshot>;

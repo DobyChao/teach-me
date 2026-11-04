@@ -506,6 +506,33 @@ input[type='checkbox'] {
   max-height: 70px;
   overflow: auto;
 }
+.recovery-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 10px 6px;
+}
+.recovery-status {
+  margin: 0;
+  color: var(--busy);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.recovery-tip {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.panel.is-recovering .header button,
+.panel.is-recovering .composer button,
+.panel.is-recovering .composer textarea,
+.panel.is-recovering .offer,
+.panel.is-recovering .aux-tools button,
+.panel.is-recovering .request button {
+  pointer-events: none;
+  opacity: 0.4;
+}
 .settings-body {
   background: var(--bg);
 }

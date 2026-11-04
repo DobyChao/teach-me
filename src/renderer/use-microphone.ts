@@ -5,7 +5,7 @@ export function useMicrophone(state: Snapshot | null, act: (action: Action) => v
   const current = useRef(state);
   current.current = state;
   const id = state?.voice.id;
-  const recording = state?.voice.phase === 'recording';
+  const recording = state?.voice.phase === 'recording' && !state.recovery.active;
   const engine = state?.settings.voice.engine;
   useEffect(() => {
     if (!recording || !id || engine === 'system') return;

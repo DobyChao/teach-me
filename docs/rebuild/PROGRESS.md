@@ -2,6 +2,10 @@
 
 维护日期：2026-11-04。只保留继续工作需要的结论；任务状态和具体下一步唯一维护在 [tasks.json](tasks.json)，可读视图见 [CONTEXT.md](CONTEXT.md)。完整旧记录见 [历史归档](history/2026-10-18-progress.md)。
 
+## 2026-11-04 T51+T52 实现（夹具，真机未做）
+
+恢复期主控件改为吞掉而不是执行 `quit` / `edit`。面板在 RECOVERING 时常显「正在恢复」并禁用控件；Ctrl+Alt+W 写「正在恢复，稍等」且不打开麦克风；录音被打断写「这句没发出去」，不插入用户消息。失败路径状态文案是「面板恢复失败，请重新打开。」。恢复结束后这三句提示清空，热键可再走语音。Node 夹具见 [T51](evidence/T51.md)、[T52](evidence/T52.md)。Windows `LAPTOP-D1EFVD8K` 四拍仍 pending，两项都保持 in_progress，不标 done。本轮不改指引样式、主题、T08、T28、T47，也不处理 T14。
+
 ## 2026-11-04 首轮切片 T51+T52（仅规划）
 
 用户于 2026-11-04（Asia/Shanghai）批准首轮切片 T51、T52。交互认本地 [DESIGN-NOTES](../DESIGN-NOTES.md)：冷灰 token；Ctrl+Alt+W 按住为语音、单击为文字。稳定性与反馈优先。本轮只落盘规划，不改产品或应用代码，不把 T51、T52 标 done。

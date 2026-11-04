@@ -191,7 +191,38 @@ async function run() {
       shortcutCallbacks.get('Control+Alt+W')();
       shortcutCallbacks.get('Control+Alt+H')();
       await pause(400);
-      return originalLoad(...args);
+      const loaded = await originalLoad(...args);
+      await until(
+        () => js('document.body.textContent.includes("正在恢复")'),
+        'reloading panel did not show the recovering copy',
+      );
+      const mid = await state();
+      assert.equal(
+        mid.recovery.active,
+        true,
+        'recovery stays active until the reload handshake finishes',
+      );
+      assert.equal(mid.recovery.status, '正在恢复');
+      assert.equal(mid.recovery.hotkeyTip, '正在恢复，稍等');
+      assert.equal(mid.session.id, session.id, 'session continues while recovering');
+      assert.equal(panel.id, windowId, 'HWND owner stays the same window');
+      const clicks = [
+        { type: 'submit', turnId: oldTurn, text: 'should not send', attachBoard: false },
+        { type: 'cancel' },
+        { type: 'settings-focus', on: true },
+        { type: 'edit', on: true },
+        { type: 'quit' },
+      ];
+      for (const action of clicks) await act(action);
+      assert.equal((await state()).session.id, session.id, 'spam clicks must not end the session');
+      assert.equal(panel.isDestroyed(), false, 'spam clicks must not destroy the panel');
+      const texts = (await state()).messages.map((message) => message.text);
+      assert.equal(
+        texts.includes('should not send'),
+        false,
+        'swallowed send must not insert a user message',
+      );
+      return loaded;
     };
     deniedCapture = call('capture').then(
       () => ({ allowed: true }),
@@ -238,10 +269,14 @@ async function run() {
     'restored renderer did not mount its input',
   );
   const recovered = await state();
-  assert.ok(
-    await js('document.body.textContent.includes("面板已恢复")'),
+  await until(
+    () => js('document.body.textContent.includes("面板已恢复")'),
     'recovery must inform users about unsent content',
   );
+  await until(async () => {
+    const text = await js('document.body.textContent');
+    return !text.includes('正在恢复') && !text.includes('这句没发出去');
+  }, 'recovery tips must disappear after the panel is back');
   if (mode === 'recovery') {
     assert.match((await deniedCapture).error, /未获允许/);
     assert.match((await deniedAttach).error, /拒绝/);

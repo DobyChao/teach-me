@@ -142,6 +142,7 @@ export function Panel() {
   }, [!!state, state?.panelMode, state?.panelLayoutVersion, act]);
   const prepare = async () => {
     if (
+      state?.recovery.active ||
       preparing.current ||
       state?.input.phase === 'preparing' ||
       state?.input.phase === 'submitting'
@@ -156,7 +157,7 @@ export function Panel() {
     }
   };
   const submit = async () => {
-    if (!state?.input.turnId || !draft.trim() || sending) return;
+    if (state?.recovery.active || !state?.input.turnId || !draft.trim() || sending) return;
     const submittedVersion = draftVersion.current;
     const submittedTurn = state.input.turnId;
     setSending(true);
@@ -178,6 +179,7 @@ export function Panel() {
     }
   };
   const openSettings = async () => {
+    if (state?.recovery.active) return;
     try {
       await perform({ type: 'settings-focus', on: true });
     } catch {}
@@ -194,6 +196,7 @@ export function Panel() {
     );
   if (!state) return <p className="loading">{failure || '正在连接桌面…'}</p>;
   const active = !!state.session && state.session.phase !== 'ended';
+  const recovering = state.recovery.active;
   const last = state.messages.findLast((m) => m.role === 'agent')?.text;
   const voiceLabels = {
     idle: '',
@@ -202,8 +205,9 @@ export function Panel() {
     transcribing: '正在识别…',
     review: '即将发送，可撤回',
   };
-  const title =
-    state.voice.phase !== 'idle'
+  const title = state.recovery.status
+    ? state.recovery.status
+    : state.voice.phase !== 'idle'
       ? state.voice.text || voiceLabels[state.voice.phase]
       : state.session?.phase === 'ended' || state.session?.phase === 'offline'
         ? phaseLabels[state.session.phase]
@@ -221,7 +225,7 @@ export function Panel() {
       <section
         ref={panelRef}
         style={{ ...motion.panelStyle, maxHeight: state.panelHeightLimit }}
-        className={`panel mode-${state.panelMode} ${state.collapsed ? 'collapsed' : 'expanded'} ${state.panelAnimating ? 'is-switching' : ''}`}
+        className={`panel mode-${state.panelMode} ${state.collapsed ? 'collapsed' : 'expanded'} ${state.panelAnimating ? 'is-switching' : ''} ${recovering ? 'is-recovering' : ''}`}
         onMouseEnter={() => act({ type: 'hover', on: true })}
         onMouseLeave={() => act({ type: 'hover', on: false })}
       >
@@ -267,6 +271,7 @@ export function Panel() {
           <button
             className="mini-write icon"
             hidden={!mini}
+            disabled={recovering}
             aria-label="开始输入"
             title={
               state.unreadReply
@@ -285,7 +290,13 @@ export function Panel() {
           />
           <p title={title}>{title}</p>
           {!state.collapsed && (
-            <button className="icon" title="设置" aria-label="设置" onClick={openSettings}>
+            <button
+              className="icon"
+              title="设置"
+              aria-label="设置"
+              disabled={recovering}
+              onClick={openSettings}
+            >
               ⚙
             </button>
           )}
@@ -294,6 +305,7 @@ export function Panel() {
             aria-label={state.collapsed ? '展开对话' : '收起对话'}
             title={state.collapsed ? '展开对话' : '收起对话'}
             aria-expanded={!state.collapsed}
+            disabled={recovering}
             onClick={() => act({ type: 'toggle-expanded' })}
           >
             <PanelIcon name={state.collapsed ? 'expand' : 'collapse'} />
@@ -302,6 +314,7 @@ export function Panel() {
             className="icon minimize-toggle"
             aria-label="收成小胶囊"
             title="收成小胶囊，保留草稿"
+            disabled={recovering}
             onClick={() => act({ type: 'panel-mode', mode: 'mini' })}
           >
             <PanelIcon name="minimize" />
@@ -310,11 +323,34 @@ export function Panel() {
             className="icon"
             title={active ? '结束教学' : '关闭应用'}
             aria-label={active ? '结束教学' : '关闭应用'}
-            onClick={() => act({ type: active ? 'end' : 'quit' })}
+            disabled={recovering}
+            onClick={() => {
+              if (recovering) return;
+              act({ type: active ? 'end' : 'quit' });
+            }}
           >
             <PanelIcon name="close" />
           </button>
         </header>
+        {(state.recovery.status || state.recovery.hotkeyTip || state.recovery.voiceTip) && (
+          <div className="recovery-banner">
+            {state.recovery.status && (
+              <p className="recovery-status" role="status" data-recovery="status">
+                {state.recovery.status}
+              </p>
+            )}
+            {state.recovery.hotkeyTip && (
+              <p className="recovery-tip" role="status" data-recovery="hotkey">
+                {state.recovery.hotkeyTip}
+              </p>
+            )}
+            {state.recovery.voiceTip && (
+              <p className="recovery-tip" role="status" data-recovery="voice">
+                {state.recovery.voiceTip}
+              </p>
+            )}
+          </div>
+        )}
         <div className="panel-details" hidden={state.collapsed}>
           {state.selectingDisplay && (
             <div className="request">
@@ -422,7 +458,7 @@ export function Panel() {
             <button onClick={() => act({ type: 'voice-cancel' })}>撤回</button>
           </div>
         )}
-        {!state.collapsed && canContinue(state, draft) && (
+        {!recovering && !state.collapsed && canContinue(state, draft) && (
           <button className="offer" onClick={() => act({ type: 'continue' })}>
             {state.settings.continueText} ↗
           </button>
@@ -454,12 +490,14 @@ export function Panel() {
             }
             title="Enter 发送，Shift+Enter 换行"
             onPointerDown={(e) => {
+              if (recovering) return;
               if (!editable) {
                 e.preventDefault();
                 prepare();
               }
             }}
             onFocus={() => {
+              if (recovering) return;
               if (['idle', 'failed'].includes(state.input.phase) && state.voice.phase === 'idle')
                 prepare();
             }}
@@ -468,6 +506,10 @@ export function Panel() {
               setDraft(e.target.value);
             }}
             onKeyDown={(e) => {
+              if (recovering) {
+                e.preventDefault();
+                return;
+              }
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 submit();
@@ -486,7 +528,10 @@ export function Panel() {
               title={`按住说话，点一下打字（${state.settings.hotkeys.input}）`}
               aria-label="按住说话，点一下打字"
               disabled={
-                !active || !!draft.trim() || !['idle', 'editing'].includes(state.input.phase)
+                recovering ||
+                !active ||
+                !!draft.trim() ||
+                !['idle', 'editing'].includes(state.input.phase)
               }
               onPointerDown={(e) => {
                 e.preventDefault();
@@ -531,8 +576,12 @@ export function Panel() {
               className="tool-icon"
               aria-label="画板"
               aria-pressed={state.editing}
+              disabled={recovering}
               title={`打开你的画板：图形、文字、自由画、橡皮与撤销（${state.settings.hotkeys.board} 开关画板）`}
-              onClick={() => act({ type: 'edit', on: !state.editing })}
+              onClick={() => {
+                if (recovering) return;
+                act({ type: 'edit', on: !state.editing });
+              }}
             >
               <PanelIcon name="board" />
               <span className="tool-label">{state.editing ? '正在画' : '画板'}</span>
@@ -552,7 +601,7 @@ export function Panel() {
             <button
               className="send"
               type="submit"
-              disabled={!editable || !draft.trim() || sending}
+              disabled={recovering || !editable || !draft.trim() || sending}
               title="发送（Enter）"
               aria-label="发送"
             >
