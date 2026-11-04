@@ -15,7 +15,7 @@
 
 状态：`in_progress`。优先理由：用户 2026-11-04（Asia/Shanghai）批准首轮切片，稳定性优先：RECOVERING 中撞控件不得整 App 退出，且不能静默无反馈。本轮优先 T51、T52，其后原排序保留但让路。
 
-下一步：实现与 Node 夹具已落地：恢复期吞掉主控件、常显「正在恢复」、失败有状态文案。不要改指引样式、主题、T08、T28、T47，不要臆断 T14。下一步只在 LAPTOP-D1EFVD8K 做真机 4 拍；夹具通过不得标 done。
+下一步：实现与 Node 夹具已落地：恢复期吞掉主控件、常显「正在恢复」、失败有状态文案。不要改指引样式、主题、T08、T28、T47，不要臆断 T14。下一步只在 LAPTOP-D1EFVD8K 做真机 4 拍；夹具通过不得标 done。Win真机 PARTIAL 仍欠 T55（恢复中「附画板」须 disabled）与 T56（失败文案驻留的脱敏截图）。
 
 验收入口：A36；证据：[T51.md](evidence/T51.md)
 
@@ -23,11 +23,43 @@
 
 状态：`in_progress`。优先理由：同一批准切片的反馈半边：恢复中与录音被掐必须出现锁死文案。本轮优先 T51、T52。
 
-下一步：文案与不开麦已由 Node 夹具锁死。下一步在 LAPTOP-D1EFVD8K 看恢复中 Ctrl+Alt+W 的「正在恢复，稍等」、录音被打断的「这句没发出去」，以及恢复结束后提示消失且热键能说一句。无脱敏截图不得标 done。
+下一步：文案与不开麦已由 Node 夹具锁死。下一步在 LAPTOP-D1EFVD8K 看恢复中 Ctrl+Alt+W 的「正在恢复，稍等」、录音被打断的「这句没发出去」，以及恢复结束后提示消失且热键能说一句。无脱敏截图不得标 done。Win真机 PARTIAL 仍欠 T54。
 
 验收入口：A09、A36；证据：[T52.md](evidence/T52.md)
 
-### 3. T50 · 连续试用并观察用户等待回复时间
+### 3. T54 · Win真机 PARTIAL：录音打断须见「这句没发出去」
+
+状态：`todo`。优先理由：Win真机 PARTIAL 欠账：录音打断须见「这句没发出去」。PARTIAL 不是通过，T52 不能因此标 done。
+
+下一步：在 LAPTOP-D1EFVD8K 看录音被打断时出现「这句没发出去」，并留下脱敏截图。本环境不要改产品代码，不要把本项或 T52 标 done，不要写成远控已验证。
+
+验收入口：A09、A36；证据：[T54.md](evidence/T54.md)
+
+### 4. T55 · Win真机 PARTIAL：恢复中「附画板」须 disabled
+
+状态：`todo`。优先理由：Win真机 PARTIAL 欠账：恢复中「附画板」须 disabled。PARTIAL 不是通过，T51 不能因此标 done。
+
+下一步：让恢复中的「附画板」成为 disabled，并在 LAPTOP-D1EFVD8K 用脱敏截图验收。本环境只登记欠账，不改面板。
+
+验收入口：A36；证据：[T55.md](evidence/T55.md)
+
+### 5. T56 · Win真机 PARTIAL：失败文案驻留要有脱敏截图证据
+
+状态：`todo`。优先理由：Win真机 PARTIAL 欠账：失败文案驻留要有脱敏截图证据。PARTIAL 不是通过。
+
+下一步：在 LAPTOP-D1EFVD8K 确认失败文案驻留并留脱敏截图。截图不进 Git。没有该证据不得标 done。
+
+验收入口：A36；证据：[T56.md](evidence/T56.md)
+
+### 6. T53 · 屏幕共享式陪练概念稿（讨论/草案，未实现）
+
+状态：`todo`。优先理由：屏幕共享式陪练概念稿已落盘，状态是讨论/草案，未实现，未获接受。
+
+下一步：读 SHARED-SCREEN-CONCEPT.md 的可测验收草案。用户选择方向前不实现持续共享，不把 Windows 远控记为已验证，不把 T53 标 done。
+
+验收入口：A14；证据：[T53.md](evidence/T53.md)
+
+### 7. T50 · 连续试用并观察用户等待回复时间
 
 状态：`in_progress`。优先理由：用户要求继续实际试用并关注等待时间。
 
@@ -35,7 +67,7 @@
 
 验收入口：A41；证据：[T50.md](evidence/T50.md)
 
-### 4. T46 · 继续教学快捷键与热键可配置
+### 8. T46 · 继续教学快捷键与热键可配置
 
 状态：`in_progress`。优先理由：用户2026-10-24要求继续教学快捷键与热键可配置；实现与schema单测已完成，宿主侧实机验收未做。
 
@@ -43,7 +75,7 @@
 
 验收入口：A43；证据：[T46.md](evidence/T46.md)
 
-### 5. T45 · 画板开关全局快捷键
+### 9. T45 · 画板开关全局快捷键
 
 状态：`in_progress`。优先理由：用户2026-10-24要求打开/关闭画板也有快捷键。
 
@@ -51,7 +83,7 @@
 
 验收入口：A42；证据：[T45.md](evidence/T45.md)
 
-### 6. T47 · 首启overlay指引偶发空白的复现与定位
+### 10. T47 · 首启overlay指引偶发空白的复现与定位
 
 状态：`todo`。优先理由：自测发现首启overlay指引完全空白，重启后正常；可能是用户看不到指引的真实根因之一。
 
@@ -59,7 +91,7 @@
 
 验收入口：A44；证据：[T47.md](evidence/T47.md)
 
-### 7. T41 · 隔离helper短查询超时与窗口操作期限
+### 11. T41 · 隔离helper短查询超时与窗口操作期限
 
 状态：`in_progress`。优先理由：用户提供已复现P2；短轮询会截断正常窗口操作，应优先处理。
 
@@ -67,7 +99,7 @@
 
 验收入口：A37；证据：[T41.md](evidence/T41.md)
 
-### 8. T40 · 取消语音时中止在途本地与自定义转写
+### 12. T40 · 取消语音时中止在途本地与自定义转写
 
 状态：`in_progress`。优先理由：取消传播实现与单元检查已完成，实际本地进程和自定义API取消尚未验收。
 
@@ -75,7 +107,7 @@
 
 验收入口：A09、A12；证据：[T40.md](evidence/T40.md)
 
-### 9. T38 · 语音取消重试的进程与迟到回调隔离
+### 13. T38 · 语音取消重试的进程与迟到回调隔离
 
 状态：`in_progress`。优先理由：本轮禁止实机测试；纯Node已复现旧语音回调终止新录音及旧错误污染新状态，优先收敛可确定验证的连续输入问题。
 
@@ -83,7 +115,7 @@
 
 验收入口：A09；证据：[T38.md](evidence/T38.md)
 
-### 10. T14 · 定位 npm 启动后退出并补全退出诊断
+### 14. T14 · 定位 npm 启动后退出并补全退出诊断
 
 状态：`in_progress`。优先理由：用户多次反馈应用静置后退出；原始根因尚未复现，影响基本可用性。
 
@@ -91,7 +123,7 @@
 
 验收入口：A19；证据：[T14.md](evidence/T14.md)
 
-### 11. T28 · 补齐通用接收能力并验证Agent所选原生通路
+### 15. T28 · 补齐通用接收能力并验证Agent所选原生通路
 
 状态：`todo`。优先理由：原生通路仍待验证；按用户决议让Agent自主选择接通，不预设逐家实现适配器。
 
@@ -99,7 +131,7 @@
 
 验收入口：A33；证据：[T28.md](evidence/T28.md)
 
-### 12. T17 · 小中大三档与情境平滑切换
+### 16. T17 · 小中大三档与情境平滑切换
 
 状态：`in_progress`。优先理由：三档交互已实现，完整输入与切换体验仍需补齐；先保护草稿与连续使用。
 
@@ -107,7 +139,7 @@
 
 验收入口：A22；证据：[T17.md](evidence/T17.md)
 
-### 13. T02 · React 面板与浏览器布局验收
+### 17. T02 · React 面板与浏览器布局验收
 
 状态：`in_progress`。优先理由：局部布局已修复，但密集工具、审批、长消息等完整视觉状态仍未验收。
 
@@ -174,6 +206,10 @@
 | T50 连续试用并观察用户等待回复时间 | in_progress | T01 | [T50.md](evidence/T50.md) |
 | T51 RECOVERING 中撞控件不得整 App 退出 | in_progress | T32 | [T51.md](evidence/T51.md) |
 | T52 Ctrl+Alt+W 恢复中与录音被掐的反馈 | in_progress | T32 | [T52.md](evidence/T52.md) |
+| T53 屏幕共享式陪练概念稿（讨论/草案，未实现） | todo | T00 | [T53.md](evidence/T53.md) |
+| T54 Win真机 PARTIAL：录音打断须见「这句没发出去」 | todo | T32 | [T54.md](evidence/T54.md) |
+| T55 Win真机 PARTIAL：恢复中「附画板」须 disabled | todo | T32 | [T55.md](evidence/T55.md) |
+| T56 Win真机 PARTIAL：失败文案驻留要有脱敏截图证据 | todo | T32 | [T56.md](evidence/T56.md) |
 
 ## 尚未完成任务的接续说明
 
@@ -198,12 +234,16 @@
 - **T46**：默认W/H/B/N入设置并持久化；别名归一与冲突在schema层拒绝；保存先注册失败回滚；继续热键走continue动作；四键实机验证pending。
 - **T47**：2026-10-27自测首实例overlay空白、重启正常；最小透明实验正常，疑应用侧首帧/加载问题，根因未确认。
 - **T50**：两轮有效：首次反馈34.9秒、指引87.1秒（截图审批含约20.5秒），第二轮直接回复12.8秒；第三轮输入未提交却误答，不能算有效样本。需继续自然多轮并完善呈现时刻测量。
-- **T51**：实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。
-- **T52**：实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。
+- **T51**：实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。Win真机 PARTIAL 另欠：恢复中「附画板」须 disabled（T55），失败文案驻留要有脱敏截图（T56）。PARTIAL 不是通过。
+- **T52**：实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。Win真机 PARTIAL 另欠：录音打断须见「这句没发出去」（T54）。PARTIAL 不是通过。
+- **T53**：2026-11-04 概念稿自本地讨论稿落盘。状态 discussion/draft，未实现、未接受。文中旧编号 T51/A45/ADR-033 不是当前仓库的 T51。原型 HTML 不在本树。不宣称 Win 远控已验证。
+- **T54**：Win真机 PARTIAL 欠账，本环境未重跑。录音打断须见「这句没发出去」。无脱敏截图。不是通过，也不表示远控已验证。T52 不得因此标 done。
+- **T55**：Win真机 PARTIAL 欠账，本环境未重跑。恢复中「附画板」须 disabled。所读 Panel 里该复选框的 disabled 只看有无笔迹，恢复态未计入；本任务不改代码。不是通过，也不表示远控已验证。T51 不得因此标 done。
+- **T56**：Win真机 PARTIAL 欠账，本环境未重跑。失败文案驻留要有脱敏截图证据。仓库里没有该截图。不是通过，也不表示远控已验证。T51 不得因此标 done。
 
 ## 收尾
 
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 9a0b1fac6c34828f59d1708ddda5a32472cc1aba2bb76b20b060dcee8006351e -->
+<!-- source-sha256: 7bc341e1e0b339642911b5557b43edcaebafb2d2aa22cfdc810ce2ececb0ec7f -->

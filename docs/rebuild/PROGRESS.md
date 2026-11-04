@@ -2,6 +2,18 @@
 
 维护日期：2026-11-04。只保留继续工作需要的结论；任务状态和具体下一步唯一维护在 [tasks.json](tasks.json)，可读视图见 [CONTEXT.md](CONTEXT.md)。完整旧记录见 [历史归档](history/2026-10-18-progress.md)。
 
+## 2026-11-04 屏幕共享概念稿落盘（仅文档）
+
+本地讨论稿迁入 [SHARED-SCREEN-CONCEPT.md](SHARED-SCREEN-CONCEPT.md)。状态是讨论/草案，未实现，未获接受，不替代 PRODUCT。不表示持续共享、实时语音或 Windows 远控已经实现或验收。原稿里的 T51/A45/ADR-033 是未进 origin 的本地编号；当前 T51、T52 仍是恢复切片。原型 `prototypes/shared-screen-companion.html` 不在本树，失效相对链接已去掉。可测验收草案写了四条过/不过，对齐 R14、ADR-005、ADR-007 与 R07/R08 的穿透边界。任务记为 [T53](evidence/T53.md)，保持 todo。
+
+T51、T52 保持 in_progress，不标 done。Win 真机 PARTIAL 欠账另记，PARTIAL 不是通过，本环境没有重跑，也没有脱敏截图：
+
+- 录音打断须见「这句没发出去」（[T54](evidence/T54.md)）
+- 恢复中「附画板」须 disabled（[T55](evidence/T55.md)）
+- 失败文案驻留要有脱敏截图证据（[T56](evidence/T56.md)）
+
+本轮不改产品代码，不做 T08、T28、T47，也不处理 T14。
+
 ## 2026-11-04 T51+T52 实现（夹具，真机未做）
 
 恢复期主控件改为吞掉而不是执行 `quit` / `edit`。面板在 RECOVERING 时常显「正在恢复」并禁用控件；Ctrl+Alt+W 写「正在恢复，稍等」且不打开麦克风；录音被打断写「这句没发出去」，不插入用户消息。失败路径状态文案是「面板恢复失败，请重新打开。」。恢复结束后这三句提示清空，热键可再走语音。Node 夹具见 [T51](evidence/T51.md)、[T52](evidence/T52.md)。Windows `LAPTOP-D1EFVD8K` 四拍仍 pending，两项都保持 in_progress，不标 done。本轮不改指引样式、主题、T08、T28、T47，也不处理 T14。
