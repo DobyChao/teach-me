@@ -46,6 +46,7 @@ const state: Snapshot = {
   displays: [],
   displayId: 2,
   error: null,
+  recovery: { active: false, status: null, hotkeyTip: null, voiceTip: null },
 };
 test('wait means ready for reply; typing and preparation suppress continue', () => {
   assert.equal(canContinue(state, ''), true);

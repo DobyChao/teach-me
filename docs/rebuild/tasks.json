@@ -1258,7 +1258,7 @@
       "id": "T51",
       "title": "RECOVERING 中撞控件不得整 App 退出",
       "milestone": "M2",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "T32"
       ],
@@ -1276,13 +1276,13 @@
       "evidence": [
         "docs/rebuild/evidence/T51.md"
       ],
-      "notes": "用户 2026-11-04（Asia/Shanghai）批准的首轮切片，只规划未实现。UX 收紧：恢复中不能静默无反馈。交互认本地 DESIGN-NOTES（冷灰 token；Ctrl+Alt+W 按住语音、单击文字）。A36 覆盖同窗口有界恢复及未发送稿/录音损失须有明确提示，不覆盖连点主控件不退出、控件禁用或常显「正在恢复」这些扩展要求；扩展验收只写在本任务 verify。真机 4 拍的第 1、4 拍：进入恢复可见「正在恢复」或控件禁用且连点不闪退；恢复结束提示消失，热键可正常说一句。与 T52 同一轮验收，结构依赖已完成的 T32。无 LAPTOP-D1EFVD8K 真机证据不得标 done。"
+      "notes": "实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。"
     },
     {
       "id": "T52",
       "title": "Ctrl+Alt+W 恢复中与录音被掐的反馈",
       "milestone": "M2",
-      "status": "todo",
+      "status": "in_progress",
       "dependsOn": [
         "T32"
       ],
@@ -1304,19 +1304,19 @@
       "evidence": [
         "docs/rebuild/evidence/T52.md"
       ],
-      "notes": "用户 2026-11-04（Asia/Shanghai）批准，只规划未实现。UX 真机 4 拍：1) 进入恢复可见「正在恢复」或控件禁用，连点不闪退（与 T51 一起看）；2) 恢复中 Ctrl+Alt+W 可见「正在恢复，稍等」，麦不开，提示保持到恢复结束；3) 正在录音被打断可见「这句没发出去」，对话无假消息；4) 恢复结束提示消失，热键可正常说一句。A09 覆盖语音取消、设备释放与可重试，A36 覆盖恢复期损失须有明确提示；两则都不锁死上述两句文案，文案以本任务 verify 为准。结构依赖已完成的 T32，以便与仍为 todo 的 T51 同时位于 nextUp；实现和真机验收与 T51 同一轮。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。"
+      "notes": "实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。"
     }
   ],
   "nextUp": [
     {
       "taskId": "T51",
       "reason": "用户 2026-11-04（Asia/Shanghai）批准首轮切片，稳定性优先：RECOVERING 中撞控件不得整 App 退出，且不能静默无反馈。本轮优先 T51、T52，其后原排序保留但让路。",
-      "action": "按 verify 实现恢复期控件禁用或常显「正在恢复」、连点不退出、失败路径有状态文案。不改指引样式、主题、T08、T28、T47，不臆断 T14 根因。过线必须 LAPTOP-D1EFVD8K 真机证据；夹具通过不得标 done。当前仅为规划，尚未实现。"
+      "action": "实现与 Node 夹具已落地：恢复期吞掉主控件、常显「正在恢复」、失败有状态文案。不要改指引样式、主题、T08、T28、T47，不要臆断 T14。下一步只在 LAPTOP-D1EFVD8K 做真机 4 拍；夹具通过不得标 done。"
     },
     {
       "taskId": "T52",
       "reason": "同一批准切片的反馈半边：恢复中与录音被掐必须出现锁死文案。本轮优先 T51、T52。",
-      "action": "按真机 4 拍验收：恢复中 Ctrl+Alt+W 见「正在恢复，稍等」且不开麦，提示保持到恢复结束再消失；录音被打断见「这句没发出去」且无假消息；结束后热键可正常说一句。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。当前仅为规划，尚未实现。"
+      "action": "文案与不开麦已由 Node 夹具锁死。下一步在 LAPTOP-D1EFVD8K 看恢复中 Ctrl+Alt+W 的「正在恢复，稍等」、录音被打断的「这句没发出去」，以及恢复结束后提示消失且热键能说一句。无脱敏截图不得标 done。"
     },
     {
       "taskId": "T50",

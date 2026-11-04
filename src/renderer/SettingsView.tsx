@@ -39,12 +39,13 @@ export function SettingsView({
       setBusy(false);
     }
   };
+  const recovering = state.recovery.active;
   return (
     <section
       className="settings-window"
       aria-label="设置"
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && !busy) run({ type: 'settings-focus', on: false });
+        if (e.key === 'Escape' && !busy && !recovering) run({ type: 'settings-focus', on: false });
       }}
     >
       <header className="settings-header" title="拖动此处移动设置窗口" {...drag}>
@@ -53,7 +54,7 @@ export function SettingsView({
           className="icon settings-close"
           aria-label="关闭设置"
           title="关闭设置"
-          disabled={busy}
+          disabled={busy || recovering}
           onClick={() => run({ type: 'settings-focus', on: false })}
         >
           <PanelIcon name="close" />
@@ -61,9 +62,16 @@ export function SettingsView({
       </header>
       <div className="settings-intro">
         <p className="muted">调整后保存，教学对话与草稿会保留。</p>
+        {state.recovery.status && (
+          <p className="recovery-status" role="status">
+            {state.recovery.status}
+          </p>
+        )}
+        {state.recovery.hotkeyTip && <p className="recovery-tip">{state.recovery.hotkeyTip}</p>}
+        {state.recovery.voiceTip && <p className="recovery-tip">{state.recovery.voiceTip}</p>}
       </div>
       <div className="settings-content">
-        <fieldset disabled={busy}>
+        <fieldset disabled={busy || recovering}>
           <div className="appearance-setting">
             <h3>外观</h3>
             <div className="color-modes" role="group" aria-label="颜色模式">
@@ -232,10 +240,17 @@ export function SettingsView({
           </p>
         )}
         <div className="row">
-          <button disabled={busy} onClick={() => run({ type: 'settings-focus', on: false })}>
+          <button
+            disabled={busy || recovering}
+            onClick={() => run({ type: 'settings-focus', on: false })}
+          >
             取消
           </button>
-          <button className="primary" disabled={busy || !draft.continueText.trim()} onClick={save}>
+          <button
+            className="primary"
+            disabled={busy || recovering || !draft.continueText.trim()}
+            onClick={save}
+          >
             {busy ? '正在保存…' : '保存设置'}
           </button>
         </div>
