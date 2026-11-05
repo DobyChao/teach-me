@@ -55,7 +55,7 @@
 
 状态：`todo`。优先理由：屏幕共享式陪练概念稿已落盘，状态是讨论/草案，未实现，未获接受。
 
-下一步：读 SHARED-SCREEN-CONCEPT.md 的可测验收草案。用户选择方向前不实现持续共享，不把 Windows 远控记为已验证，不把 T53 标 done。
+下一步：读 SHARED-SCREEN-CONCEPT.md 的可测验收草案。三态文案只认「共享中」「我先试试」「已暂停」。本切片不做代操作、代点击和 ego-lite Space 接管。用户选择方向前不实现持续共享，不把 Windows 远控记为已验证，不把 T53 标 done。
 
 验收入口：A14；证据：[T53.md](evidence/T53.md)
 
@@ -236,7 +236,7 @@
 - **T50**：两轮有效：首次反馈34.9秒、指引87.1秒（截图审批含约20.5秒），第二轮直接回复12.8秒；第三轮输入未提交却误答，不能算有效样本。需继续自然多轮并完善呈现时刻测量。
 - **T51**：实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。Win真机 PARTIAL 另欠：恢复中「附画板」须 disabled（T55），失败文案驻留要有脱敏截图（T56）。PARTIAL 不是通过。
 - **T52**：实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。Win真机 PARTIAL 另欠：录音打断须见「这句没发出去」（T54）。PARTIAL 不是通过。
-- **T53**：2026-11-04 概念稿自本地讨论稿落盘。状态 discussion/draft，未实现、未接受。文中旧编号 T51/A45/ADR-033 不是当前仓库的 T51。原型 HTML 不在本树。不宣称 Win 远控已验证。
+- **T53**：2026-11-04 概念稿自本地讨论稿落盘。状态 discussion/draft，未实现、未接受。文中旧编号 T51/A45/ADR-033 不是当前仓库的 T51。原型 HTML 不在本树。不宣称 Win 远控已验证。2026-11-05 过/不过锁死「共享中」「我先试试」「已暂停」，并写明本切片不做代操作、代点击和 ego-lite Space 接管。
 - **T54**：Win真机 PARTIAL 欠账，本环境未重跑。录音打断须见「这句没发出去」。无脱敏截图。不是通过，也不表示远控已验证。T52 不得因此标 done。
 - **T55**：Win真机 PARTIAL 欠账，本环境未重跑。恢复中「附画板」须 disabled。所读 Panel 里该复选框的 disabled 只看有无笔迹，恢复态未计入；本任务不改代码。不是通过，也不表示远控已验证。T51 不得因此标 done。
 - **T56**：Win真机 PARTIAL 欠账，本环境未重跑。失败文案驻留要有脱敏截图证据。仓库里没有该截图。不是通过，也不表示远控已验证。T51 不得因此标 done。
@@ -246,4 +246,4 @@
 更新规格/ADR、tasks.json、证据和当前接续 → `npm run context` → 审阅差异 → `npm run check` → 一起提交。
 具体命令和验证边界见 MEMORY.md、README.md 与各任务 verify；不将运行数据写入项目记忆。
 
-<!-- source-sha256: 7bc341e1e0b339642911b5557b43edcaebafb2d2aa22cfdc810ce2ececb0ec7f -->
+<!-- source-sha256: 2efca2081fdd9e632d539f8feeed0396fb13868214aec82c17a8fd50bca1a058 -->
