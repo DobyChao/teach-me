@@ -1271,12 +1271,13 @@
       "verify": [
         "注入或进入 RECOVERING 后连点主控件不少于 5 次：进程不退出，同一 HWND 与 session 仍在；面板控件禁用，或常显「正在恢复」；失败路径有状态文案，不能静默无反馈",
         "npm run check 与既有夹具回归；夹具或 CI 通过不能单独把本任务标 done",
-        "过线必须在用户本机 Windows LAPTOP-D1EFVD8K 实机；证据含环境名、注入步骤与脱敏截图"
+        "过线必须在用户本机 Windows LAPTOP-D1EFVD8K 实机；证据含环境名、注入步骤与脱敏截图",
+        "Win真机 PARTIAL 欠账（PARTIAL 不是通过，也不表示远控已验证）：恢复中「附画板」须 disabled；失败文案驻留须有脱敏截图。见 T55、T56。本项保持 in_progress，不得标 done"
       ],
       "evidence": [
         "docs/rebuild/evidence/T51.md"
       ],
-      "notes": "实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。"
+      "notes": "实现已进分支，状态保持 in_progress。恢复期发送/取消/设置/画板/关闭等主控件在 host 被吞掉，不 quit、不结束 session；面板常显「正在恢复」且控件禁用。失败与 60 秒内再次恢复的状态文案是「面板恢复失败，请重新打开。」。Node 夹具 test/panel-recovery.test.ts 已覆盖连点 swallow、quit 不执行、失败文案和 generation 隔离。Electron 夹具已补恢复中 DOM 与连点断言，但本环境是 Linux，宿主在 Windows helper 启动处 NATIVE_SPAWN_FAILED，没有跑到注入点。A36 仍不覆盖这些扩展要求。无 LAPTOP-D1EFVD8K 真机证据不得标 done。Win真机 PARTIAL 另欠：恢复中「附画板」须 disabled（T55），失败文案驻留要有脱敏截图（T56）。PARTIAL 不是通过。"
     },
     {
       "id": "T52",
@@ -1299,24 +1300,146 @@
         "恢复中按 Ctrl+Alt+W：可见「正在恢复，稍等」，不开麦；提示保持到恢复结束，结束后消失且热键恢复",
         "录音中被恢复打断：可见「这句没发出去」，对话中不出现假消息",
         "npm run check；夹具或 CI 通过不能单独把本任务标 done",
-        "过线必须在用户本机 Windows LAPTOP-D1EFVD8K 实机并附脱敏截图；没有该 Windows 真机证据不得标 done"
+        "过线必须在用户本机 Windows LAPTOP-D1EFVD8K 实机并附脱敏截图；没有该 Windows 真机证据不得标 done",
+        "Win真机 PARTIAL 欠账（PARTIAL 不是通过，也不表示远控已验证）：录音被打断须看见「这句没发出去」。见 T54。本项保持 in_progress，不得标 done"
       ],
       "evidence": [
         "docs/rebuild/evidence/T52.md"
       ],
-      "notes": "实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。"
+      "notes": "实现已进分支，状态保持 in_progress。恢复中 Ctrl+Alt+W 写入「正在恢复，稍等」且不调用 voice-start；录音中进入恢复写入「这句没发出去」，voice-stop/submit 被吞掉，不插入用户消息。两句提示在 complete 后清空，热键恢复可走 voice-start。Node 夹具 test/panel-recovery.test.ts 锁死这两句并覆盖 generation。Electron 恢复夹具会在真实 reload 完成前读 hotkey 文案，本环境 Linux 未跑到该断言。无 LAPTOP-D1EFVD8K 脱敏截图不得标 done。Win真机 PARTIAL 另欠：录音打断须见「这句没发出去」（T54）。PARTIAL 不是通过。"
+    },
+    {
+      "id": "T53",
+      "title": "屏幕共享式陪练概念稿（讨论/草案，未实现）",
+      "milestone": "M0",
+      "status": "todo",
+      "dependsOn": [
+        "T00"
+      ],
+      "requirements": [
+        "R14"
+      ],
+      "acceptance": [
+        "A14"
+      ],
+      "verify": [
+        "概念稿 docs/rebuild/SHARED-SCREEN-CONCEPT.md 已落盘；状态为讨论/草案，不替代 PRODUCT，不表示持续共享或实时语音已实现",
+        "可测验收草案只写过/不过句子，对齐 R14 与 ADR-005/007，不把 Windows 远控记为已验证",
+        "共享状态文案只锁「共享中」「我先试试」「已暂停」，不认「暂停共享」「共享已暂停」等近义句；工具条用不同视觉重量（色点或图标）盲分三者；麦克风开关与共享各自独立",
+        "本切片不实现 Agent 桌面代操作、代点击或 ego-lite 的 Space 接管；ego-lite 只作为以后的对照候选，把「控制权可见」映射到「我先试试」或「已暂停」",
+        "用户选择方向前不拆实现任务，不把本任务标 done"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T53.md"
+      ],
+      "notes": "2026-11-04 概念稿自本地讨论稿落盘。状态 discussion/draft，未实现、未接受。文中旧编号 T51/A45/ADR-033 不是当前仓库的 T51。原型 HTML 不在本树。不宣称 Win 远控已验证。2026-11-05 过/不过锁死「共享中」「我先试试」「已暂停」，并写明本切片不做代操作、代点击和 ego-lite Space 接管。"
+    },
+    {
+      "id": "T54",
+      "title": "Win真机 PARTIAL：录音打断须见「这句没发出去」",
+      "milestone": "M2",
+      "status": "todo",
+      "dependsOn": [
+        "T32"
+      ],
+      "requirements": [
+        "R03",
+        "R06"
+      ],
+      "acceptance": [
+        "A09",
+        "A36"
+      ],
+      "verify": [
+        "录音被打断时用户看见「这句没发出去」，对话里没有假消息",
+        "证据含 LAPTOP-D1EFVD8K 与脱敏截图；没有该截图不得标 done",
+        "PARTIAL 不是通过；不表示 Windows 远控已验证；T52 保持 in_progress 直到本欠账关闭"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T54.md"
+      ],
+      "notes": "Win真机 PARTIAL 欠账，本环境未重跑。录音打断须见「这句没发出去」。无脱敏截图。不是通过，也不表示远控已验证。T52 不得因此标 done。"
+    },
+    {
+      "id": "T55",
+      "title": "Win真机 PARTIAL：恢复中「附画板」须 disabled",
+      "milestone": "M2",
+      "status": "todo",
+      "dependsOn": [
+        "T32"
+      ],
+      "requirements": [
+        "R19",
+        "R20"
+      ],
+      "acceptance": [
+        "A36"
+      ],
+      "verify": [
+        "恢复中「附画板」为 disabled，不能勾选或附上画板",
+        "证据含 LAPTOP-D1EFVD8K 与脱敏截图；没有该截图不得标 done",
+        "PARTIAL 不是通过；不表示 Windows 远控已验证；T51 保持 in_progress 直到本欠账关闭"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T55.md"
+      ],
+      "notes": "Win真机 PARTIAL 欠账，本环境未重跑。恢复中「附画板」须 disabled。所读 Panel 里该复选框的 disabled 只看有无笔迹，恢复态未计入；本任务不改代码。不是通过，也不表示远控已验证。T51 不得因此标 done。"
+    },
+    {
+      "id": "T56",
+      "title": "Win真机 PARTIAL：失败文案驻留要有脱敏截图证据",
+      "milestone": "M2",
+      "status": "todo",
+      "dependsOn": [
+        "T32"
+      ],
+      "requirements": [
+        "R19"
+      ],
+      "acceptance": [
+        "A36"
+      ],
+      "verify": [
+        "失败文案在界面上驻留，并有脱敏截图；截图不进 Git，证据写环境与观察结论",
+        "没有脱敏截图不得标 done",
+        "PARTIAL 不是通过；不表示 Windows 远控已验证；T51 保持 in_progress 直到本欠账关闭"
+      ],
+      "evidence": [
+        "docs/rebuild/evidence/T56.md"
+      ],
+      "notes": "Win真机 PARTIAL 欠账，本环境未重跑。失败文案驻留要有脱敏截图证据。仓库里没有该截图。不是通过，也不表示远控已验证。T51 不得因此标 done。"
     }
   ],
   "nextUp": [
     {
       "taskId": "T51",
       "reason": "用户 2026-11-04（Asia/Shanghai）批准首轮切片，稳定性优先：RECOVERING 中撞控件不得整 App 退出，且不能静默无反馈。本轮优先 T51、T52，其后原排序保留但让路。",
-      "action": "实现与 Node 夹具已落地：恢复期吞掉主控件、常显「正在恢复」、失败有状态文案。不要改指引样式、主题、T08、T28、T47，不要臆断 T14。下一步只在 LAPTOP-D1EFVD8K 做真机 4 拍；夹具通过不得标 done。"
+      "action": "实现与 Node 夹具已落地：恢复期吞掉主控件、常显「正在恢复」、失败有状态文案。不要改指引样式、主题、T08、T28、T47，不要臆断 T14。下一步只在 LAPTOP-D1EFVD8K 做真机 4 拍；夹具通过不得标 done。Win真机 PARTIAL 仍欠 T55（恢复中「附画板」须 disabled）与 T56（失败文案驻留的脱敏截图）。"
     },
     {
       "taskId": "T52",
       "reason": "同一批准切片的反馈半边：恢复中与录音被掐必须出现锁死文案。本轮优先 T51、T52。",
-      "action": "文案与不开麦已由 Node 夹具锁死。下一步在 LAPTOP-D1EFVD8K 看恢复中 Ctrl+Alt+W 的「正在恢复，稍等」、录音被打断的「这句没发出去」，以及恢复结束后提示消失且热键能说一句。无脱敏截图不得标 done。"
+      "action": "文案与不开麦已由 Node 夹具锁死。下一步在 LAPTOP-D1EFVD8K 看恢复中 Ctrl+Alt+W 的「正在恢复，稍等」、录音被打断的「这句没发出去」，以及恢复结束后提示消失且热键能说一句。无脱敏截图不得标 done。Win真机 PARTIAL 仍欠 T54。"
+    },
+    {
+      "taskId": "T54",
+      "reason": "Win真机 PARTIAL 欠账：录音打断须见「这句没发出去」。PARTIAL 不是通过，T52 不能因此标 done。",
+      "action": "在 LAPTOP-D1EFVD8K 看录音被打断时出现「这句没发出去」，并留下脱敏截图。本环境不要改产品代码，不要把本项或 T52 标 done，不要写成远控已验证。"
+    },
+    {
+      "taskId": "T55",
+      "reason": "Win真机 PARTIAL 欠账：恢复中「附画板」须 disabled。PARTIAL 不是通过，T51 不能因此标 done。",
+      "action": "让恢复中的「附画板」成为 disabled，并在 LAPTOP-D1EFVD8K 用脱敏截图验收。本环境只登记欠账，不改面板。"
+    },
+    {
+      "taskId": "T56",
+      "reason": "Win真机 PARTIAL 欠账：失败文案驻留要有脱敏截图证据。PARTIAL 不是通过。",
+      "action": "在 LAPTOP-D1EFVD8K 确认失败文案驻留并留脱敏截图。截图不进 Git。没有该证据不得标 done。"
+    },
+    {
+      "taskId": "T53",
+      "reason": "屏幕共享式陪练概念稿已落盘，状态是讨论/草案，未实现，未获接受。",
+      "action": "读 SHARED-SCREEN-CONCEPT.md 的可测验收草案。三态文案只认「共享中」「我先试试」「已暂停」。本切片不做代操作、代点击和 ego-lite Space 接管。用户选择方向前不实现持续共享，不把 Windows 远控记为已验证，不把 T53 标 done。"
     },
     {
       "taskId": "T50",
